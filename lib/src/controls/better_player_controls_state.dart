@@ -23,6 +23,10 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
 
   void cancelAndRestartTimer();
 
+  void showQualityBottomSheet(){
+    _showQualitiesSelectionWidget();
+  }
+
   bool isVideoFinished(VideoPlayerValue? videoPlayerValue) {
     return videoPlayerValue?.position != null &&
         videoPlayerValue?.duration != null &&
@@ -58,6 +62,8 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     }
   }
 
+
+
   void onShowMoreClicked() {
     _showModalBottomSheet([_buildMoreOptionsList()]);
   }
@@ -71,12 +77,12 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
           children: [
             Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.8),
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(child: Center(child: Text('properites'))),
+                  Expanded(child: Center(child: Text(translations.properites , style: TextStyle(fontSize: 18 ),))),
                   InkWell(
                     child: Icon(Icons.close),
                     onTap: () {
@@ -170,7 +176,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Expanded(child: Center(child: Text('speed'))),
+            Expanded(child: Center(child: Text(betterPlayerController!.translations.speed))),
             InkWell(
               child: Icon(Icons.close),
               onTap: () {
@@ -204,7 +210,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0),
         child: Divider(
-          color: Colors.black12,
+          color: Colors.white,
           thickness: 1,
         ),
       ),
@@ -338,7 +344,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(child: Center(child: Text('quality'))),
+          Expanded(child: Center(child: Text(betterPlayerController!.translations.overflowMenuQuality))),
           InkWell(
             child: Icon(Icons.close),
             onTap: () {
@@ -543,8 +549,8 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
                 color: betterPlayerControlsConfiguration.overflowModalColor,
                 /*shape: RoundedRectangleBorder(side: Bor,borderRadius: 24,)*/
                 borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(15.0),
-                    topRight: Radius.circular(15.0)),
+                    topLeft: Radius.circular(10.0),
+                    topRight: Radius.circular(10.0)),
               ),
               child: Column(
                 children: children,
@@ -573,8 +579,8 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
               decoration: BoxDecoration(
                 color: betterPlayerControlsConfiguration.overflowModalColor,
                 borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(15.0),
-                    topRight: Radius.circular(15.0)),
+                    topLeft: Radius.circular(10.0),
+                    topRight: Radius.circular(10.0)),
               ),
               child: Column(
                 children: children,

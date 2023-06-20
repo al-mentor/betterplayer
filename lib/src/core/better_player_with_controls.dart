@@ -193,10 +193,12 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
     );
   }
 
+
   Widget _buildCupertinoControl() {
     return BetterPlayerCupertinoControls(
       onControlsVisibilityChanged: onControlsVisibilityChanged,
       controlsConfiguration: controlsConfiguration,
+
     );
   }
 

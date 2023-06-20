@@ -62,6 +62,8 @@ class _BetterPlayerMaterialControlsState
     return buildLTRDirectionality(_buildMainWidget());
   }
 
+
+
   ///Builds main widget of the controls.
   Widget _buildMainWidget() {
     _wasLoading = isLoading(_latestValue);
@@ -272,6 +274,7 @@ class _BetterPlayerMaterialControlsState
       ),
     );
   }
+
 
   Widget _buildBottomBar() {
     if (!betterPlayerController!.controlsEnabled) {
@@ -728,6 +731,8 @@ class _BetterPlayerMaterialControlsState
     _betterPlayerController!.toggleControlsVisibility(!controlsNotVisible);
     widget.onControlsVisibilityChanged(!controlsNotVisible);
   }
+
+
 
   Widget? _buildLoadingWidget() {
     if (_controlsConfiguration.loadingWidget != null) {

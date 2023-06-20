@@ -96,6 +96,7 @@ class _BetterPlayerState extends State<BetterPlayer>
     widget.controller.setupTranslations(locale);
   }
 
+
   @override
   void dispose() {
     ///If somehow BetterPlayer widget has been disposed from widget tree and
@@ -147,8 +148,7 @@ class _BetterPlayerState extends State<BetterPlayer>
     final controller = widget.controller;
     if (controller.isFullScreen && !_isFullScreen) {
       _isFullScreen = true;
-      controller
-          .postEvent(BetterPlayerEvent(BetterPlayerEventType.openFullscreen));
+      controller.postEvent(BetterPlayerEvent(BetterPlayerEventType.openFullscreen));
       await _pushFullScreenWidget(context);
     } else if (_isFullScreen) {
       Navigator.of(context, rootNavigator: true).pop();

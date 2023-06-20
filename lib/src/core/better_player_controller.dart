@@ -743,6 +743,7 @@ class BetterPlayerController {
         : BetterPlayerEvent(BetterPlayerEventType.controlsHiddenEnd));
   }
 
+
   ///Send player event. Shouldn't be used manually.
   void postEvent(BetterPlayerEvent betterPlayerEvent) {
     _postEvent(betterPlayerEvent);
@@ -989,6 +990,8 @@ class BetterPlayerController {
     switch (languageCode) {
       case "pl":
         return BetterPlayerTranslations.polish();
+      case "ar":
+        return BetterPlayerTranslations.arabic();
       case "zh":
         return BetterPlayerTranslations.chinese();
       case "hi":

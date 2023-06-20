@@ -13,6 +13,8 @@ class BetterPlayerTranslations {
   final String overflowMenuQuality;
   final String overflowMenuAudioTracks;
   final String qualityAuto;
+  final String properites;
+  final String speed;
 
   BetterPlayerTranslations(
       {this.languageCode = "en",
@@ -27,7 +29,11 @@ class BetterPlayerTranslations {
       this.overflowMenuSubtitles = "Subtitles",
       this.overflowMenuQuality = "Quality",
       this.overflowMenuAudioTracks = "Audio",
-      this.qualityAuto = "Auto"});
+      this.qualityAuto = "Auto",
+        this.properites="Properites",
+        this.speed="Speed"
+
+      });
 
   factory BetterPlayerTranslations.polish() => BetterPlayerTranslations(
         languageCode: "pl",
@@ -89,8 +95,11 @@ class BetterPlayerTranslations {
         overflowMenuSubtitles: "الترجمة",
         overflowMenuQuality: "الجودة",
         overflowMenuAudioTracks: "الصوت",
-        qualityAuto: "ऑटो",
-      );
+        qualityAuto: "تلقائي",
+        properites: "الخصائص",
+         speed: "السرعه"
+
+  );
 
   factory BetterPlayerTranslations.turkish() => BetterPlayerTranslations(
       languageCode: "tr",
