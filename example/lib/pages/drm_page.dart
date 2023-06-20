@@ -26,6 +26,7 @@ class _DrmPageState extends State<DrmPage> {
       drmConfiguration: BetterPlayerDrmConfiguration(
           drmType: BetterPlayerDrmType.token,
           token: Constants.tokenEncodedHlsToken),
+
     );
     _tokenController = BetterPlayerController(betterPlayerConfiguration);
     _tokenController.setupDataSource(_tokenDataSource);

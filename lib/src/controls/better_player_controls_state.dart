@@ -69,6 +69,23 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       child: Container(
         child: Column(
           children: [
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(child: Center(child: Text('properites'))),
+                  InkWell(
+                    child: Icon(Icons.close),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              ),
+            ),
             if (betterPlayerControlsConfiguration.enablePlaybackSpeed)
               _buildMoreOptionsListRow(
                   betterPlayerControlsConfiguration.playbackSpeedIcon,
@@ -76,6 +93,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
                 Navigator.of(context).pop();
                 _showSpeedChooserWidget();
               }),
+            _buildDivider(betterPlayerControlsConfiguration.enableSubtitles),
             if (betterPlayerControlsConfiguration.enableSubtitles)
               _buildMoreOptionsListRow(
                   betterPlayerControlsConfiguration.subtitlesIcon,
@@ -83,6 +101,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
                 Navigator.of(context).pop();
                 _showSubtitlesSelectionWidget();
               }),
+            _buildDivider(betterPlayerControlsConfiguration.enableQualities),
             if (betterPlayerControlsConfiguration.enableQualities)
               _buildMoreOptionsListRow(
                   betterPlayerControlsConfiguration.qualitiesIcon,
@@ -90,6 +109,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
                 Navigator.of(context).pop();
                 _showQualitiesSelectionWidget();
               }),
+            _buildDivider(betterPlayerControlsConfiguration.enableAudioTracks),
             if (betterPlayerControlsConfiguration.enableAudioTracks)
               _buildMoreOptionsListRow(
                   betterPlayerControlsConfiguration.audioTracksIcon,
@@ -124,9 +144,12 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
         child: Row(
           children: [
             const SizedBox(width: 8),
-            Icon(
-              icon,
-              color: betterPlayerControlsConfiguration.overflowMenuIconsColor,
+            Visibility(
+              visible: false,
+              child: Icon(
+                icon,
+                color: betterPlayerControlsConfiguration.overflowMenuIconsColor,
+              ),
             ),
             const SizedBox(width: 16),
             Text(
@@ -141,21 +164,56 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
 
   void _showSpeedChooserWidget() {
     _showModalBottomSheet([
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(child: Center(child: Text('speed'))),
+            InkWell(
+              child: Icon(Icons.close),
+              onTap: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      ),
       _buildSpeedRow(0.25),
+      _buildDivider(true),
       _buildSpeedRow(0.5),
+      _buildDivider(true),
       _buildSpeedRow(0.75),
+      _buildDivider(true),
       _buildSpeedRow(1.0),
+      _buildDivider(true),
       _buildSpeedRow(1.25),
+      _buildDivider(true),
       _buildSpeedRow(1.5),
+      _buildDivider(true),
       _buildSpeedRow(1.75),
+      _buildDivider(true),
       _buildSpeedRow(2.0),
     ]);
+  }
+
+  Widget _buildDivider(bool visibilty) {
+    return Visibility(
+      visible: visibilty,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0),
+        child: Divider(
+          color: Colors.black12,
+          thickness: 1,
+        ),
+      ),
+    );
   }
 
   Widget _buildSpeedRow(double value) {
     final bool isSelected =
         betterPlayerController!.videoPlayerController!.value.speed == value;
-
     return BetterPlayerMaterialClickableWidget(
       onTap: () {
         Navigator.of(context).pop();
@@ -165,19 +223,19 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         child: Row(
           children: [
-            SizedBox(width: isSelected ? 8 : 16),
+            SizedBox(width: 8),
+            Text(
+              "$value x",
+              style: _getOverflowMenuElementTextStyle(isSelected),
+            ),
+            Spacer(),
             Visibility(
                 visible: isSelected,
                 child: Icon(
                   Icons.check_outlined,
-                  color:
-                      betterPlayerControlsConfiguration.overflowModalTextColor,
+                  color: betterPlayerControlsConfiguration
+                      .overflowModalSelectedIconColor,
                 )),
-            const SizedBox(width: 16),
-            Text(
-              "$value x",
-              style: _getOverflowMenuElementTextStyle(isSelected),
-            )
           ],
         ),
       ),
@@ -247,8 +305,8 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
                 visible: isSelected,
                 child: Icon(
                   Icons.check_outlined,
-                  color:
-                      betterPlayerControlsConfiguration.overflowModalTextColor,
+                  color: betterPlayerControlsConfiguration
+                      .overflowModalSelectedIconColor,
                 )),
             const SizedBox(width: 16),
             Text(
@@ -274,6 +332,21 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     final List<BetterPlayerAsmsTrack> asmsTracks =
         betterPlayerController!.betterPlayerAsmsTracks;
     final List<Widget> children = [];
+    children.add(Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(child: Center(child: Text('quality'))),
+          InkWell(
+            child: Icon(Icons.close),
+            onTap: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),));
     for (var index = 0; index < asmsTracks.length; index++) {
       final track = asmsTracks[index];
 
@@ -285,7 +358,9 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
             asmsTrackNames.length > index ? asmsTrackNames[index] : null;
       }
       children.add(_buildTrackRow(asmsTracks[index], preferredName));
-    }
+      children.add(_buildDivider(index !=asmsTracks.length-1 ? true : false));
+
+      }
 
     // normal videos
     final resolutions =
@@ -295,7 +370,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     });
 
     if (children.isEmpty) {
-      children.add(
+    children.add(
         _buildTrackRow(BetterPlayerAsmsTrack.defaultTrack(),
             betterPlayerController!.translations.qualityAuto),
       );
@@ -325,19 +400,19 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         child: Row(
           children: [
-            SizedBox(width: isSelected ? 8 : 16),
-            Visibility(
-                visible: isSelected,
-                child: Icon(
-                  Icons.check_outlined,
-                  color:
-                      betterPlayerControlsConfiguration.overflowModalTextColor,
-                )),
-            const SizedBox(width: 16),
+            SizedBox(width: 8),
             Text(
               trackName,
               style: _getOverflowMenuElementTextStyle(isSelected),
             ),
+            Spacer(),
+            Visibility(
+                visible: isSelected,
+                child: Icon(
+                  Icons.check_outlined,
+                  color: betterPlayerControlsConfiguration
+                      .overflowModalSelectedIconColor,
+                )),
           ],
         ),
       ),
@@ -468,8 +543,8 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
                 color: betterPlayerControlsConfiguration.overflowModalColor,
                 /*shape: RoundedRectangleBorder(side: Bor,borderRadius: 24,)*/
                 borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24.0),
-                    topRight: Radius.circular(24.0)),
+                    topLeft: Radius.circular(15.0),
+                    topRight: Radius.circular(15.0)),
               ),
               child: Column(
                 children: children,
@@ -498,8 +573,8 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
               decoration: BoxDecoration(
                 color: betterPlayerControlsConfiguration.overflowModalColor,
                 borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24.0),
-                    topRight: Radius.circular(24.0)),
+                    topLeft: Radius.circular(15.0),
+                    topRight: Radius.circular(15.0)),
               ),
               child: Column(
                 children: children,

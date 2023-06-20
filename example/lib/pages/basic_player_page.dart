@@ -15,41 +15,43 @@ class _BasicPlayerPageState extends State<BasicPlayerPage> {
       appBar: AppBar(
         title: Text("Basic player"),
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              "Basic player created with the simplest factory method. Shows video from URL.",
-              style: TextStyle(fontSize: 16),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Basic player created with the simplest factory method. Shows video from URL.",
+                style: TextStyle(fontSize: 16),
+              ),
             ),
-          ),
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: BetterPlayer.network(
-              Constants.forBiggerBlazesUrl,
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: BetterPlayer.network(
+                Constants.forBiggerBlazesUrl,
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              "Next player shows video from file.",
-              style: TextStyle(fontSize: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Next player shows video from file.",
+                style: TextStyle(fontSize: 16),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          FutureBuilder<String>(
-            future: Utils.getFileUrl(Constants.fileTestVideoUrl),
-            builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
-              if (snapshot.data != null) {
-                return BetterPlayer.file(snapshot.data!);
-              } else {
-                return const SizedBox();
-              }
-            },
-          )
-        ],
+            const SizedBox(height: 8),
+            FutureBuilder<String>(
+              future: Utils.getFileUrl(Constants.fileTestVideoUrl),
+              builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+                if (snapshot.data != null) {
+                  return BetterPlayer.file(snapshot.data!);
+                } else {
+                  return const SizedBox();
+                }
+              },
+            )
+          ],
+        ),
       ),
     );
   }

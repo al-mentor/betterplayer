@@ -290,21 +290,28 @@ class _BetterPlayerMaterialControlsState
               flex: 75,
               child: Row(
                 children: [
-                  if (_controlsConfiguration.enablePlayPause)
-                    _buildPlayPause(_controller!)
+                  // if (_controlsConfiguration.enablePlayPause)
+                  //   _buildPlayPause(_controller!)
+                  // else
+                  //   const SizedBox(),
+
+                  if (_betterPlayerController!.isLiveStream())
+                    const SizedBox()
                   else
-                    const SizedBox(),
+                    _controlsConfiguration.enableProgressBar
+                        ? _buildProgressBar()
+                        : const SizedBox(),
                   if (_betterPlayerController!.isLiveStream())
                     _buildLiveWidget()
                   else
                     _controlsConfiguration.enableProgressText
-                        ? Expanded(child: _buildPosition())
+                        ? _buildPosition()
                         : const SizedBox(),
-                  const Spacer(),
                   if (_controlsConfiguration.enableMute)
                     _buildMuteButton(_controller)
                   else
                     const SizedBox(),
+
                   if (_controlsConfiguration.enableFullscreen)
                     _buildExpandButton()
                   else
@@ -312,12 +319,6 @@ class _BetterPlayerMaterialControlsState
                 ],
               ),
             ),
-            if (_betterPlayerController!.isLiveStream())
-              const SizedBox()
-            else
-              _controlsConfiguration.enableProgressBar
-                  ? _buildProgressBar()
-                  : const SizedBox(),
           ],
         ),
       ),
@@ -696,8 +697,8 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildProgressBar() {
     return Expanded(
-      flex: 40,
       child: Container(
+        width: MediaQuery.of(context).size.width,
         alignment: Alignment.bottomCenter,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: BetterPlayerMaterialVideoProgressBar(
