@@ -204,13 +204,14 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     ]);
   }
 
+
   Widget _buildDivider(bool visibilty) {
     return Visibility(
       visible: visibilty,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0),
         child: Divider(
-          color: Colors.white,
+          color: Colors.grey,
           thickness: 1,
         ),
       ),
