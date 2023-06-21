@@ -16,6 +16,8 @@ dependencies:
   path_provider: ^2.0.10
   visibility_detector: ^0.3.3
   collection: ^1.16.0
+  just_audio: ^0.9.34
+
 
 dev_dependencies:
   flutter_test:
