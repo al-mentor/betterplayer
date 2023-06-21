@@ -43,6 +43,7 @@ class _BetterPlayerMaterialControlsState
   VideoPlayerController? _controller;
   BetterPlayerController? _betterPlayerController;
   StreamSubscription? _controlsVisibilityStreamSubscription;
+  StreamSubscription? _qualityVisibilityStreamSubscription;
 
   BetterPlayerControlsConfiguration get _controlsConfiguration =>
       widget.controlsConfiguration;
@@ -63,7 +64,6 @@ class _BetterPlayerMaterialControlsState
   }
 
 
-
   ///Builds main widget of the controls.
   Widget _buildMainWidget() {
     _wasLoading = isLoading(_latestValue);
@@ -73,14 +73,13 @@ class _BetterPlayerMaterialControlsState
         child: _buildErrorWidget(),
       );
     }
+
     return GestureDetector(
       onTap: () {
         if (BetterPlayerMultipleGestureDetector.of(context) != null) {
           BetterPlayerMultipleGestureDetector.of(context)!.onTap?.call();
         }
-        controlsNotVisible
-            ? cancelAndRestartTimer()
-            : changePlayerControlsNotVisible(true);
+        controlsNotVisible ? cancelAndRestartTimer() : changePlayerControlsNotVisible(true);
       },
       onDoubleTap: () {
         if (BetterPlayerMultipleGestureDetector.of(context) != null) {
@@ -207,6 +206,7 @@ class _BetterPlayerMaterialControlsState
                     else
                       const SizedBox(),
                     _buildMoreButton(),
+
                   ],
                 ),
               ),
@@ -447,6 +447,8 @@ class _BetterPlayerMaterialControlsState
     );
   }
 
+
+
   Widget _buildReplayButton(VideoPlayerController controller) {
     final bool isFinished = isVideoFinished(_latestValue);
     return _buildHitAreaClickableButton(
@@ -625,6 +627,7 @@ class _BetterPlayerMaterialControlsState
       _initTimer = Timer(const Duration(milliseconds: 200), () {
         changePlayerControlsNotVisible(false);
       });
+
     }
 
     _controlsVisibilityStreamSubscription =
@@ -634,6 +637,11 @@ class _BetterPlayerMaterialControlsState
         cancelAndRestartTimer();
       }
     });
+
+    _qualityVisibilityStreamSubscription =
+        _betterPlayerController!.qualityVisibilityStream.listen((state) {
+          showQualityBottomSheet(true);
+        });
   }
 
   void _onExpandCollapse() {

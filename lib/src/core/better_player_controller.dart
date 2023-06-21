@@ -38,6 +38,9 @@ class BetterPlayerController {
   final StreamController<bool> _controlsVisibilityStreamController =
       StreamController.broadcast();
 
+  final StreamController<bool> _qualityVisibilityStreamController =
+  StreamController.broadcast();
+
   ///Instance of video player controller which is adapter used to communicate
   ///between flutter high level code and lower level native code.
   VideoPlayerController? videoPlayerController;
@@ -130,6 +133,9 @@ class BetterPlayerController {
   ///Stream which sends flag whenever visibility of controls changes
   Stream<bool> get controlsVisibilityStream =>
       _controlsVisibilityStreamController.stream;
+
+  Stream<bool> get qualityVisibilityStream =>
+      _qualityVisibilityStreamController.stream;
 
   ///Current app lifecycle state.
   AppLifecycleState _appLifecycleState = AppLifecycleState.resumed;
@@ -706,6 +712,7 @@ class BetterPlayerController {
     );
   }
 
+
   ///Flag which determines whenever player is playing or not.
   bool? isPlaying() {
     if (videoPlayerController == null) {
@@ -725,6 +732,9 @@ class BetterPlayerController {
   ///Show or hide controls manually
   void setControlsVisibility(bool isVisible) {
     _controlsVisibilityStreamController.add(isVisible);
+  }
+  void setQualityVisibility(bool isVisible) {
+    _qualityVisibilityStreamController.add(isVisible);
   }
 
   ///Enable/disable controls (when enabled = false, controls will be always hidden)

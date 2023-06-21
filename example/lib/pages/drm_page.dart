@@ -103,6 +103,11 @@ class _DrmPageState extends State<DrmPage> {
               child: BetterPlayer(controller: _fairplayController),
             ),
             const SizedBox(height: 100),
+            InkWell( onTap: (){
+              _tokenController.setQualityVisibility(true);
+
+            }, child: Text('test click')),
+
           ],
         ),
       ),
