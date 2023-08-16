@@ -429,7 +429,7 @@ class _BetterPlayerMaterialControlsState
     return _buildHitAreaClickableButton(
       icon: Icon(
         _controlsConfiguration.skipBackIcon,
-        size: 24,
+        size: 36,
         color: _controlsConfiguration.iconsColor,
       ),
       onClicked: skipBack,
@@ -440,7 +440,7 @@ class _BetterPlayerMaterialControlsState
     return _buildHitAreaClickableButton(
       icon: Icon(
         _controlsConfiguration.skipForwardIcon,
-        size: 24,
+        size: 36,
         color: _controlsConfiguration.iconsColor,
       ),
       onClicked: skipForward,
