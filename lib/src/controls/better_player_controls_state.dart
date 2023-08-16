@@ -375,8 +375,16 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     // normal videos
     final resolutions =
         betterPlayerController!.betterPlayerDataSource!.resolutions;
-    resolutions?.forEach((key, value) {
-      children.add(_buildResolutionSelectionRow(key, value));
+    resolutions?.forEach((String key, value) {
+      if (key.contains("480")) {
+        children.add(_buildResolutionSelectionRow("480p", value));
+      }
+      if (key.contains("320")) {
+        children.add(_buildResolutionSelectionRow("320p", value));
+      }
+      if (key.contains("1280")) {
+        children.add(_buildResolutionSelectionRow("1280p", value));
+      }
     });
 
     if (children.isEmpty) {
