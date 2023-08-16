@@ -414,11 +414,11 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
             bitrate)} $mimeType";
 
     if (trackName.contains("480")) {
-      trackName = "480p";
+      trackName = "HD";
     } else if (trackName.contains("320")) {
-      trackName = "320p";
+      trackName = "Low quality";
     } else if (trackName.contains("1280")) {
-      trackName = "320p";
+      trackName = "Full HD";
     } else {
       return null;
     }
@@ -459,11 +459,11 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
 
   Widget? _buildResolutionSelectionRow(String name, String url) {
     if (name.contains("480")) {
-      name = "480p";
+      name = "HD";
     } else if (name.contains("320")) {
-      name = "320p";
+      name = "Low quality";
     } else if (name.contains("1280")) {
-      name = "320p";
+      name = "Full HD";
     } else {
       return null;
     }

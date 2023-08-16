@@ -30,7 +30,7 @@ class BetterPlayerTranslations {
       this.overflowMenuQuality = "Quality",
       this.overflowMenuAudioTracks = "Audio",
       this.qualityAuto = "Auto",
-        this.properites="Properites",
+        this.properites="Properties",
         this.speed="Speed"
 
       });
