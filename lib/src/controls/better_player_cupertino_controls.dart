@@ -476,6 +476,7 @@ class _BetterPlayerCupertinoControlsState
     double topBarHeight,
     double buttonPadding,
   ) {
+    final orientation = MediaQuery.of(context).orientation;
     if (!betterPlayerController!.controlsEnabled) {
       return const SizedBox();
     }

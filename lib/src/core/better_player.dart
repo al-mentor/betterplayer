@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:better_player/better_player.dart';
 import 'package:better_player/src/configuration/better_player_controller_event.dart';
 import 'package:better_player/src/core/better_player_utils.dart';
@@ -96,7 +97,6 @@ class _BetterPlayerState extends State<BetterPlayer>
     widget.controller.setupTranslations(locale);
   }
 
-
   @override
   void dispose() {
     ///If somehow BetterPlayer widget has been disposed from widget tree and
@@ -148,7 +148,8 @@ class _BetterPlayerState extends State<BetterPlayer>
     final controller = widget.controller;
     if (controller.isFullScreen && !_isFullScreen) {
       _isFullScreen = true;
-      controller.postEvent(BetterPlayerEvent(BetterPlayerEventType.openFullscreen));
+      controller
+          .postEvent(BetterPlayerEvent(BetterPlayerEventType.openFullscreen));
       await _pushFullScreenWidget(context);
     } else if (_isFullScreen) {
       Navigator.of(context, rootNavigator: true).pop();
@@ -199,16 +200,26 @@ class _BetterPlayerState extends State<BetterPlayer>
     Animation<double> secondaryAnimation,
   ) {
     final controllerProvider = BetterPlayerControllerProvider(
-        controller: widget.controller, child: _buildPlayer());
+      controller: widget.controller,
+      child: _buildPlayer(),
+    );
 
     final routePageBuilder = _betterPlayerConfiguration.routePageBuilder;
     if (routePageBuilder == null) {
       return _defaultRoutePageBuilder(
-          context, animation, secondaryAnimation, controllerProvider);
+        context,
+        animation,
+        secondaryAnimation,
+        controllerProvider,
+      );
     }
 
     return routePageBuilder(
-        context, animation, secondaryAnimation, controllerProvider);
+      context,
+      animation,
+      secondaryAnimation,
+      controllerProvider,
+    );
   }
 
   Future<dynamic> _pushFullScreenWidget(BuildContext context) async {
@@ -265,7 +276,9 @@ class _BetterPlayerState extends State<BetterPlayer>
     return VisibilityDetector(
       key: Key("${widget.controller.hashCode}_key"),
       onVisibilityChanged: (VisibilityInfo info) =>
-          widget.controller.onPlayerVisibilityChanged(info.visibleFraction),
+          widget.controller.onPlayerVisibilityChanged(
+        info.visibleFraction,
+      ),
       child: BetterPlayerWithControls(
         controller: widget.controller,
       ),
@@ -281,7 +294,8 @@ class _BetterPlayerState extends State<BetterPlayer>
 
 ///Page route builder used in fullscreen mode.
 typedef BetterPlayerRoutePageBuilder = Widget Function(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    BetterPlayerControllerProvider controllerProvider);
+  BuildContext context,
+  Animation<double> animation,
+  Animation<double> secondaryAnimation,
+  BetterPlayerControllerProvider controllerProvider,
+);

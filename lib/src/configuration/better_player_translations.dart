@@ -15,25 +15,38 @@ class BetterPlayerTranslations {
   final String qualityAuto;
   final String properites;
   final String speed;
+  final String? hdQuality;
+  final String? lowQuality;
+  final String? fullHdQuality;
+  final String? autoQualityDesc;
+  final String? fullHdQualityDesc;
+  final String? hdQualityDesc;
+  final String? lowQualityDesc;
 
-  BetterPlayerTranslations(
-      {this.languageCode = "en",
-      this.generalDefaultError = "Video can't be played",
-      this.generalNone = "None",
-      this.generalDefault = "Default",
-      this.generalRetry = "Retry",
-      this.playlistLoadingNextVideo = "Loading next video",
-      this.controlsLive = "LIVE",
-      this.controlsNextVideoIn = "Next video in",
-      this.overflowMenuPlaybackSpeed = "Playback speed",
-      this.overflowMenuSubtitles = "Subtitles",
-      this.overflowMenuQuality = "Quality",
-      this.overflowMenuAudioTracks = "Audio",
-      this.qualityAuto = "Auto",
-        this.properites="Properties",
-        this.speed="Speed"
-
-      });
+  BetterPlayerTranslations({
+    this.languageCode = "en",
+    this.generalDefaultError = "Video can't be played",
+    this.generalNone = "None",
+    this.generalDefault = "Default",
+    this.generalRetry = "Retry",
+    this.playlistLoadingNextVideo = "Loading next video",
+    this.controlsLive = "LIVE",
+    this.controlsNextVideoIn = "Next video in",
+    this.overflowMenuPlaybackSpeed = "Playback speed",
+    this.overflowMenuSubtitles = "Subtitles",
+    this.overflowMenuQuality = "Quality",
+    this.overflowMenuAudioTracks = "Audio",
+    this.qualityAuto = "Auto",
+    this.properites = "Properties",
+    this.speed = "Speed",
+    this.hdQuality = "HD",
+    this.lowQuality = "Low Quality",
+    this.fullHdQuality = 'Full HD',
+    this.autoQualityDesc = 'To get the best possible experience',
+    this.lowQualityDesc = 'data saver',
+    this.fullHdQualityDesc = 'up to 1080p',
+    this.hdQualityDesc = 'up to 720p',
+  });
 
   factory BetterPlayerTranslations.polish() => BetterPlayerTranslations(
         languageCode: "pl",
@@ -97,9 +110,15 @@ class BetterPlayerTranslations {
         overflowMenuAudioTracks: "الصوت",
         qualityAuto: "تلقائي",
         properites: "الخصائص",
-         speed: "السرعه"
-
-  );
+        speed: "السرعه",
+        fullHdQuality: "Full HD",
+        hdQuality: "HD",
+        lowQuality: "جودة منخفضة",
+        autoQualityDesc: 'للحصول على افضل تجربة ممكنة',
+        lowQualityDesc: 'موفر البيانات',
+        fullHdQualityDesc: 'تصل الي 1080p',
+        hdQualityDesc: 'تصل الي 720p',
+      );
 
   factory BetterPlayerTranslations.turkish() => BetterPlayerTranslations(
       languageCode: "tr",
