@@ -29,20 +29,39 @@ NSString * DEFAULT_LICENSE_SERVER_URL = @"https://fps.ezdrm.com/api/licenses/";
     NSURLResponse * response;
     
     NSURL * finalLicenseURL;
-    if (_licenseURL != [NSNull null]){
-        finalLicenseURL = _licenseURL;
-    } else {
-        finalLicenseURL = [[NSURL alloc] initWithString: DEFAULT_LICENSE_SERVER_URL];
-    }
-    NSURL * ksmURL = [[NSURL alloc] initWithString: [NSString stringWithFormat:@"%@%@%@",finalLicenseURL,assetId,customParams]];
-    
-    NSMutableURLRequest * request = [[NSMutableURLRequest alloc] initWithURL:ksmURL];
-    [request setHTTPMethod:@"POST"];
-    [request setValue:@"application/octet-stream" forHTTPHeaderField:@"Content-type"];
-    [request setHTTPBody:requestBytes];
-    
+     if (_licenseURL != [NSNull null]){
+         finalLicenseURL = _licenseURL;
+     } else {
+         finalLicenseURL = [[NSURL alloc] initWithString: DEFAULT_LICENSE_SERVER_URL];
+     }
+     NSURL * ksmURL = [[NSURL alloc] initWithString: [NSString stringWithFormat:@"%@",finalLicenseURL]];
+     
+     NSMutableURLRequest * request = [[NSMutableURLRequest alloc] initWithURL:ksmURL];
+     [request setHTTPMethod:@"POST"];
+     [request setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-type"];
+     NSString *accessToken = @"";
+     [request setValue:[NSString stringWithFormat:@"Bearer %@", accessToken] forHTTPHeaderField:@"Authorization"];
+
+     
+     NSURLComponents *requestBodyComponent = [NSURLComponents new];
+      NSString *base64RequestBytes = [requestBytes base64EncodedStringWithOptions:0];
+     [requestBodyComponent setQueryItems:@[[NSURLQueryItem queryItemWithName:@"spc" value:base64RequestBytes]]];
+     request.HTTPBody = [requestBodyComponent.query dataUsingEncoding:NSUTF8StringEncoding];
+     
+     NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+     NSURLSession *session = [NSURLSession sessionWithConfiguration:configuration];
+     
+     
+     
     @try {
         decodedData = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:nil];
+        
+        NSString *responseString = [[NSString alloc] initWithData:decodedData encoding:NSUTF8StringEncoding];
+        
+        responseString = [responseString stringByReplacingOccurrencesOfString:@"<ckc>" withString:@""];
+        responseString = [responseString stringByReplacingOccurrencesOfString:@"</ckc>" withString:@""];
+        decodedData = [[NSData alloc] initWithBase64EncodedString:responseString options:0];
+        
     }
     @catch (NSException* excp) {
         NSLog(@"SDK Error, SDK responded with Error: (error)");
@@ -66,7 +85,8 @@ NSString * DEFAULT_LICENSE_SERVER_URL = @"https://fps.ezdrm.com/api/licenses/";
 
 - (BOOL)resourceLoader:(AVAssetResourceLoader *)resourceLoader shouldWaitForLoadingOfRequestedResource:(AVAssetResourceLoadingRequest *)loadingRequest {
     NSURL *assetURI = loadingRequest.request.URL;
-    NSString * str = assetURI.absoluteString;
+    NSString * str = assetURI.host;
+    
     NSString * mySubstring = [str substringFromIndex:str.length - 36];
     _assetId = mySubstring;
     NSString * scheme = assetURI.scheme;
@@ -94,6 +114,10 @@ NSString * DEFAULT_LICENSE_SERVER_URL = @"https://fps.ezdrm.com/api/licenses/";
     NSError * error;
     
     responseData = [self getContentKeyAndLeaseExpiryFromKeyServerModuleWithRequest:requestBytes and:_assetId and:passthruParams and:error];
+    
+    
+    
+    
     
     if (responseData != nil && responseData != NULL && ![responseData.class isKindOfClass:NSNull.class]){
         AVAssetResourceLoadingDataRequest * dataRequest = loadingRequest.dataRequest;
