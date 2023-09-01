@@ -34,7 +34,16 @@ NSString * DEFAULT_LICENSE_SERVER_URL = @"https://fps.ezdrm.com/api/licenses/";
      } else {
          finalLicenseURL = [[NSURL alloc] initWithString: DEFAULT_LICENSE_SERVER_URL];
      }
-     NSURL * ksmURL = [[NSURL alloc] initWithString: [NSString stringWithFormat:@"%@",finalLicenseURL]];
+    
+    
+    
+    NSString *stringURL = [[NSString stringWithFormat:@"%@%@",finalLicenseURL,assetId] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+
+    NSURL *ksmURL=[NSURL URLWithString:stringURL];
+    
+    
+    
+//     NSURL * ksmURL = [[NSURL alloc] initWithString: [NSString stringWithFormat:@"%@%@",finalLicenseURL,assetId]];
      
      NSMutableURLRequest * request = [[NSMutableURLRequest alloc] initWithURL:ksmURL];
      [request setHTTPMethod:@"POST"];
@@ -113,7 +122,26 @@ NSString * DEFAULT_LICENSE_SERVER_URL = @"https://fps.ezdrm.com/api/licenses/";
     NSData * responseData;
     NSError * error;
     
-    responseData = [self getContentKeyAndLeaseExpiryFromKeyServerModuleWithRequest:requestBytes and:_assetId and:passthruParams and:error];
+    
+    NSString *query = [assetURI query];
+
+    NSArray *queryComponents = [query componentsSeparatedByString:@"&"];
+    NSString *kidValue = nil;
+
+    for (NSString *component in queryComponents) {
+        NSArray *keyValue = [component componentsSeparatedByString:@"="];
+        if (keyValue.count == 2) {
+            NSString *key = keyValue[0];
+            NSString *value = keyValue[1];
+            if ([key isEqualToString:@"kid"]) {
+                kidValue = value;
+                break;
+            }
+        }
+    }
+    
+    
+    responseData = [self getContentKeyAndLeaseExpiryFromKeyServerModuleWithRequest:requestBytes and:kidValue and:passthruParams and:error];
     
     
     
