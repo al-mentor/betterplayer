@@ -162,7 +162,10 @@ class BetterPlayerControlsConfiguration {
   final Color overflowModalTextColor;
   final Color overflowModalSelectedIconColor;
 
+  final Widget Function(BuildContext)? fullScreenControlsBuilder;
+
   const BetterPlayerControlsConfiguration({
+    this.fullScreenControlsBuilder,
     this.controlBarColor = Colors.black87,
     this.textColor = Colors.white,
     this.iconsColor = Colors.white,

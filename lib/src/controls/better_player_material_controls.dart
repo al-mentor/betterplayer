@@ -63,7 +63,6 @@ class _BetterPlayerMaterialControlsState
     return buildLTRDirectionality(_buildMainWidget());
   }
 
-
   ///Builds main widget of the controls.
   Widget _buildMainWidget() {
     _wasLoading = isLoading(_latestValue);
@@ -79,7 +78,9 @@ class _BetterPlayerMaterialControlsState
         if (BetterPlayerMultipleGestureDetector.of(context) != null) {
           BetterPlayerMultipleGestureDetector.of(context)!.onTap?.call();
         }
-        controlsNotVisible ? cancelAndRestartTimer() : changePlayerControlsNotVisible(true);
+        controlsNotVisible
+            ? cancelAndRestartTimer()
+            : changePlayerControlsNotVisible(true);
       },
       onDoubleTap: () {
         if (BetterPlayerMultipleGestureDetector.of(context) != null) {
@@ -206,7 +207,6 @@ class _BetterPlayerMaterialControlsState
                     else
                       const SizedBox(),
                     _buildMoreButton(),
-
                   ],
                 ),
               ),
@@ -275,11 +275,12 @@ class _BetterPlayerMaterialControlsState
     );
   }
 
-
   Widget _buildBottomBar() {
-    if (!betterPlayerController!.controlsEnabled) {
-      return const SizedBox();
-    }
+    final isFullScreen =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    // if (!betterPlayerController!.controlsEnabled) {
+    //   return const SizedBox();
+    // }
     return AnimatedOpacity(
       opacity: controlsNotVisible ? 0.0 : 1.0,
       duration: _controlsConfiguration.controlsHideTime,
@@ -289,8 +290,11 @@ class _BetterPlayerMaterialControlsState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
+            if(!betterPlayerController!.controlsEnabled)
+              const Expanded(child:  SizedBox())
+            else
             Expanded(
-              flex: 75,
+              flex: 1,
               child: Row(
                 children: [
                   // if (_controlsConfiguration.enablePlayPause)
@@ -322,6 +326,12 @@ class _BetterPlayerMaterialControlsState
                 ],
               ),
             ),
+            if (_controlsConfiguration.fullScreenControlsBuilder != null &&
+                isFullScreen)
+              Expanded(
+                child: _controlsConfiguration.fullScreenControlsBuilder!
+                    .call(context),
+              ),
           ],
         ),
       ),
@@ -446,8 +456,6 @@ class _BetterPlayerMaterialControlsState
       onClicked: skipForward,
     );
   }
-
-
 
   Widget _buildReplayButton(VideoPlayerController controller) {
     final bool isFinished = isVideoFinished(_latestValue);
@@ -627,7 +635,6 @@ class _BetterPlayerMaterialControlsState
       _initTimer = Timer(const Duration(milliseconds: 200), () {
         changePlayerControlsNotVisible(false);
       });
-
     }
 
     _controlsVisibilityStreamSubscription =
@@ -640,8 +647,8 @@ class _BetterPlayerMaterialControlsState
 
     _qualityVisibilityStreamSubscription =
         _betterPlayerController!.qualityVisibilityStream.listen((state) {
-          showQualityBottomSheet(true);
-        });
+      showQualityBottomSheet(true);
+    });
   }
 
   void _onExpandCollapse() {
@@ -739,8 +746,6 @@ class _BetterPlayerMaterialControlsState
     _betterPlayerController!.toggleControlsVisibility(!controlsNotVisible);
     widget.onControlsVisibilityChanged(!controlsNotVisible);
   }
-
-
 
   Widget? _buildLoadingWidget() {
     if (_controlsConfiguration.loadingWidget != null) {
