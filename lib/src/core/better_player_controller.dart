@@ -22,6 +22,9 @@ class BetterPlayerController {
   static const String _dataSourceParameter = "dataSource";
   static const String _authorizationHeader = "Authorization";
 
+
+  bool isPIPStart = false;
+
   ///General configuration used in controller instance.
   final BetterPlayerConfiguration betterPlayerConfiguration;
 
@@ -1176,6 +1179,12 @@ class BetterPlayerController {
         break;
       case VideoEventType.bufferingEnd:
         _postEvent(BetterPlayerEvent(BetterPlayerEventType.bufferingEnd));
+        break;
+      case VideoEventType.pipStart:
+        isPIPStart = true;
+        break;
+      case VideoEventType.pipStop:
+        isPIPStart = false;
         break;
       default:
 

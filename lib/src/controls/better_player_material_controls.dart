@@ -290,44 +290,45 @@ class _BetterPlayerMaterialControlsState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            if(!betterPlayerController!.controlsEnabled)
-              const Expanded(child:  SizedBox())
+            if (!betterPlayerController!.controlsEnabled)
+              const Expanded(child: SizedBox())
             else
-            Expanded(
-              flex: 1,
-              child: Row(
-                children: [
-                  // if (_controlsConfiguration.enablePlayPause)
-                  //   _buildPlayPause(_controller!)
-                  // else
-                  //   const SizedBox(),
+              Expanded(
+                flex: 1,
+                child: Row(
+                  children: [
+                    // if (_controlsConfiguration.enablePlayPause)
+                    //   _buildPlayPause(_controller!)
+                    // else
+                    //   const SizedBox(),
 
-                  if (_betterPlayerController!.isLiveStream())
-                    const SizedBox()
-                  else
-                    _controlsConfiguration.enableProgressBar
-                        ? _buildProgressBar()
-                        : const SizedBox(),
-                  if (_betterPlayerController!.isLiveStream())
-                    _buildLiveWidget()
-                  else
-                    _controlsConfiguration.enableProgressText
-                        ? _buildPosition()
-                        : const SizedBox(),
-                  if (_controlsConfiguration.enableMute)
-                    _buildMuteButton(_controller)
-                  else
-                    const SizedBox(),
+                    if (_betterPlayerController!.isLiveStream())
+                      const SizedBox()
+                    else
+                      _controlsConfiguration.enableProgressBar
+                          ? _buildProgressBar()
+                          : const SizedBox(),
+                    if (_betterPlayerController!.isLiveStream())
+                      _buildLiveWidget()
+                    else
+                      _controlsConfiguration.enableProgressText
+                          ? _buildPosition()
+                          : const SizedBox(),
+                    if (_controlsConfiguration.enableMute)
+                      _buildMuteButton(_controller)
+                    else
+                      const SizedBox(),
 
-                  if (_controlsConfiguration.enableFullscreen)
-                    _buildExpandButton()
-                  else
-                    const SizedBox(),
-                ],
+                    if (_controlsConfiguration.enableFullscreen)
+                      _buildExpandButton()
+                    else
+                      const SizedBox(),
+                  ],
+                ),
               ),
-            ),
             if (_controlsConfiguration.fullScreenControlsBuilder != null &&
-                isFullScreen)
+                isFullScreen &&
+                !_betterPlayerController!.isPIPStart)
               Expanded(
                 child: _controlsConfiguration.fullScreenControlsBuilder!
                     .call(context),
