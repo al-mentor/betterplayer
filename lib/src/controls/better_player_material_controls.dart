@@ -201,11 +201,11 @@ class _BetterPlayerMaterialControlsState
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    if (_controlsConfiguration.enablePip)
-                      _buildPipButtonWrapperWidget(
-                          controlsNotVisible, _onPlayerHide)
-                    else
-                      const SizedBox(),
+                    // if (_controlsConfiguration.enablePip)
+                    //   _buildPipButtonWrapperWidget(
+                    //       controlsNotVisible, _onPlayerHide)
+                    // else
+                    //   const SizedBox(),
                     _buildMoreButton(),
                   ],
                 ),

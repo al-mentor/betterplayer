@@ -499,21 +499,22 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     String trackName = preferredName ??
         "${width}x$height ${BetterPlayerUtils.formatBitrate(bitrate)} $mimeType";
     String? trackDesc;
-
-    if (trackName.contains("480")) {
-      trackName = betterPlayerController!.translations.hdQuality!;
-      trackDesc = betterPlayerController!.translations.hdQualityDesc!;
-    } else if (trackName.contains("320")) {
-      trackName = betterPlayerController!.translations.lowQuality!;
-      trackDesc = betterPlayerController!.translations.lowQualityDesc!;
-    } else if (trackName.contains("1280")) {
-      trackName = betterPlayerController!.translations.fullHdQuality!;
-      trackDesc = betterPlayerController!.translations.fullHdQualityDesc!;
-    } else if (track.id == '') {
+    // if (height == 360) {
+    //   trackName = betterPlayerController!.translations.hdQuality!;
+    //   trackDesc = betterPlayerController!.translations.hdQualityDesc!;
+    // } else if (height == 180) {
+    //   trackName = betterPlayerController!.translations.lowQuality!;
+    //   trackDesc = betterPlayerController!.translations.lowQualityDesc!;
+    // } else if (height == 720) {
+    //   trackName = betterPlayerController!.translations.fullHdQuality!;
+    //   trackDesc = betterPlayerController!.translations.fullHdQualityDesc!;
+    // } else
+    if (track.id == '') {
       trackName = preferredName!;
       trackDesc = betterPlayerController!.translations.autoQualityDesc!;
     } else {
-      return null;
+      trackName = '$height';
+      trackDesc = '';
     }
 
     final selectedTrack = betterPlayerController!.betterPlayerAsmsTrack;

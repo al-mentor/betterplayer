@@ -22,7 +22,6 @@ class BetterPlayerController {
   static const String _dataSourceParameter = "dataSource";
   static const String _authorizationHeader = "Authorization";
 
-
   bool isPIPStart = false;
 
   ///General configuration used in controller instance.
@@ -42,7 +41,7 @@ class BetterPlayerController {
       StreamController.broadcast();
 
   final StreamController<bool> _qualityVisibilityStreamController =
-  StreamController.broadcast();
+      StreamController.broadcast();
 
   ///Instance of video player controller which is adapter used to communicate
   ///between flutter high level code and lower level native code.
@@ -715,7 +714,6 @@ class BetterPlayerController {
     );
   }
 
-
   ///Flag which determines whenever player is playing or not.
   bool? isPlaying() {
     if (videoPlayerController == null) {
@@ -736,6 +734,7 @@ class BetterPlayerController {
   void setControlsVisibility(bool isVisible) {
     _controlsVisibilityStreamController.add(isVisible);
   }
+
   void setQualityVisibility(bool isVisible) {
     _qualityVisibilityStreamController.add(isVisible);
   }
@@ -755,7 +754,6 @@ class BetterPlayerController {
         ? BetterPlayerEvent(BetterPlayerEventType.controlsVisible)
         : BetterPlayerEvent(BetterPlayerEventType.controlsHiddenEnd));
   }
-
 
   ///Send player event. Shouldn't be used manually.
   void postEvent(BetterPlayerEvent betterPlayerEvent) {
@@ -1083,11 +1081,12 @@ class BetterPlayerController {
       _wasInFullScreenBeforePiP = _isFullScreen;
       _wasControlsEnabledBeforePiP = _controlsEnabled;
       setControlsEnabled(true);
+      setControlsVisibility(false);
       if (Platform.isAndroid) {
         _wasInFullScreenBeforePiP = _isFullScreen;
         await videoPlayerController?.enablePictureInPicture(
             left: 0, top: 0, width: 0, height: 0);
-        enterFullScreen();
+        // enterFullScreen();
         _postEvent(BetterPlayerEvent(BetterPlayerEventType.pipStart));
         return;
       }
@@ -1123,6 +1122,7 @@ class BetterPlayerController {
     if (videoPlayerController == null) {
       throw StateError("The data source has not been initialized");
     }
+    setControlsVisibility(true);
     return videoPlayerController!.disablePictureInPicture();
   }
 
