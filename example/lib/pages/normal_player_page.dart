@@ -19,7 +19,7 @@ class _NormalPlayerPageState extends State<NormalPlayerPage> {
       aspectRatio: 16 / 9,
       fit: BoxFit.contain,
       autoPlay: true,
-      looping: true,
+      looping: false,
       deviceOrientationsAfterFullScreen: [
         DeviceOrientation.portraitDown,
         DeviceOrientation.portraitUp
@@ -45,7 +45,9 @@ class _NormalPlayerPageState extends State<NormalPlayerPage> {
           const SizedBox(height: 8),
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: BetterPlayer(controller: _betterPlayerController),
+            child: BetterPlayer(
+              controller: _betterPlayerController,
+            ),
           ),
         ],
       ),
