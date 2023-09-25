@@ -48,6 +48,8 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
           .inMilliseconds;
       betterPlayerController!
           .seekTo(Duration(milliseconds: max(skip, beginning)));
+      betterPlayerController!.setTrack(betterPlayerController!.betterPlayerAsmsTrack!);
+
     }
   }
 
@@ -61,6 +63,8 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
                   .forwardSkipTimeInMilliseconds))
           .inMilliseconds;
       betterPlayerController!.seekTo(Duration(milliseconds: min(skip, end)));
+      betterPlayerController!.setTrack(betterPlayerController!.betterPlayerAsmsTrack!);
+
     }
   }
 
@@ -536,6 +540,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       onTap: () {
         Navigator.of(context).pop();
         betterPlayerController!.setTrack(track);
+
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
