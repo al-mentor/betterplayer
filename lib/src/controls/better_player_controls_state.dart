@@ -518,10 +518,10 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       trackDesc = betterPlayerController!.translations.autoQualityDesc!;
     } else {
       if(height == 1080){
-        trackName = '$height';
+        trackName = betterPlayerController!.translations.fullHdQuality!;
         trackDesc = betterPlayerController!.translations.fullHdQualityDesc!;
       }else if (height == 720) {
-        trackName = '$height';
+        trackName = betterPlayerController!.translations.hdQuality!;
         trackDesc = betterPlayerController!.translations.hdQualityDesc!;
       } else if (height == 180){
         trackName = betterPlayerController!.translations.lowQuality!;
