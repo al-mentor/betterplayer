@@ -2,16 +2,16 @@ import 'package:better_player/better_player.dart';
 
 extension QualityExtension on BetterPlayerAsmsTrack{
   String? qualityString(BetterPlayerTranslations translations){
-    if (width == 480) {
+    if (height == 720) {
       return translations.hdQuality;
-    } else if (width == 320) {
+    } else if (height == 180) {
       return  translations.lowQuality;
-    } else if (width == 1280) {
+    } else if (height == 1080) {
       return translations.fullHdQuality;
     } else if(id == ''){
       return translations.qualityAuto;
     } else {
-      return null;
+      return height.toString()+"p";
     }
   }
 
