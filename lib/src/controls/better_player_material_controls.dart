@@ -453,6 +453,7 @@ class _BetterPlayerMaterialControlsState
     // final bool isFinished =
     return _buildHitAreaClickableButton(
       icon: isVideoFinished(_latestValue)
+      
           ? Icon(
               Icons.replay,
               size: 42,
@@ -663,7 +664,7 @@ class _BetterPlayerMaterialControlsState
 
   void _onPlayPause() {
     bool isFinished = false;
-
+    
     if (_latestValue?.position != null && _latestValue?.duration != null) {
       isFinished = _latestValue!.position >= _latestValue!.duration!;
     }

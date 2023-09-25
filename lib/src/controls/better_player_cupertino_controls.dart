@@ -672,6 +672,7 @@ class _BetterPlayerCupertinoControlsState
       } else {
         if (isFinished) {
           _betterPlayerController!.seekTo(const Duration());
+          return;
         }
         _betterPlayerController!.play();
         _betterPlayerController!.cancelNextVideoTimer();
@@ -698,6 +699,9 @@ class _BetterPlayerCupertinoControlsState
           _latestValue = _controller!.value;
           if (isVideoFinished(_latestValue)) {
             changePlayerControlsNotVisible(false);
+            _hideTimer?.cancel();
+            _initTimer?.cancel();
+            _betterPlayerController!.pause();
           }
         });
       }
