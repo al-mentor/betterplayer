@@ -122,9 +122,9 @@ class _VideoProgressBarState
       },
       child: Center(
         child: Container(
-          height: MediaQuery.of(context).size.height / 2,
+          height: MediaQuery.of(context).size.height / 32,
           width: MediaQuery.of(context).size.width,
-          color: Colors.transparent,
+          //color: Colors.red,
           child: CustomPaint(
             painter: _ProgressBarPainter(
               _getValue(),
