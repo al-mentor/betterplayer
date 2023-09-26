@@ -166,11 +166,12 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
     if (controlsConfiguration.showControls) {
       BetterPlayerTheme? playerTheme = controlsConfiguration.playerTheme;
       if (playerTheme == null) {
-        if (Platform.isAndroid) {
-          playerTheme = BetterPlayerTheme.material;
-        } else {
-          playerTheme = BetterPlayerTheme.cupertino;
-        }
+        playerTheme = BetterPlayerTheme.material;
+        // if (Platform.isAndroid) {
+        //   playerTheme = BetterPlayerTheme.material;
+        // } else {
+        //   playerTheme = BetterPlayerTheme.cupertino;
+        // }
       }
 
       if (controlsConfiguration.customControlsBuilder != null &&
