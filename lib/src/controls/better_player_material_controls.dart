@@ -287,6 +287,7 @@ class _BetterPlayerMaterialControlsState
       duration: _controlsConfiguration.controlsHideTime,
       onEnd: _onPlayerHide,
       child: Container(
+       // color: Colors.green,
         height: _controlsConfiguration.controlBarHeight + 20.0,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -732,7 +733,7 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildProgressBar() {
-    return Expanded(
+    return Flexible(
       child: Container(
         width: MediaQuery.of(context).size.width,
         alignment: Alignment.bottomCenter,
