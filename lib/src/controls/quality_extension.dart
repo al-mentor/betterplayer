@@ -5,9 +5,13 @@ extension QualityExtension on BetterPlayerAsmsTrack{
   String? qualityString(BetterPlayerTranslations translations){
     String qualityVal ="";
     if(id == ''){
-      if(height !=  0)
-       qualityVal = " ("+height.toString()+")";
-      return translations.qualityAuto +" "+qualityVal;
+      if(height !=  0){
+        qualityVal = " ("+height.toString()+")";
+        return translations.qualityAuto +" "+qualityVal;
+      }else{
+        return translations.qualityAuto ;
+      }
+
     } else {
       return height.toString()+"p";
     }

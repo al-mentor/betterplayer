@@ -36,7 +36,7 @@ class BetterPlayerTranslations {
     this.playlistLoadingNextVideo = "Loading next video",
     this.controlsLive = "LIVE",
     this.controlsNextVideoIn = "Next video in",
-    this.overflowMenuPlaybackSpeed = "Playback speed",
+    this.overflowMenuPlaybackSpeed = "Speed",
     this.overflowMenuSubtitles = "Subtitles",
     this.overflowMenuQuality = "Quality",
     this.overflowMenuAudioTracks = "Audio",

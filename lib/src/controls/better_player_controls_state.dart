@@ -6,6 +6,7 @@ import 'package:better_player/src/core/better_player_utils.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import'dart:io' show Platform;
 
 ///Base class for both material and cupertino controls
 abstract class BetterPlayerControlsState<T extends StatefulWidget>
@@ -386,8 +387,8 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     // HLS / DASH
     final List<String> asmsTrackNames =
         betterPlayerController!.betterPlayerDataSource!.asmsTrackNames ?? [];
-    final List<BetterPlayerAsmsTrack> asmsTracks =
-        betterPlayerController!.betterPlayerAsmsTracks;
+    final List<BetterPlayerAsmsTrack> asmsTracks = Platform.isAndroid?
+     betterPlayerController!.betterPlayerAsmsTracks :betterPlayerController!.betterPlayerAsmsTracks.reversed.toList() ;
 
     final List<Widget> children = [];
     children.add(Padding(
@@ -431,7 +432,15 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       ),
     ));
 
-    final autoTrack = _buildTrackRow(
+    if(Platform.isIOS){
+      for (var i = 0; i < asmsTracks.length; i++) {
+        if(asmsTracks[i].height == 0){
+          asmsTracks.removeAt(i);
+        }
+      }
+    }
+
+      final autoTrack = _buildTrackRow(
       BetterPlayerAsmsTrack.defaultTrack(),
       betterPlayerController!.translations.qualityAuto,asmsTracks
     );
@@ -445,22 +454,21 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
         color: Colors.grey.withOpacity(0.3),
       ));
     }
-
-    if (autoTrack != null) {
-
+    if (autoTrack != null ) {
       children.add(autoTrack);
       if (orientation == Orientation.portrait) {
         children.add(_buildDivider(true));
       }
     }
+
     for (var index = 0; index < asmsTracks.length; index++) {
       final track = asmsTracks[index];
-      String? preferredName;
+      String preferredName="";
       if (track.height == 0 && track.width == 0 && track.bitrate == 0) {
-        preferredName = betterPlayerController!.translations.qualityAuto ;
+        preferredName = betterPlayerController!.translations.qualityAuto;
       } else {
         preferredName =
-        asmsTrackNames.length > index ? asmsTrackNames[index] : null;
+        asmsTrackNames.length > index ? asmsTrackNames[index] : "";
       }
 
       var data = _buildTrackRow(asmsTracks[index], preferredName,asmsTracks);
@@ -496,23 +504,25 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     _showModalBottomSheet(children);
   }
 
-  Widget? _buildTrackRow(BetterPlayerAsmsTrack track, String? preferredName, List<BetterPlayerAsmsTrack> asmsTracks) {
+  Widget? _buildTrackRow(BetterPlayerAsmsTrack track, String preferredName, List<BetterPlayerAsmsTrack> asmsTracks) {
+
+
     final orientation = MediaQuery.of(context).orientation;
     final int width = track.width ?? 0;
     final int height = track.height ?? 0;
     final int bitrate = track.bitrate ?? 0;
     final String mimeType = (track.mimeType ?? '').replaceAll('video/', '');
-    String trackName = preferredName ??
-        "${width}x$height ${BetterPlayerUtils.formatBitrate(bitrate)} $mimeType";
+    String trackName = preferredName;
+    // String trackName = preferredName ??
+    //     "${width}x$height ${BetterPlayerUtils.formatBitrate(bitrate)} $mimeType";
     String? trackDesc;
-    if (track.id == '') {
+    if (track.height == 0 ) {
        track.height = checkQuality(asmsTracks);
-      if(track.height != 0 )
-      trackName = preferredName! +" ( "+track.height.toString()+" )";
-      else
-        trackName = preferredName!;
+       if(track.height != 0) trackName =  preferredName +" ( "+track.height.toString()+" )" ;
+       else trackName =  preferredName;
 
-      trackDesc = betterPlayerController!.translations.autoQualityDesc! ;
+     trackDesc = betterPlayerController!.translations.autoQualityDesc! ;
+
     } else {
       trackName = '$height'+"p";
       trackDesc = '';
