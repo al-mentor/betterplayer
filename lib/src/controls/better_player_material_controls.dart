@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:better_player/src/configuration/better_player_controls_configuration.dart';
 import 'package:better_player/src/controls/better_player_clickable_widget.dart';
 import 'package:better_player/src/controls/better_player_controls_state.dart';
@@ -8,7 +9,6 @@ import 'package:better_player/src/controls/better_player_progress_colors.dart';
 import 'package:better_player/src/core/better_player_controller.dart';
 import 'package:better_player/src/core/better_player_utils.dart';
 import 'package:better_player/src/video_player/video_player.dart';
-
 // Flutter imports:
 import 'package:flutter/material.dart';
 
@@ -109,7 +109,12 @@ class _BetterPlayerMaterialControlsState
               child: _buildTopBar(),
             ),
             Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomBar()),
-            _buildNextVideoWidget(),
+            Positioned(
+              right: 0,
+              bottom: _controlsConfiguration.controlBarHeight,
+              width: MediaQuery.of(context).size.width * 0.4,
+              child: _buildNextVideoWidget(),
+            ),
           ],
         ),
       ),
@@ -505,18 +510,24 @@ class _BetterPlayerMaterialControlsState
             child: Align(
               alignment: Alignment.bottomRight,
               child: Container(
-                margin: EdgeInsets.only(
-                    bottom: _controlsConfiguration.controlBarHeight + 20,
-                    right: 24),
+                // margin: EdgeInsets.only(
+                //   bottom: _controlsConfiguration.controlBarHeight - 20,
+                //   right: 24,
+                // ),
                 decoration: BoxDecoration(
                   color: _controlsConfiguration.controlBarColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    "${_betterPlayerController!.translations.controlsNextVideoIn} $time...",
-                    style: const TextStyle(color: Colors.white),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: FittedBox(
+                    child: Text(
+                      "${_betterPlayerController!.translations.controlsNextVideoIn} $time...",
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ),
