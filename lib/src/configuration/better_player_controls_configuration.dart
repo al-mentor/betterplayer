@@ -161,6 +161,7 @@ class BetterPlayerControlsConfiguration {
   ///Color of text in bottom modal sheet used for overflow menu items.
   final Color overflowModalTextColor;
   final Color overflowModalSelectedIconColor;
+  final double? internetSpeed;
 
   final Widget Function(BuildContext)? fullScreenControlsBuilder;
 
@@ -218,6 +219,7 @@ class BetterPlayerControlsConfiguration {
     this.overflowModalColor = Colors.white,
     this.overflowModalTextColor = Colors.black,
     this.overflowModalSelectedIconColor = Colors.blue,
+    this.internetSpeed
   });
 
   factory BetterPlayerControlsConfiguration.white() {

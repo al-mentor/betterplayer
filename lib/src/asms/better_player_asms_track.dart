@@ -7,7 +7,7 @@ class BetterPlayerAsmsTrack {
   final int? width;
 
   ///Height in px of the track
-  final int? height;
+   int? height;
 
   ///Bitrate in px of the track
   final int? bitrate;
