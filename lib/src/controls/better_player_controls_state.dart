@@ -506,8 +506,12 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
         "${width}x$height ${BetterPlayerUtils.formatBitrate(bitrate)} $mimeType";
     String? trackDesc;
     if (track.id == '') {
-      track.height = checkQuality(asmsTracks);
-      trackName = preferredName! +" ( "+checkQuality(asmsTracks).toString()+" )";
+       track.height = checkQuality(asmsTracks);
+      if(track.height != 0 )
+      trackName = preferredName! +" ( "+track.height.toString()+" )";
+      else
+        trackName = preferredName!;
+
       trackDesc = betterPlayerController!.translations.autoQualityDesc! ;
     } else {
       trackName = '$height'+"p";
