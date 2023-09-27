@@ -3,9 +3,11 @@ import 'package:better_player/better_player.dart';
 extension QualityExtension on BetterPlayerAsmsTrack{
 
   String? qualityString(BetterPlayerTranslations translations){
-
+    String qualityVal ="";
     if(id == ''){
-      return translations.qualityAuto;
+      if(height !=  0)
+       qualityVal = " ("+height.toString()+")";
+      return translations.qualityAuto +" "+qualityVal;
     } else {
       return height.toString()+"p";
     }
