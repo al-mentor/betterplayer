@@ -171,10 +171,10 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     void Function() onTap, {
     String? selectedValue,
   }) {
-    return BetterPlayerMaterialClickableWidget(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      child: BetterPlayerMaterialClickableWidget(
+        onTap: onTap,
         child: Row(
           children: [
             const SizedBox(width: 8),
@@ -390,7 +390,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     final List<String> asmsTrackNames =
         betterPlayerController!.betterPlayerDataSource!.asmsTrackNames ?? [];
     final List<BetterPlayerAsmsTrack> asmsTracks = Platform.isAndroid?
-     betterPlayerController!.betterPlayerAsmsTracks :betterPlayerController!.betterPlayerAsmsTracks.reversed.toList() ;
+      betterPlayerController!.betterPlayerAsmsTracks :betterPlayerController!.betterPlayerAsmsTracks.reversed.toList() ;
 
     final List<Widget> children = [];
     children.add(Padding(
@@ -708,36 +708,36 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     _showMaterialBottomSheet(children);
   }
 
-  void _showCupertinoModalBottomSheet(List<Widget> children) {
-    showCupertinoModalPopup<void>(
-      barrierColor: Colors.transparent,
-      context: context,
-      useRootNavigator:
-          betterPlayerController?.betterPlayerConfiguration.useRootNavigator ??
-              false,
-      builder: (context) {
-        return SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              decoration: BoxDecoration(
-                color: betterPlayerControlsConfiguration.overflowModalColor,
-                /*shape: RoundedRectangleBorder(side: Bor,borderRadius: 24,)*/
-                borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(10.0),
-                    topRight: Radius.circular(10.0)),
-              ),
-              child: Column(
-                children: children,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // void _showCupertinoModalBottomSheet(List<Widget> children) {
+  //   showCupertinoModalPopup<void>(
+  //     barrierColor: Colors.transparent,
+  //     context: context,
+  //     useRootNavigator:
+  //         betterPlayerController?.betterPlayerConfiguration.useRootNavigator ??
+  //             false,
+  //     builder: (context) {
+  //       return SafeArea(
+  //         top: false,
+  //         child: SingleChildScrollView(
+  //           physics: const BouncingScrollPhysics(),
+  //           child: Container(
+  //             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+  //             decoration: BoxDecoration(
+  //               color: betterPlayerControlsConfiguration.overflowModalColor,
+  //               /*shape: RoundedRectangleBorder(side: Bor,borderRadius: 24,)*/
+  //               borderRadius: const BorderRadius.only(
+  //                   topLeft: Radius.circular(10.0),
+  //                   topRight: Radius.circular(10.0)),
+  //             ),
+  //             child: Column(
+  //               children: children,
+  //             ),
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   void _showMaterialBottomSheet(List<Widget> children) {
     final size = MediaQuery.of(context).size;
