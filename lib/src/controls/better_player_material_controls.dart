@@ -277,12 +277,13 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildMoreButton() {
-    return BetterPlayerMaterialClickableWidget(
-      onTap: () {
-        onShowMoreClicked();
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(8),
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: BetterPlayerMaterialClickableWidget(
+        raduis: 15,
+        onTap: () {
+          onShowMoreClicked();
+        },
         child: Icon(
           _controlsConfiguration.overflowMenuIcon,
           color: _controlsConfiguration.iconsColor,

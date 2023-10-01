@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 class BetterPlayerMaterialClickableWidget extends StatelessWidget {
   final Widget child;
   final void Function() onTap;
-
+  final double? raduis;
   const BetterPlayerMaterialClickableWidget({
     Key? key,
     required this.onTap,
     required this.child,
+    this.raduis,
   }) : super(key: key);
 
   @override
@@ -17,7 +18,7 @@ class BetterPlayerMaterialClickableWidget extends StatelessWidget {
       animationDuration: Duration(microseconds: 10),
       borderOnForeground: false,
       type: MaterialType.transparency,
-      borderRadius: BorderRadius.circular(60),
+      borderRadius: BorderRadius.circular(raduis ?? 60),
       clipBehavior: Clip.hardEdge,
       color: Colors.transparent,
       child: InkWell(
