@@ -65,7 +65,6 @@ class _BetterPlayerMaterialControlsState
   @override
   void initState() {
     super.initState();
-
   }
 
   @override
@@ -75,6 +74,8 @@ class _BetterPlayerMaterialControlsState
 
   ///Builds main widget of the controls.
   Widget _buildMainWidget() {
+    final isFullScreen =
+        MediaQuery.of(context).orientation == Orientation.landscape;
     _wasLoading = isLoading(_latestValue);
     if (_latestValue?.hasError == true) {
       return Container(
@@ -118,7 +119,17 @@ class _BetterPlayerMaterialControlsState
               right: 0,
               child: _buildTopBar(),
             ),
-            Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomBar()),
+            Positioned(bottom: -4, left: 0, right: 0, child: _buildBottomBar()),
+            if (_controlsConfiguration.fullScreenControlsBuilder != null &&
+                isFullScreen &&
+                !_betterPlayerController!.isPIPStart)
+              Positioned(
+                bottom: -6,
+                left: 0,
+                right: 0,
+                child: _controlsConfiguration.fullScreenControlsBuilder!
+                    .call(context),
+              ),
             Positioned(
               right: 0,
               bottom: _controlsConfiguration.controlBarHeight,
@@ -293,8 +304,8 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildBottomBar() {
-    final isFullScreen =
-        MediaQuery.of(context).orientation == Orientation.landscape;
+    // final isFullScreen =
+    //     MediaQuery.of(context).orientation == Orientation.landscape;
     // if (!betterPlayerController!.controlsEnabled) {
     //   return const SizedBox();
     // }
@@ -303,7 +314,7 @@ class _BetterPlayerMaterialControlsState
       duration: _controlsConfiguration.controlsHideTime,
       onEnd: _onPlayerHide,
       child: Container(
-       // color: Colors.green,
+        // color: Colors.green,
         height: _controlsConfiguration.controlBarHeight + 20.0,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -344,13 +355,13 @@ class _BetterPlayerMaterialControlsState
                   ],
                 ),
               ),
-            if (_controlsConfiguration.fullScreenControlsBuilder != null &&
-                isFullScreen &&
-                !_betterPlayerController!.isPIPStart)
-              Expanded(
-                child: _controlsConfiguration.fullScreenControlsBuilder!
-                    .call(context),
-              ),
+            // if (_controlsConfiguration.fullScreenControlsBuilder != null &&
+            //     isFullScreen &&
+            //     !_betterPlayerController!.isPIPStart)
+            //   Expanded(
+            //     child: _controlsConfiguration.fullScreenControlsBuilder!
+            //         .call(context),
+            //   ),
           ],
         ),
       ),
