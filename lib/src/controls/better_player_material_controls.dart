@@ -6,15 +6,11 @@ import 'package:better_player/src/controls/better_player_controls_state.dart';
 import 'package:better_player/src/controls/better_player_material_progress_bar.dart';
 import 'package:better_player/src/controls/better_player_multiple_gesture_detector.dart';
 import 'package:better_player/src/controls/better_player_progress_colors.dart';
-import 'package:better_player/src/controls/quality_extension.dart';
 import 'package:better_player/src/core/better_player_controller.dart';
 import 'package:better_player/src/core/better_player_utils.dart';
 import 'package:better_player/src/video_player/video_player.dart';
 // Flutter imports:
 import 'package:flutter/material.dart';
-
-import '../asms/better_player_asms_track.dart';
-import '../configuration/better_player_translations.dart';
 
 class BetterPlayerMaterialControls extends StatefulWidget {
   ///Callback used to send information if player bar is hidden or not
@@ -63,19 +59,12 @@ class _BetterPlayerMaterialControlsState
       _controlsConfiguration;
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return buildLTRDirectionality(_buildMainWidget());
   }
 
   ///Builds main widget of the controls.
   Widget _buildMainWidget() {
-    final isFullScreen =
-        MediaQuery.of(context).orientation == Orientation.landscape;
     _wasLoading = isLoading(_latestValue);
     if (_latestValue?.hasError == true) {
       return Container(
@@ -119,17 +108,7 @@ class _BetterPlayerMaterialControlsState
               right: 0,
               child: _buildTopBar(),
             ),
-            Positioned(bottom: -4, left: 0, right: 0, child: _buildBottomBar()),
-            if (_controlsConfiguration.fullScreenControlsBuilder != null &&
-                isFullScreen &&
-                !_betterPlayerController!.isPIPStart)
-              Positioned(
-                bottom: -6,
-                left: 0,
-                right: 0,
-                child: _controlsConfiguration.fullScreenControlsBuilder!
-                    .call(context),
-              ),
+            Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomBar()),
             Positioned(
               right: 0,
               bottom: _controlsConfiguration.controlBarHeight,
@@ -288,13 +267,12 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildMoreButton() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: BetterPlayerMaterialClickableWidget(
-        raduis: 15,
-        onTap: () {
-          onShowMoreClicked();
-        },
+    return BetterPlayerMaterialClickableWidget(
+      onTap: () {
+        onShowMoreClicked();
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(8),
         child: Icon(
           _controlsConfiguration.overflowMenuIcon,
           color: _controlsConfiguration.iconsColor,
@@ -304,8 +282,8 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildBottomBar() {
-    // final isFullScreen =
-    //     MediaQuery.of(context).orientation == Orientation.landscape;
+    final isFullScreen =
+        MediaQuery.of(context).orientation == Orientation.landscape;
     // if (!betterPlayerController!.controlsEnabled) {
     //   return const SizedBox();
     // }
@@ -314,7 +292,6 @@ class _BetterPlayerMaterialControlsState
       duration: _controlsConfiguration.controlsHideTime,
       onEnd: _onPlayerHide,
       child: Container(
-        // color: Colors.green,
         height: _controlsConfiguration.controlBarHeight + 20.0,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -355,13 +332,13 @@ class _BetterPlayerMaterialControlsState
                   ],
                 ),
               ),
-            // if (_controlsConfiguration.fullScreenControlsBuilder != null &&
-            //     isFullScreen &&
-            //     !_betterPlayerController!.isPIPStart)
-            //   Expanded(
-            //     child: _controlsConfiguration.fullScreenControlsBuilder!
-            //         .call(context),
-            //   ),
+            if (_controlsConfiguration.fullScreenControlsBuilder != null &&
+                isFullScreen &&
+                !_betterPlayerController!.isPIPStart)
+              Expanded(
+                child: _controlsConfiguration.fullScreenControlsBuilder!
+                    .call(context),
+              ),
           ],
         ),
       ),
@@ -766,7 +743,7 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildProgressBar() {
-    return Flexible(
+    return Expanded(
       child: Container(
         width: MediaQuery.of(context).size.width,
         alignment: Alignment.bottomCenter,
