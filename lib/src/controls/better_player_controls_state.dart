@@ -106,18 +106,18 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
               ),
             ),
             const SizedBox(height: 8),
-            if (betterPlayerControlsConfiguration.enablePlaybackSpeed)
-              _buildMoreOptionsListRow(
-                betterPlayerControlsConfiguration.playbackSpeedIcon,
-                translations.overflowMenuPlaybackSpeed,
-                () {
-                  Navigator.of(context).pop();
-                  _showSpeedChooserWidget();
-                },
-                selectedValue:
-                    '${betterPlayerController!.videoPlayerController!.value.speed}x',
-              ),
-            _buildDivider(betterPlayerControlsConfiguration.enableSubtitles),
+            // if (betterPlayerControlsConfiguration.enablePlaybackSpeed)
+            //   _buildMoreOptionsListRow(
+            //     betterPlayerControlsConfiguration.playbackSpeedIcon,
+            //     translations.overflowMenuPlaybackSpeed,
+            //     () {
+            //       Navigator.of(context).pop();
+            //       _showSpeedChooserWidget();
+            //     },
+            //     selectedValue:
+            //         '${betterPlayerController!.videoPlayerController!.value.speed}x',
+            //   ),
+            // _buildDivider(betterPlayerControlsConfiguration.enableSubtitles),
             if (betterPlayerControlsConfiguration.enableSubtitles)
               _buildMoreOptionsListRow(
                   betterPlayerControlsConfiguration.subtitlesIcon,
@@ -205,47 +205,47 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     );
   }
 
-  void _showSpeedChooserWidget() {
-    _showModalBottomSheet([
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Center(
-                child: Text(
-                  betterPlayerController!.translations.speed,
-                ),
-              ),
-            ),
-            InkWell(
-              child: Icon(Icons.close),
-              onTap: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
-      ),
-      // _buildSpeedRow(0.25),
-      // _buildDivider(true),
-      _buildSpeedRow(0.5),
-      _buildDivider(true),
-      _buildSpeedRow(0.75),
-      _buildDivider(true),
-      _buildSpeedRow(1.0),
-      _buildDivider(true),
-      _buildSpeedRow(1.25),
-      _buildDivider(true),
-      _buildSpeedRow(1.5),
-      _buildDivider(true),
-      // _buildSpeedRow(1.75),
-      // _buildDivider(true),
-      _buildSpeedRow(2.0),
-    ]);
-  }
+  // void _showSpeedChooserWidget() {
+  //   _showModalBottomSheet([
+  //     Padding(
+  //       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.8),
+  //       child: Row(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         crossAxisAlignment: CrossAxisAlignment.center,
+  //         children: [
+  //           Expanded(
+  //             child: Center(
+  //               child: Text(
+  //                 betterPlayerController!.translations.speed,
+  //               ),
+  //             ),
+  //           ),
+  //           InkWell(
+  //             child: Icon(Icons.close),
+  //             onTap: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //     // _buildSpeedRow(0.25),
+  //     // _buildDivider(true),
+  //     _buildSpeedRow(0.5),
+  //     _buildDivider(true),
+  //     _buildSpeedRow(0.75),
+  //     _buildDivider(true),
+  //     _buildSpeedRow(1.0),
+  //     _buildDivider(true),
+  //     _buildSpeedRow(1.25),
+  //     _buildDivider(true),
+  //     _buildSpeedRow(1.5),
+  //     _buildDivider(true),
+  //     // _buildSpeedRow(1.75),
+  //     // _buildDivider(true),
+  //     _buildSpeedRow(2.0),
+  //   ]);
+  // }
 
   Widget _buildDivider(
     bool visibilty, {

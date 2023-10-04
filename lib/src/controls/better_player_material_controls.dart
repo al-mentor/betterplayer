@@ -339,6 +339,7 @@ class _BetterPlayerMaterialControlsState
                 child: _controlsConfiguration.fullScreenControlsBuilder!
                     .call(context),
               ),
+         //   SizedBox(height: MediaQuery.of(context).viewPadding.bottom),
           ],
         ),
       ),
@@ -358,7 +359,7 @@ class _BetterPlayerMaterialControlsState
     return Padding(
       padding: EdgeInsets.only(right: 12.0),
       child: BetterPlayerMaterialClickableWidget(
-        onTap: _onExpandCollapse,
+        onTap: _controlsConfiguration.onClickToExpandButton ?? (){},
         child: AnimatedOpacity(
           opacity: controlsNotVisible ? 0.0 : 1.0,
           duration: _controlsConfiguration.controlsHideTime,
@@ -661,16 +662,16 @@ class _BetterPlayerMaterialControlsState
     });
   }
 
-  void _onExpandCollapse() {
-    changePlayerControlsNotVisible(true);
-    _betterPlayerController!.toggleFullScreen();
-    _showAfterExpandCollapseTimer =
-        Timer(_controlsConfiguration.controlsHideTime, () {
-      setState(() {
-        cancelAndRestartTimer();
-      });
-    });
-  }
+  // void _onExpandCollapse() {
+  //   changePlayerControlsNotVisible(true);
+  //   _betterPlayerController!.toggleFullScreen();
+  //   _showAfterExpandCollapseTimer =
+  //       Timer(_controlsConfiguration.controlsHideTime, () {
+  //   //  setState(() {
+  //       cancelAndRestartTimer();
+  //    // });
+  //   });
+  // }
 
   void _onPlayPause() {
     bool isFinished = false;
