@@ -162,7 +162,8 @@ class BetterPlayerControlsConfiguration {
   final Color overflowModalTextColor;
   final Color overflowModalSelectedIconColor;
   final double? internetSpeed;
-  final void Function()? onClickToExpandButton;
+  final Widget? fullScreenIconWidget;
+  // final void Function()? onClickToExpandButton;
 
   final Widget Function(BuildContext)? fullScreenControlsBuilder;
 
@@ -220,7 +221,8 @@ class BetterPlayerControlsConfiguration {
       this.overflowModalColor = Colors.white,
       this.overflowModalTextColor = Colors.black,
       this.overflowModalSelectedIconColor = Colors.blue,
-      this.onClickToExpandButton,
+      this.fullScreenIconWidget,
+      //  this.onClickToExpandButton,
       this.internetSpeed});
 
   factory BetterPlayerControlsConfiguration.white() {
