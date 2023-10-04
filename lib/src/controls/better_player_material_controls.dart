@@ -58,6 +58,8 @@ class _BetterPlayerMaterialControlsState
   BetterPlayerControlsConfiguration get betterPlayerControlsConfiguration =>
       _controlsConfiguration;
 
+  // bool get isFullScreen =>
+  //     MediaQuery.of(context).orientation == Orientation.landscape;
   @override
   Widget build(BuildContext context) {
     return buildLTRDirectionality(_buildMainWidget());
@@ -194,30 +196,36 @@ class _BetterPlayerMaterialControlsState
     if (!betterPlayerController!.controlsEnabled) {
       return const SizedBox();
     }
-
-    return Container(
-      child: (_controlsConfiguration.enableOverflowMenu)
-          ? AnimatedOpacity(
-              opacity: controlsNotVisible ? 0.0 : 1.0,
-              duration: _controlsConfiguration.controlsHideTime,
-              onEnd: _onPlayerHide,
-              child: Container(
-                height: _controlsConfiguration.controlBarHeight,
-                width: double.infinity,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (_controlsConfiguration.enablePip)
-                      _buildPipButtonWrapperWidget(
-                          controlsNotVisible, _onPlayerHide)
-                    else
-                      const SizedBox(),
-                    _buildMoreButton(),
-                  ],
+    final isFullScreen =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    return Padding(
+      padding: isFullScreen
+          ? const EdgeInsets.symmetric(horizontal: 10, vertical: 11)
+          : const EdgeInsets.all(8.0),
+      child: Container(
+        child: (_controlsConfiguration.enableOverflowMenu)
+            ? AnimatedOpacity(
+                opacity: controlsNotVisible ? 0.0 : 1.0,
+                duration: _controlsConfiguration.controlsHideTime,
+                onEnd: _onPlayerHide,
+                child: Container(
+                  height: _controlsConfiguration.controlBarHeight,
+                  width: double.infinity,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (_controlsConfiguration.enablePip)
+                        _buildPipButtonWrapperWidget(
+                            controlsNotVisible, _onPlayerHide)
+                      else
+                        const SizedBox(),
+                      _buildMoreButton(),
+                    ],
+                  ),
                 ),
-              ),
-            )
-          : const SizedBox(),
+              )
+            : const SizedBox(),
+      ),
     );
   }
 
@@ -335,12 +343,13 @@ class _BetterPlayerMaterialControlsState
               ),
             if (_controlsConfiguration.fullScreenControlsBuilder != null &&
                 isFullScreen &&
-                !_betterPlayerController!.isPIPStart)
+                !_betterPlayerController!.isPIPStart) ...[
               Expanded(
                 child: _controlsConfiguration.fullScreenControlsBuilder!
                     .call(context),
               ),
-            //   SizedBox(height: MediaQuery.of(context).viewPadding.bottom),
+              SizedBox(height: MediaQuery.of(context).viewPadding.bottom),
+            ]
           ],
         ),
       ),
