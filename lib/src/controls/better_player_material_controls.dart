@@ -200,7 +200,7 @@ class _BetterPlayerMaterialControlsState
         MediaQuery.of(context).orientation == Orientation.landscape;
     return Padding(
       padding: isFullScreen
-          ? const EdgeInsets.symmetric(horizontal: 10, vertical: 11)
+          ? const EdgeInsets.symmetric(horizontal: 15, vertical: 20)
           : const EdgeInsets.all(8.0),
       child: Container(
         child: (_controlsConfiguration.enableOverflowMenu)
@@ -348,7 +348,7 @@ class _BetterPlayerMaterialControlsState
                 child: _controlsConfiguration.fullScreenControlsBuilder!
                     .call(context),
               ),
-              SizedBox(height: MediaQuery.of(context).viewPadding.bottom),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
             ]
           ],
         ),
