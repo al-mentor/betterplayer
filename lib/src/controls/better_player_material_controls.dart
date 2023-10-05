@@ -348,7 +348,7 @@ class _BetterPlayerMaterialControlsState
                 child: _controlsConfiguration.fullScreenControlsBuilder!
                     .call(context),
               ),
-              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+              SizedBox(height: MediaQuery.of(context).padding.bottom),
             ]
           ],
         ),
