@@ -209,7 +209,7 @@ class _BetterPlayerMaterialControlsState
                 duration: _controlsConfiguration.controlsHideTime,
                 onEnd: _onPlayerHide,
                 child: Container(
-                 // height: _controlsConfiguration.controlBarHeight,
+                  height: _controlsConfiguration.topBarHeight,
                   width: double.infinity,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -307,7 +307,8 @@ class _BetterPlayerMaterialControlsState
       duration: _controlsConfiguration.controlsHideTime,
       onEnd: _onPlayerHide,
       child: Container(
-        height: _controlsConfiguration.controlBarHeight + 20.0,
+        height: _controlsConfiguration.bottomBarHeight,
+       // height: _controlsConfiguration.controlBarHeight + 20.0,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[

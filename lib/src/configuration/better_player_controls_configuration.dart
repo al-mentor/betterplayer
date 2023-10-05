@@ -89,7 +89,7 @@ class BetterPlayerControlsConfiguration {
   final bool showControlsOnInitialize;
 
   ///Control bar height
-  final double controlBarHeight;
+  final double controlBarHeight,topBarHeight,bottomBarHeight;
 
   ///Live text color;
   final Color liveTextColor;
@@ -224,6 +224,8 @@ class BetterPlayerControlsConfiguration {
       this.overflowModalSelectedIconColor = Colors.blue,
       this.fullScreenIconWidget,
       this.inTopBarWidget,
+      this.topBarHeight = 28,
+      this.bottomBarHeight = 28,
       //  this.onClickToExpandButton,
       this.internetSpeed});
 
