@@ -209,7 +209,7 @@ class _BetterPlayerMaterialControlsState
               onEnd: _onPlayerHide,
               child: Container(
                 height: _controlsConfiguration.topBarHeight,
-                width: MediaQuery.of(context).size.width,
+                width: double.infinity,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -218,6 +218,14 @@ class _BetterPlayerMaterialControlsState
                           controlsNotVisible, _onPlayerHide)
                     else
                       const SizedBox(),
+                    if (_controlsConfiguration.topBarEndWidget != null) ...[
+                      Spacer(),
+                      _controlsConfiguration.topBarEndWidget!
+                    ],
+                    if (_controlsConfiguration.topBarCenterWidget != null) ...[
+                      Spacer(),
+                      _controlsConfiguration.topBarCenterWidget!
+                    ],
                     _buildMoreButton(),
                   ],
                 ),
@@ -277,9 +285,6 @@ class _BetterPlayerMaterialControlsState
       padding: const EdgeInsets.all(8.0),
       child: Row(
         children: [
-          if (_controlsConfiguration.inTopBarWidget != null) ...{
-            _controlsConfiguration.inTopBarWidget!
-          },
           BetterPlayerMaterialClickableWidget(
             onTap: () {
               onShowMoreClicked();
@@ -306,7 +311,7 @@ class _BetterPlayerMaterialControlsState
       onEnd: _onPlayerHide,
       child: Container(
         height: _controlsConfiguration.bottomBarHeight,
-       // height: _controlsConfiguration.controlBarHeight + 20.0,
+        // height: _controlsConfiguration.controlBarHeight + 20.0,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
