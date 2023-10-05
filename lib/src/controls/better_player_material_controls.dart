@@ -209,7 +209,7 @@ class _BetterPlayerMaterialControlsState
                 duration: _controlsConfiguration.controlsHideTime,
                 onEnd: _onPlayerHide,
                 child: Container(
-                  height: _controlsConfiguration.controlBarHeight,
+                 // height: _controlsConfiguration.controlBarHeight,
                   width: double.infinity,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -342,13 +342,7 @@ class _BetterPlayerMaterialControlsState
 
                     if (_controlsConfiguration.enableFullscreen &&
                         _controlsConfiguration.fullScreenIconWidget != null)
-                      Padding(
-                        padding: isFullScreen
-                            ? const EdgeInsets.symmetric(
-                                horizontal: 15, vertical: 20)
-                            : EdgeInsets.zero,
-                        child: _controlsConfiguration.fullScreenIconWidget!,
-                      )
+                      _controlsConfiguration.fullScreenIconWidget!
                     else
                       const SizedBox(),
                   ],
