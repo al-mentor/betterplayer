@@ -202,30 +202,28 @@ class _BetterPlayerMaterialControlsState
       padding: isFullScreen
           ? const EdgeInsets.symmetric(horizontal: 15, vertical: 20)
           : const EdgeInsets.all(8.0),
-      child: Container(
-        child: (_controlsConfiguration.enableOverflowMenu)
-            ? AnimatedOpacity(
-                opacity: controlsNotVisible ? 0.0 : 1.0,
-                duration: _controlsConfiguration.controlsHideTime,
-                onEnd: _onPlayerHide,
-                child: Container(
-                  height: _controlsConfiguration.topBarHeight,
-                  width: double.infinity,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (_controlsConfiguration.enablePip)
-                        _buildPipButtonWrapperWidget(
-                            controlsNotVisible, _onPlayerHide)
-                      else
-                        const SizedBox(),
-                      _buildMoreButton(),
-                    ],
-                  ),
+      child: (_controlsConfiguration.enableOverflowMenu)
+          ? AnimatedOpacity(
+              opacity: controlsNotVisible ? 0.0 : 1.0,
+              duration: _controlsConfiguration.controlsHideTime,
+              onEnd: _onPlayerHide,
+              child: Container(
+                height: _controlsConfiguration.topBarHeight,
+                width: MediaQuery.of(context).size.width,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (_controlsConfiguration.enablePip)
+                      _buildPipButtonWrapperWidget(
+                          controlsNotVisible, _onPlayerHide)
+                    else
+                      const SizedBox(),
+                    _buildMoreButton(),
+                  ],
                 ),
-              )
-            : const SizedBox(),
-      ),
+              ),
+            )
+          : const SizedBox(),
     );
   }
 
