@@ -217,9 +217,13 @@ class _BetterPlayerMaterialControlsState
                       if (_controlsConfiguration.enablePip)
                         _buildPipButtonWrapperWidget(
                             controlsNotVisible, _onPlayerHide)
-                      else
+                      else...[
                         const SizedBox(),
                       _buildMoreButton(),
+                      if(_controlsConfiguration.inTopBarWidget != null)...{
+                        _controlsConfiguration.inTopBarWidget!
+                      }
+                      ],
                     ],
                   ),
                 ),
@@ -335,7 +339,13 @@ class _BetterPlayerMaterialControlsState
 
                     if (_controlsConfiguration.enableFullscreen &&
                         _controlsConfiguration.fullScreenIconWidget != null)
-                      _controlsConfiguration.fullScreenIconWidget!
+                      Padding(
+                        padding: isFullScreen
+                            ? const EdgeInsets.symmetric(
+                                horizontal: 15, vertical: 20)
+                            : EdgeInsets.zero,
+                        child: _controlsConfiguration.fullScreenIconWidget!,
+                      )
                     else
                       const SizedBox(),
                   ],
@@ -348,7 +358,7 @@ class _BetterPlayerMaterialControlsState
                 child: _controlsConfiguration.fullScreenControlsBuilder!
                     .call(context),
               ),
-             // SizedBox(height: MediaQuery.of(context).padding.bottom),
+              // SizedBox(height: MediaQuery.of(context).padding.bottom),
             ]
           ],
         ),
