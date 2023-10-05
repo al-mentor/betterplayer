@@ -214,16 +214,12 @@ class _BetterPlayerMaterialControlsState
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      if (_controlsConfiguration.enablePip)...{
+                      if (_controlsConfiguration.enablePip)
                         _buildPipButtonWrapperWidget(
                             controlsNotVisible, _onPlayerHide)
-                      } else...[
+                      else
                         const SizedBox(),
                       _buildMoreButton(),
-                      if(_controlsConfiguration.inTopBarWidget != null)...{
-                        _controlsConfiguration.inTopBarWidget!
-                      }
-                      ],
                     ],
                   ),
                 ),
@@ -279,17 +275,24 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildMoreButton() {
-    return BetterPlayerMaterialClickableWidget(
-      onTap: () {
-        onShowMoreClicked();
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Icon(
-          _controlsConfiguration.overflowMenuIcon,
-          color: _controlsConfiguration.iconsColor,
+    return Row(
+      children: [
+        BetterPlayerMaterialClickableWidget(
+          onTap: () {
+            onShowMoreClicked();
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(
+              _controlsConfiguration.overflowMenuIcon,
+              color: _controlsConfiguration.iconsColor,
+            ),
+          ),
         ),
-      ),
+        if (_controlsConfiguration.inTopBarWidget != null) ...{
+          _controlsConfiguration.inTopBarWidget!
+        }
+      ],
     );
   }
 
