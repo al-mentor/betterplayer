@@ -275,24 +275,24 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildMoreButton() {
-    return Row(
-      children: [
-        BetterPlayerMaterialClickableWidget(
-          onTap: () {
-            onShowMoreClicked();
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          if (_controlsConfiguration.inTopBarWidget != null) ...{
+            _controlsConfiguration.inTopBarWidget!
           },
-          child: Padding(
-            padding: const EdgeInsets.all(8),
+          BetterPlayerMaterialClickableWidget(
+            onTap: () {
+              onShowMoreClicked();
+            },
             child: Icon(
               _controlsConfiguration.overflowMenuIcon,
               color: _controlsConfiguration.iconsColor,
             ),
           ),
-        ),
-        if (_controlsConfiguration.inTopBarWidget != null) ...{
-          _controlsConfiguration.inTopBarWidget!
-        }
-      ],
+        ],
+      ),
     );
   }
 
