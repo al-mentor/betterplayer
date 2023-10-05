@@ -111,12 +111,12 @@ class _BetterPlayerMaterialControlsState
               child: _buildTopBar(),
             ),
             Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomBar()),
-            Positioned(
-              right: 0,
-              bottom: _controlsConfiguration.controlBarHeight,
-              width: MediaQuery.of(context).size.width * 0.4,
-              child: _buildNextVideoWidget(),
-            ),
+            // Positioned(
+            //   right: 0,
+            //   bottom: _controlsConfiguration.controlBarHeight,
+            //   width: MediaQuery.of(context).size.width * 0.4,
+            //   child: _buildNextVideoWidget(),
+            // ),
           ],
         ),
       ),
