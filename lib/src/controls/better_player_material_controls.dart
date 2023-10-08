@@ -196,12 +196,10 @@ class _BetterPlayerMaterialControlsState
     if (!betterPlayerController!.controlsEnabled) {
       return const SizedBox();
     }
-    final isFullScreen =
-        MediaQuery.of(context).orientation == Orientation.landscape;
+    // final isFullScreen =
+    //     MediaQuery.of(context).orientation == Orientation.landscape;
     return Padding(
-      padding: isFullScreen
-          ? const EdgeInsets.symmetric(horizontal: 15, vertical: 20)
-          : const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(8.0),
       child: (_controlsConfiguration.enableOverflowMenu)
           ? AnimatedOpacity(
               opacity: controlsNotVisible ? 0.0 : 1.0,
