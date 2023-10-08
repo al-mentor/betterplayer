@@ -75,19 +75,18 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
 
     double? aspectRatio;
     if (betterPlayerController.isFullScreen) {
-      // if (betterPlayerController.betterPlayerConfiguration
-      //         .autoDetectFullscreenDeviceOrientation ||
-      //     betterPlayerController
-      //         .betterPlayerConfiguration.autoDetectFullscreenAspectRatio) {
-      //   aspectRatio =
-      //       betterPlayerController.videoPlayerController?.value.aspectRatio ??
-      //           1.0;
-      // }
-      //  else {
+      if (betterPlayerController.betterPlayerConfiguration
+              .autoDetectFullscreenDeviceOrientation ||
+          betterPlayerController
+              .betterPlayerConfiguration.autoDetectFullscreenAspectRatio) {
+        aspectRatio =
+            betterPlayerController.videoPlayerController?.value.aspectRatio ??
+                1.0;
+      } else {
         aspectRatio = betterPlayerController
                 .betterPlayerConfiguration.fullScreenAspectRatio ??
             BetterPlayerUtils.calculateAspectRatio(context);
-    //  }
+      }
     } else {
       aspectRatio = betterPlayerController.getAspectRatio();
     }
