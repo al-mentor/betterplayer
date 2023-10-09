@@ -89,7 +89,7 @@ class BetterPlayerControlsConfiguration {
   final bool showControlsOnInitialize;
 
   ///Control bar height
-  final double controlBarHeight,topBarHeight,bottomBarHeight;
+  final double controlBarHeight, topBarHeight, bottomBarHeight;
 
   ///Live text color;
   final Color liveTextColor;
@@ -162,7 +162,11 @@ class BetterPlayerControlsConfiguration {
   final Color overflowModalTextColor;
   final Color overflowModalSelectedIconColor;
   final double? internetSpeed;
-  final Widget? fullScreenIconWidget,topBarEndWidget,topBarCenterWidget,overflowMenuWidget;
+  final Widget? fullScreenIconWidget,
+      topBarEndWidget,
+      topBarCenterWidget,
+      overflowMenuWidget;
+  final EdgeInsets? overflowMenuPadding;
 
   // final void Function()? onClickToExpandButton;
 
@@ -228,6 +232,7 @@ class BetterPlayerControlsConfiguration {
       this.topBarHeight = 48,
       this.bottomBarHeight = 48,
       this.overflowMenuWidget,
+      this.overflowMenuPadding,
       //  this.onClickToExpandButton,
       this.internetSpeed});
 

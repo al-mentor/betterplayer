@@ -280,7 +280,7 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildMoreButton() {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: _controlsConfiguration.overflowMenuPadding ?? const EdgeInsets.all(8.0),
       child: Row(
         children: [
           BetterPlayerMaterialClickableWidget(
