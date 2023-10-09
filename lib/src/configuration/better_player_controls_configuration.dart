@@ -162,7 +162,7 @@ class BetterPlayerControlsConfiguration {
   final Color overflowModalTextColor;
   final Color overflowModalSelectedIconColor;
   final double? internetSpeed;
-  final Widget? fullScreenIconWidget,topBarEndWidget,topBarCenterWidget;
+  final Widget? fullScreenIconWidget,topBarEndWidget,topBarCenterWidget,overflowMenuWidget;
 
   // final void Function()? onClickToExpandButton;
 
@@ -227,6 +227,7 @@ class BetterPlayerControlsConfiguration {
       this.topBarEndWidget,
       this.topBarHeight = 48,
       this.bottomBarHeight = 48,
+      this.overflowMenuWidget,
       //  this.onClickToExpandButton,
       this.internetSpeed});
 

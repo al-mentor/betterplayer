@@ -287,10 +287,11 @@ class _BetterPlayerMaterialControlsState
             onTap: () {
               onShowMoreClicked();
             },
-            child: Icon(
-              _controlsConfiguration.overflowMenuIcon,
-              color: _controlsConfiguration.iconsColor,
-            ),
+            child: _controlsConfiguration.overflowMenuWidget ??
+                Icon(
+                  _controlsConfiguration.overflowMenuIcon,
+                  color: _controlsConfiguration.iconsColor,
+                ),
           ),
         ],
       ),
