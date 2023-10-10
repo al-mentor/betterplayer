@@ -224,13 +224,7 @@ class _BetterPlayerMaterialControlsState
                       Spacer(),
                       _controlsConfiguration.topBarCenterWidget!
                     ],
-                    if (betterPlayerController!.isFullScreen &&
-                        !_controlsConfiguration
-                            .enableBuildMoreWidgetWhenFullScreen) ...[
-                      const SizedBox.shrink()
-                    ] else ...[
-                      _buildMoreButton(),
-                    ]
+                    _buildMoreButton(),
                   ],
                 ),
               ),
@@ -285,24 +279,27 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildMoreButton() {
-    return Padding(
-      padding: _controlsConfiguration.overflowMenuPadding ??
-          const EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          BetterPlayerMaterialClickableWidget(
-            onTap: () {
-              onShowMoreClicked();
-            },
-            child: _controlsConfiguration.overflowMenuWidget ??
-                Icon(
-                  _controlsConfiguration.overflowMenuIcon,
-                  color: _controlsConfiguration.iconsColor,
+    return betterPlayerController!.isFullScreen &&
+            !_controlsConfiguration.enableBuildMoreWidgetWhenFullScreen
+        ? const SizedBox.shrink()
+        : Padding(
+            padding: _controlsConfiguration.overflowMenuPadding ??
+                const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                BetterPlayerMaterialClickableWidget(
+                  onTap: () {
+                    onShowMoreClicked();
+                  },
+                  child: _controlsConfiguration.overflowMenuWidget ??
+                      Icon(
+                        _controlsConfiguration.overflowMenuIcon,
+                        color: _controlsConfiguration.iconsColor,
+                      ),
                 ),
-          ),
-        ],
-      ),
-    );
+              ],
+            ),
+          );
   }
 
   Widget _buildBottomBar() {
