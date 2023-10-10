@@ -280,7 +280,7 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildMoreButton() {
     if (betterPlayerController!.isFullScreen) {
-      if (!_controlsConfiguration.enableBuildMoreWidgetWhenFullScreen) {
+      if (_controlsConfiguration.disableBuildMoreWidgetWhenFullScreen) {
         return const SizedBox.shrink();
       }
     }
