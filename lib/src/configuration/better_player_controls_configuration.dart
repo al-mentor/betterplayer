@@ -165,7 +165,9 @@ class BetterPlayerControlsConfiguration {
   final Widget? fullScreenIconWidget,
       topBarEndWidget,
       topBarCenterWidget,
-      overflowMenuWidget;
+      overflowMenuWidget,
+      skipBackIconWidget,
+      skipForwardIconWidget;
   final EdgeInsets? overflowMenuPadding;
   final bool disableBuildMoreWidgetWhenFullScreen;
 
@@ -173,6 +175,8 @@ class BetterPlayerControlsConfiguration {
 
   const BetterPlayerControlsConfiguration(
       {this.fullScreenControlsBuilder,
+      this.skipBackIconWidget,
+      this.skipForwardIconWidget,
       this.controlBarColor = Colors.black87,
       this.textColor = Colors.white,
       this.iconsColor = Colors.white,
@@ -290,7 +294,9 @@ class BetterPlayerControlsConfiguration {
     Color? progressBarBufferedColor,
     Color? progressBarBackgroundColor,
     Duration? controlsHideTime,
-    Widget Function(BetterPlayerController controller, Function(bool) onPlayerVisibilityChanged)? customControlsBuilder,
+    Widget Function(BetterPlayerController controller,
+            Function(bool) onPlayerVisibilityChanged)?
+        customControlsBuilder,
     BetterPlayerTheme? playerTheme,
     bool? showControls,
     bool? showControlsOnInitialize,
@@ -329,71 +335,92 @@ class BetterPlayerControlsConfiguration {
     EdgeInsets? overflowMenuPadding,
     bool? disableBuildMoreWidgetWhenFullScreen,
     Widget Function(BuildContext)? fullScreenControlsBuilder,
-}) {
+    Widget? skipBackIconWidget,
+    Widget? skipForwardIconWidget,
+  }) {
     return BetterPlayerControlsConfiguration(
-        controlBarColor: controlBarColor ?? this.controlBarColor,
-        textColor: textColor ?? this.textColor,
-        iconsColor: iconsColor ?? this.iconsColor,
-        playIcon: playIcon ?? this.playIcon,
-        pauseIcon: pauseIcon ?? this.pauseIcon,
-        muteIcon: muteIcon ?? this.muteIcon,
-        unMuteIcon: unMuteIcon ?? this.unMuteIcon,
-        fullscreenEnableIcon: fullscreenEnableIcon ?? this.fullscreenEnableIcon,
-        fullscreenDisableIcon: fullscreenDisableIcon ?? this.fullscreenDisableIcon,
-        skipBackIcon: skipBackIcon ?? this.skipBackIcon,
-        skipForwardIcon: skipForwardIcon ?? this.skipForwardIcon,
-        enableFullscreen: enableFullscreen ?? this.enableFullscreen,
-        enableMute: enableMute ?? this.enableMute,
-        enableProgressText: enableProgressText ?? this.enableProgressText,
-        enableProgressBar: enableProgressBar ?? this.enableProgressBar,
-        enableProgressBarDrag: enableProgressBarDrag ?? this.enableProgressBarDrag,
-        enablePlayPause: enablePlayPause ?? this.enablePlayPause,
-        enableSkips: enableSkips ?? this.enableSkips,
-        progressBarPlayedColor: progressBarPlayedColor ?? this.progressBarPlayedColor,
-        progressBarHandleColor: progressBarHandleColor ?? this.progressBarHandleColor,
-        progressBarBufferedColor: progressBarBufferedColor ?? this.progressBarBufferedColor,
-        progressBarBackgroundColor: progressBarBackgroundColor ?? this.progressBarBackgroundColor,
-        controlsHideTime: controlsHideTime ?? this.controlsHideTime,
-        customControlsBuilder: customControlsBuilder ?? this.customControlsBuilder,
-        playerTheme: playerTheme ?? this.playerTheme,
-        showControls: showControls ?? this.showControls,
-        showControlsOnInitialize: showControlsOnInitialize ?? this.showControlsOnInitialize,
-        controlBarHeight: controlBarHeight ?? this.controlBarHeight,
-        topBarHeight: topBarHeight ?? this.topBarHeight,
-        bottomBarHeight: bottomBarHeight ?? this.bottomBarHeight,
-        liveTextColor: liveTextColor ?? this.liveTextColor,
-        enableOverflowMenu: enableOverflowMenu ?? this.enableOverflowMenu,
-        enablePlaybackSpeed: enablePlaybackSpeed ?? this.enablePlaybackSpeed,
-        enableSubtitles: enableSubtitles ?? this.enableSubtitles,
-        enableQualities: enableQualities ?? this.enableQualities,
-        enablePip: enablePip ?? this.enablePip,
-        enableRetry: enableRetry ?? this.enableRetry,
-        enableAudioTracks: enableAudioTracks ?? this.enableAudioTracks,
-        overflowMenuCustomItems: overflowMenuCustomItems ?? this.overflowMenuCustomItems,
-        overflowMenuIcon: overflowMenuIcon ?? this.overflowMenuIcon,
-        pipMenuIcon: pipMenuIcon ?? this.pipMenuIcon,
-        playbackSpeedIcon: playbackSpeedIcon ?? this.playbackSpeedIcon,
-        subtitlesIcon: subtitlesIcon ?? this.subtitlesIcon,
-        qualitiesIcon: qualitiesIcon ?? this.qualitiesIcon,
-        audioTracksIcon: audioTracksIcon ?? this.audioTracksIcon,
-        overflowMenuIconsColor: overflowMenuIconsColor ?? this.overflowMenuIconsColor,
-        forwardSkipTimeInMilliseconds: forwardSkipTimeInMilliseconds ?? this.forwardSkipTimeInMilliseconds,
-        backwardSkipTimeInMilliseconds: backwardSkipTimeInMilliseconds ?? this.backwardSkipTimeInMilliseconds,
-        loadingColor: loadingColor ?? this.loadingColor,
-        loadingWidget: loadingWidget ?? this.loadingWidget,
-        backgroundColor: backgroundColor ?? this.backgroundColor,
-        overflowModalColor: overflowModalColor ?? this.overflowModalColor,
-        overflowModalTextColor: overflowModalTextColor ?? this.overflowModalTextColor,
-        overflowModalSelectedIconColor: overflowModalSelectedIconColor ?? this.overflowModalSelectedIconColor,
-        internetSpeed: internetSpeed ?? this.internetSpeed,
-        fullScreenIconWidget: fullScreenIconWidget ?? this.fullScreenIconWidget,
-        topBarEndWidget: topBarEndWidget ?? this.topBarEndWidget,
-        topBarCenterWidget: topBarCenterWidget ?? this.topBarCenterWidget,
-        overflowMenuWidget: overflowMenuWidget ?? this.overflowMenuWidget,
-        overflowMenuPadding: overflowMenuPadding ?? this.overflowMenuPadding,
-        disableBuildMoreWidgetWhenFullScreen: disableBuildMoreWidgetWhenFullScreen ?? this.disableBuildMoreWidgetWhenFullScreen,
-        fullScreenControlsBuilder: fullScreenControlsBuilder ?? this.fullScreenControlsBuilder,
+      skipBackIconWidget: skipBackIconWidget ?? this.skipBackIconWidget,
+      skipForwardIconWidget:
+          skipForwardIconWidget ?? this.skipForwardIconWidget,
+      controlBarColor: controlBarColor ?? this.controlBarColor,
+      textColor: textColor ?? this.textColor,
+      iconsColor: iconsColor ?? this.iconsColor,
+      playIcon: playIcon ?? this.playIcon,
+      pauseIcon: pauseIcon ?? this.pauseIcon,
+      muteIcon: muteIcon ?? this.muteIcon,
+      unMuteIcon: unMuteIcon ?? this.unMuteIcon,
+      fullscreenEnableIcon: fullscreenEnableIcon ?? this.fullscreenEnableIcon,
+      fullscreenDisableIcon:
+          fullscreenDisableIcon ?? this.fullscreenDisableIcon,
+      skipBackIcon: skipBackIcon ?? this.skipBackIcon,
+      skipForwardIcon: skipForwardIcon ?? this.skipForwardIcon,
+      enableFullscreen: enableFullscreen ?? this.enableFullscreen,
+      enableMute: enableMute ?? this.enableMute,
+      enableProgressText: enableProgressText ?? this.enableProgressText,
+      enableProgressBar: enableProgressBar ?? this.enableProgressBar,
+      enableProgressBarDrag:
+          enableProgressBarDrag ?? this.enableProgressBarDrag,
+      enablePlayPause: enablePlayPause ?? this.enablePlayPause,
+      enableSkips: enableSkips ?? this.enableSkips,
+      progressBarPlayedColor:
+          progressBarPlayedColor ?? this.progressBarPlayedColor,
+      progressBarHandleColor:
+          progressBarHandleColor ?? this.progressBarHandleColor,
+      progressBarBufferedColor:
+          progressBarBufferedColor ?? this.progressBarBufferedColor,
+      progressBarBackgroundColor:
+          progressBarBackgroundColor ?? this.progressBarBackgroundColor,
+      controlsHideTime: controlsHideTime ?? this.controlsHideTime,
+      customControlsBuilder:
+          customControlsBuilder ?? this.customControlsBuilder,
+      playerTheme: playerTheme ?? this.playerTheme,
+      showControls: showControls ?? this.showControls,
+      showControlsOnInitialize:
+          showControlsOnInitialize ?? this.showControlsOnInitialize,
+      controlBarHeight: controlBarHeight ?? this.controlBarHeight,
+      topBarHeight: topBarHeight ?? this.topBarHeight,
+      bottomBarHeight: bottomBarHeight ?? this.bottomBarHeight,
+      liveTextColor: liveTextColor ?? this.liveTextColor,
+      enableOverflowMenu: enableOverflowMenu ?? this.enableOverflowMenu,
+      enablePlaybackSpeed: enablePlaybackSpeed ?? this.enablePlaybackSpeed,
+      enableSubtitles: enableSubtitles ?? this.enableSubtitles,
+      enableQualities: enableQualities ?? this.enableQualities,
+      enablePip: enablePip ?? this.enablePip,
+      enableRetry: enableRetry ?? this.enableRetry,
+      enableAudioTracks: enableAudioTracks ?? this.enableAudioTracks,
+      overflowMenuCustomItems:
+          overflowMenuCustomItems ?? this.overflowMenuCustomItems,
+      overflowMenuIcon: overflowMenuIcon ?? this.overflowMenuIcon,
+      pipMenuIcon: pipMenuIcon ?? this.pipMenuIcon,
+      playbackSpeedIcon: playbackSpeedIcon ?? this.playbackSpeedIcon,
+      subtitlesIcon: subtitlesIcon ?? this.subtitlesIcon,
+      qualitiesIcon: qualitiesIcon ?? this.qualitiesIcon,
+      audioTracksIcon: audioTracksIcon ?? this.audioTracksIcon,
+      overflowMenuIconsColor:
+          overflowMenuIconsColor ?? this.overflowMenuIconsColor,
+      forwardSkipTimeInMilliseconds:
+          forwardSkipTimeInMilliseconds ?? this.forwardSkipTimeInMilliseconds,
+      backwardSkipTimeInMilliseconds:
+          backwardSkipTimeInMilliseconds ?? this.backwardSkipTimeInMilliseconds,
+      loadingColor: loadingColor ?? this.loadingColor,
+      loadingWidget: loadingWidget ?? this.loadingWidget,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      overflowModalColor: overflowModalColor ?? this.overflowModalColor,
+      overflowModalTextColor:
+          overflowModalTextColor ?? this.overflowModalTextColor,
+      overflowModalSelectedIconColor:
+          overflowModalSelectedIconColor ?? this.overflowModalSelectedIconColor,
+      internetSpeed: internetSpeed ?? this.internetSpeed,
+      fullScreenIconWidget: fullScreenIconWidget ?? this.fullScreenIconWidget,
+      topBarEndWidget: topBarEndWidget ?? this.topBarEndWidget,
+      topBarCenterWidget: topBarCenterWidget ?? this.topBarCenterWidget,
+      overflowMenuWidget: overflowMenuWidget ?? this.overflowMenuWidget,
+      overflowMenuPadding: overflowMenuPadding ?? this.overflowMenuPadding,
+      disableBuildMoreWidgetWhenFullScreen:
+          disableBuildMoreWidgetWhenFullScreen ??
+              this.disableBuildMoreWidgetWhenFullScreen,
+      fullScreenControlsBuilder:
+          fullScreenControlsBuilder ?? this.fullScreenControlsBuilder,
     );
-}
-
+  }
 }

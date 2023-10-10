@@ -461,7 +461,7 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildSkipButton() {
     return _buildHitAreaClickableButton(
-      icon: Icon(
+      icon: _controlsConfiguration.skipBackIconWidget ??  Icon(
         _controlsConfiguration.skipBackIcon,
         size: 36,
         color: _controlsConfiguration.iconsColor,
@@ -472,7 +472,7 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildForwardButton() {
     return _buildHitAreaClickableButton(
-      icon: Icon(
+      icon: _controlsConfiguration.skipForwardIconWidget ?? Icon(
         _controlsConfiguration.skipForwardIcon,
         size: 36,
         color: _controlsConfiguration.iconsColor,
