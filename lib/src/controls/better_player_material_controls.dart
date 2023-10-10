@@ -224,10 +224,13 @@ class _BetterPlayerMaterialControlsState
                       Spacer(),
                       _controlsConfiguration.topBarCenterWidget!
                     ],
-                    if (_betterPlayerController!.isFullScreen &&
-                        _controlsConfiguration
-                            .enableBuildMoreWidgetWhenFullScreen)
+                    if (betterPlayerController!.isFullScreen &&
+                        !_controlsConfiguration
+                            .enableBuildMoreWidgetWhenFullScreen) ...[
+                      const SizedBox.shrink()
+                    ] else ...[
                       _buildMoreButton(),
+                    ]
                   ],
                 ),
               ),
