@@ -279,27 +279,29 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildMoreButton() {
-    return betterPlayerController!.isFullScreen &&
-            !_controlsConfiguration.enableBuildMoreWidgetWhenFullScreen
-        ? const SizedBox.shrink()
-        : Padding(
-            padding: _controlsConfiguration.overflowMenuPadding ??
-                const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                BetterPlayerMaterialClickableWidget(
-                  onTap: () {
-                    onShowMoreClicked();
-                  },
-                  child: _controlsConfiguration.overflowMenuWidget ??
-                      Icon(
-                        _controlsConfiguration.overflowMenuIcon,
-                        color: _controlsConfiguration.iconsColor,
-                      ),
+    if (betterPlayerController!.isFullScreen) {
+      if (!_controlsConfiguration.enableBuildMoreWidgetWhenFullScreen) {
+        return const SizedBox.shrink();
+      }
+    }
+    return Padding(
+      padding: _controlsConfiguration.overflowMenuPadding ??
+          const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          BetterPlayerMaterialClickableWidget(
+            onTap: () {
+              onShowMoreClicked();
+            },
+            child: _controlsConfiguration.overflowMenuWidget ??
+                Icon(
+                  _controlsConfiguration.overflowMenuIcon,
+                  color: _controlsConfiguration.iconsColor,
                 ),
-              ],
-            ),
-          );
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildBottomBar() {
