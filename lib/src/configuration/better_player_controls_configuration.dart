@@ -167,6 +167,7 @@ class BetterPlayerControlsConfiguration {
       topBarCenterWidget,
       overflowMenuWidget;
   final EdgeInsets? overflowMenuPadding;
+  final bool enableBuildMoreWidgetWhenFullScreen;
 
   // final void Function()? onClickToExpandButton;
 
@@ -233,6 +234,7 @@ class BetterPlayerControlsConfiguration {
       this.bottomBarHeight = 48,
       this.overflowMenuWidget,
       this.overflowMenuPadding,
+      this.enableBuildMoreWidgetWhenFullScreen = true,
       //  this.onClickToExpandButton,
       this.internetSpeed});
 

@@ -224,7 +224,10 @@ class _BetterPlayerMaterialControlsState
                       Spacer(),
                       _controlsConfiguration.topBarCenterWidget!
                     ],
-                    _buildMoreButton(),
+                    if (_betterPlayerController!.isFullScreen &&
+                        _controlsConfiguration
+                            .enableBuildMoreWidgetWhenFullScreen)
+                      _buildMoreButton(),
                   ],
                 ),
               ),
@@ -280,7 +283,8 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildMoreButton() {
     return Padding(
-      padding: _controlsConfiguration.overflowMenuPadding ?? const EdgeInsets.all(8.0),
+      padding: _controlsConfiguration.overflowMenuPadding ??
+          const EdgeInsets.all(8.0),
       child: Row(
         children: [
           BetterPlayerMaterialClickableWidget(
