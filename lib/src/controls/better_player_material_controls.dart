@@ -226,11 +226,10 @@ class _BetterPlayerMaterialControlsState
                     ],
                     if (betterPlayerController!.isFullScreen &&
                         _controlsConfiguration
-                            .disableBuildMoreWidgetWhenFullScreen) ...[
-                      const SizedBox.shrink(),
-                    ] else ...[
+                            .disableBuildMoreWidgetWhenFullScreen)
+                      const SizedBox.shrink()
+                    else
                       _buildMoreButton(),
-                    ],
                   ],
                 ),
               ),
@@ -350,23 +349,7 @@ class _BetterPlayerMaterialControlsState
                     else
                       const SizedBox(),
 
-                    if (_controlsConfiguration.enableFullscreen &&
-                        _controlsConfiguration.fullScreenIconWidget != null)
-                      if (_controlsConfiguration.onFullScreenIconWidgetTapped !=
-                          null)
-                        InkWell(
-                          onTap: () {
-                            setState(() {
-                              _controlsConfiguration
-                                  .onFullScreenIconWidgetTapped!();
-                            });
-                          },
-                          child: _controlsConfiguration.fullScreenIconWidget!,
-                        )
-                      else
-                        _controlsConfiguration.fullScreenIconWidget!
-                    else if (_controlsConfiguration.enableFullscreen &&
-                        _controlsConfiguration.fullScreenIconWidget == null)
+                    if (_controlsConfiguration.enableFullscreen)
                       _buildExpandButton()
                     else
                       const SizedBox(),
@@ -399,24 +382,26 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildExpandButton() {
     return Padding(
-      padding: EdgeInsets.only(right: 12.0),
+      padding: _controlsConfiguration.fullScreenIconPadding ??
+          EdgeInsets.only(right: 12.0),
       child: BetterPlayerMaterialClickableWidget(
         onTap: _onExpandCollapse,
         child: AnimatedOpacity(
           opacity: controlsNotVisible ? 0.0 : 1.0,
           duration: _controlsConfiguration.controlsHideTime,
-          child: Container(
-            height: _controlsConfiguration.controlBarHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Center(
-              child: Icon(
-                _betterPlayerController!.isFullScreen
-                    ? _controlsConfiguration.fullscreenDisableIcon
-                    : _controlsConfiguration.fullscreenEnableIcon,
-                color: _controlsConfiguration.iconsColor,
+          child: _controlsConfiguration.fullScreenIconWidget ??
+              Container(
+                height: _controlsConfiguration.controlBarHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Center(
+                  child: Icon(
+                    _betterPlayerController!.isFullScreen
+                        ? _controlsConfiguration.fullscreenDisableIcon
+                        : _controlsConfiguration.fullscreenEnableIcon,
+                    color: _controlsConfiguration.iconsColor,
+                  ),
+                ),
               ),
-            ),
-          ),
         ),
       ),
     );
@@ -706,7 +691,8 @@ class _BetterPlayerMaterialControlsState
     });
   }
 
-  void _onExpandCollapse() {
+  void _onExpandCollapse(
+      {void Function()? onTap, bool returnAfterOnTap = false}) {
     changePlayerControlsNotVisible(true);
     _betterPlayerController!.toggleFullScreen();
     _showAfterExpandCollapseTimer =

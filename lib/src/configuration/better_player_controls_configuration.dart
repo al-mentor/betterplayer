@@ -168,7 +168,7 @@ class BetterPlayerControlsConfiguration {
       overflowMenuWidget,
       skipBackIconWidget,
       skipForwardIconWidget;
-  final EdgeInsets? overflowMenuPadding;
+  final EdgeInsets? overflowMenuPadding,fullScreenIconPadding;
   final bool disableBuildMoreWidgetWhenFullScreen;
   final void Function()? onFullScreenIconWidgetTapped;
 
@@ -239,6 +239,7 @@ class BetterPlayerControlsConfiguration {
       this.overflowMenuPadding,
       this.disableBuildMoreWidgetWhenFullScreen = true,
       this.onFullScreenIconWidgetTapped,
+      this.fullScreenIconPadding,
       //  this.onClickToExpandButton,
       this.internetSpeed});
 
