@@ -33,12 +33,6 @@ class BetterPlayerMaterialVideoProgressBar extends StatefulWidget {
 
 class _VideoProgressBarState
     extends State<BetterPlayerMaterialVideoProgressBar> {
-  _VideoProgressBarState() {
-    listener = () {
-      if (mounted) setState(() {});
-    };
-  }
-
   late VoidCallback listener;
   bool _controllerWasPlaying = false;
 
@@ -54,6 +48,9 @@ class _VideoProgressBarState
   @override
   void initState() {
     super.initState();
+    listener = () {
+      if (mounted) setState(() {});
+    };
     controller!.addListener(listener);
   }
 
