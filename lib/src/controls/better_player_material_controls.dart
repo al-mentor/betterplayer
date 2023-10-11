@@ -140,7 +140,6 @@ class _BetterPlayerMaterialControlsState
 
   @override
   void didChangeDependencies() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
       final _oldController = _betterPlayerController;
       _betterPlayerController = BetterPlayerController.of(context);
       _controller = _betterPlayerController!.videoPlayerController;
@@ -148,9 +147,11 @@ class _BetterPlayerMaterialControlsState
 
       if (_oldController != _betterPlayerController) {
         _dispose();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
         _initialize();
+        });
       }
-    });
+  
     super.didChangeDependencies();
   }
 
