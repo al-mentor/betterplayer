@@ -48,10 +48,12 @@ class _VideoProgressBarState
   @override
   void initState() {
     super.initState();
-    listener = () {
-      if (mounted) setState(() {});
-    };
-    controller!.addListener(listener);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      listener = () {
+        if (mounted) setState(() {});
+      };
+      controller!.addListener(listener);
+    });
   }
 
   @override
