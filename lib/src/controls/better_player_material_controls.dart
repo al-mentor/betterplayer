@@ -691,16 +691,15 @@ class _BetterPlayerMaterialControlsState
     });
   }
 
-  void _onExpandCollapse(
-      {void Function()? onTap, bool returnAfterOnTap = false}) {
+  void _onExpandCollapse() {
     changePlayerControlsNotVisible(true);
     _betterPlayerController!.toggleFullScreen();
-    _showAfterExpandCollapseTimer =
-        Timer(_controlsConfiguration.controlsHideTime, () {
-      //  setState(() {
-      cancelAndRestartTimer();
-      // });
-    });
+    // _showAfterExpandCollapseTimer =
+    //     Timer(_controlsConfiguration.controlsHideTime, () {
+    //   //  setState(() {
+    //   cancelAndRestartTimer();
+    //   // });
+    // });
   }
 
   void _onPlayPause() {
