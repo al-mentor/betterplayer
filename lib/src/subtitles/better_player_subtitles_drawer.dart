@@ -40,35 +40,36 @@ class _BetterPlayerSubtitlesDrawerState
 
   @override
   void initState() {
-    _visibilityStreamSubscription =
-        widget.playerVisibilityStream.listen((state) {
-      setState(() {
-        _playerVisible = state;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _visibilityStreamSubscription =
+          widget.playerVisibilityStream.listen((state) {
+        setState(() {
+          _playerVisible = state;
+        });
       });
+
+      if (widget.betterPlayerSubtitlesConfiguration != null) {
+        _configuration = widget.betterPlayerSubtitlesConfiguration;
+      } else {
+        _configuration = setupDefaultConfiguration();
+      }
+
+      widget.betterPlayerController.videoPlayerController!
+          .addListener(_updateState);
+
+      _outerTextStyle = TextStyle(
+          fontSize: _configuration!.fontSize,
+          fontFamily: _configuration!.fontFamily,
+          foreground: Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = _configuration!.outlineSize
+            ..color = _configuration!.outlineColor);
+
+      _innerTextStyle = TextStyle(
+          fontFamily: _configuration!.fontFamily,
+          color: _configuration!.fontColor,
+          fontSize: _configuration!.fontSize);
     });
-
-    if (widget.betterPlayerSubtitlesConfiguration != null) {
-      _configuration = widget.betterPlayerSubtitlesConfiguration;
-    } else {
-      _configuration = setupDefaultConfiguration();
-    }
-
-    widget.betterPlayerController.videoPlayerController!
-        .addListener(_updateState);
-
-    _outerTextStyle = TextStyle(
-        fontSize: _configuration!.fontSize,
-        fontFamily: _configuration!.fontFamily,
-        foreground: Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = _configuration!.outlineSize
-          ..color = _configuration!.outlineColor);
-
-    _innerTextStyle = TextStyle(
-        fontFamily: _configuration!.fontFamily,
-        color: _configuration!.fontColor,
-        fontSize: _configuration!.fontSize);
-
     super.initState();
   }
 
@@ -83,10 +84,10 @@ class _BetterPlayerSubtitlesDrawerState
   ///Called when player state has changed, i.e. new player position, etc.
   void _updateState() {
     if (mounted) {
-     // setState(() {
+      setState(() {
         _latestValue =
             widget.betterPlayerController.videoPlayerController!.value;
-   //   });
+      });
     }
   }
 

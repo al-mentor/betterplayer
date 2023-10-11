@@ -140,16 +140,17 @@ class _BetterPlayerMaterialControlsState
 
   @override
   void didChangeDependencies() {
-    final _oldController = _betterPlayerController;
-    _betterPlayerController = BetterPlayerController.of(context);
-    _controller = _betterPlayerController!.videoPlayerController;
-    _latestValue = _controller!.value;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final _oldController = _betterPlayerController;
+      _betterPlayerController = BetterPlayerController.of(context);
+      _controller = _betterPlayerController!.videoPlayerController;
+      _latestValue = _controller!.value;
 
-    if (_oldController != _betterPlayerController) {
-      _dispose();
-      _initialize();
-    }
-
+      if (_oldController != _betterPlayerController) {
+        _dispose();
+        _initialize();
+      }
+    });
     super.didChangeDependencies();
   }
 
@@ -751,7 +752,7 @@ class _BetterPlayerMaterialControlsState
           _wasLoading ||
           isLoading(_controller!.value) &&
               betterPlayerController!.isPlaying()!) {
-       // setState(() {
+        setState(() {
           _latestValue = _controller!.value;
           if (isVideoFinished(_latestValue) &&
               _betterPlayerController?.isLiveStream() == false &&
@@ -767,7 +768,7 @@ class _BetterPlayerMaterialControlsState
             // _initTimer?.cancel();
             //_controller?.removeListener(_updateState);
           }
-       // });
+        });
       }
     }
   }
