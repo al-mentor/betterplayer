@@ -751,7 +751,7 @@ class _BetterPlayerMaterialControlsState
           _wasLoading ||
           isLoading(_controller!.value) &&
               betterPlayerController!.isPlaying()!) {
-        setState(() {
+       // setState(() {
           _latestValue = _controller!.value;
           if (isVideoFinished(_latestValue) &&
               _betterPlayerController?.isLiveStream() == false &&
@@ -767,7 +767,7 @@ class _BetterPlayerMaterialControlsState
             // _initTimer?.cancel();
             //_controller?.removeListener(_updateState);
           }
-        });
+       // });
       }
     }
   }
