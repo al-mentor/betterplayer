@@ -1,6 +1,7 @@
 import 'package:better_player/better_player.dart';
 import 'package:better_player_example/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class HlsSubtitlesPage extends StatefulWidget {
   @override
@@ -25,9 +26,10 @@ class _HlsSubtitlesPageState extends State<HlsSubtitlesPage> {
       forwardSkipTimeInMilliseconds: 10000,
       enableSkips: true,
       enableFullscreen: true,
+      disableBuildMoreWidgetWhenFullScreen: true,
       enablePip: true,
       enablePlayPause: true,
-      enableMute: true,
+      enableMute: false,
       enableAudioTracks: true,
       enableProgressText: true,
       enableSubtitles: true,

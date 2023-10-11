@@ -224,7 +224,13 @@ class _BetterPlayerMaterialControlsState
                       Spacer(),
                       _controlsConfiguration.topBarCenterWidget!
                     ],
-                    _buildMoreButton(),
+                    if (betterPlayerController!.isFullScreen &&
+                        _controlsConfiguration
+                            .disableBuildMoreWidgetWhenFullScreen) ...[
+                      const SizedBox.shrink(),
+                    ] else ...[
+                      _buildMoreButton(),
+                    ],
                   ],
                 ),
               ),
@@ -279,11 +285,6 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildMoreButton() {
-    if (betterPlayerController!.isFullScreen) {
-      if (_controlsConfiguration.disableBuildMoreWidgetWhenFullScreen) {
-        return const SizedBox.shrink();
-      }
-    }
     return Padding(
       padding: _controlsConfiguration.overflowMenuPadding ??
           const EdgeInsets.all(8.0),
@@ -351,7 +352,22 @@ class _BetterPlayerMaterialControlsState
 
                     if (_controlsConfiguration.enableFullscreen &&
                         _controlsConfiguration.fullScreenIconWidget != null)
-                      _controlsConfiguration.fullScreenIconWidget!
+                      if (_controlsConfiguration.onFullScreenIconWidgetTapped !=
+                          null)
+                        InkWell(
+                          onTap: () {
+                            setState(() {
+                              _controlsConfiguration
+                                  .onFullScreenIconWidgetTapped!();
+                            });
+                          },
+                          child: _controlsConfiguration.fullScreenIconWidget!,
+                        )
+                      else
+                        _controlsConfiguration.fullScreenIconWidget!
+                    else if (_controlsConfiguration.enableFullscreen &&
+                        _controlsConfiguration.fullScreenIconWidget == null)
+                      _buildExpandButton()
                     else
                       const SizedBox(),
                   ],
@@ -381,30 +397,30 @@ class _BetterPlayerMaterialControlsState
     );
   }
 
-  // Widget _buildExpandButton() {
-  //   return Padding(
-  //     padding: EdgeInsets.only(right: 12.0),
-  //     child: BetterPlayerMaterialClickableWidget(
-  //       onTap: _controlsConfiguration.onClickToExpandButton ?? (){},
-  //       child: AnimatedOpacity(
-  //         opacity: controlsNotVisible ? 0.0 : 1.0,
-  //         duration: _controlsConfiguration.controlsHideTime,
-  //         child: Container(
-  //           height: _controlsConfiguration.controlBarHeight,
-  //           padding: const EdgeInsets.symmetric(horizontal: 8.0),
-  //           child: Center(
-  //             child: Icon(
-  //               _betterPlayerController!.isFullScreen
-  //                   ? _controlsConfiguration.fullscreenDisableIcon
-  //                   : _controlsConfiguration.fullscreenEnableIcon,
-  //               color: _controlsConfiguration.iconsColor,
-  //             ),
-  //           ),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
+  Widget _buildExpandButton() {
+    return Padding(
+      padding: EdgeInsets.only(right: 12.0),
+      child: BetterPlayerMaterialClickableWidget(
+        onTap: _onExpandCollapse,
+        child: AnimatedOpacity(
+          opacity: controlsNotVisible ? 0.0 : 1.0,
+          duration: _controlsConfiguration.controlsHideTime,
+          child: Container(
+            height: _controlsConfiguration.controlBarHeight,
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Center(
+              child: Icon(
+                _betterPlayerController!.isFullScreen
+                    ? _controlsConfiguration.fullscreenDisableIcon
+                    : _controlsConfiguration.fullscreenEnableIcon,
+                color: _controlsConfiguration.iconsColor,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildHitArea() {
     if (!betterPlayerController!.controlsEnabled) {
@@ -461,22 +477,24 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildSkipButton() {
     return _buildHitAreaClickableButton(
-      icon: _controlsConfiguration.skipBackIconWidget ??  Icon(
-        _controlsConfiguration.skipBackIcon,
-        size: 36,
-        color: _controlsConfiguration.iconsColor,
-      ),
+      icon: _controlsConfiguration.skipBackIconWidget ??
+          Icon(
+            _controlsConfiguration.skipBackIcon,
+            size: 36,
+            color: _controlsConfiguration.iconsColor,
+          ),
       onClicked: skipBack,
     );
   }
 
   Widget _buildForwardButton() {
     return _buildHitAreaClickableButton(
-      icon: _controlsConfiguration.skipForwardIconWidget ?? Icon(
-        _controlsConfiguration.skipForwardIcon,
-        size: 36,
-        color: _controlsConfiguration.iconsColor,
-      ),
+      icon: _controlsConfiguration.skipForwardIconWidget ??
+          Icon(
+            _controlsConfiguration.skipForwardIcon,
+            size: 36,
+            color: _controlsConfiguration.iconsColor,
+          ),
       onClicked: skipForward,
     );
   }
@@ -688,16 +706,16 @@ class _BetterPlayerMaterialControlsState
     });
   }
 
-  // void _onExpandCollapse() {
-  //   changePlayerControlsNotVisible(true);
-  //   _betterPlayerController!.toggleFullScreen();
-  //   _showAfterExpandCollapseTimer =
-  //       Timer(_controlsConfiguration.controlsHideTime, () {
-  //   //  setState(() {
-  //       cancelAndRestartTimer();
-  //    // });
-  //   });
-  // }
+  void _onExpandCollapse() {
+    changePlayerControlsNotVisible(true);
+    _betterPlayerController!.toggleFullScreen();
+    _showAfterExpandCollapseTimer =
+        Timer(_controlsConfiguration.controlsHideTime, () {
+      //  setState(() {
+      cancelAndRestartTimer();
+      // });
+    });
+  }
 
   void _onPlayPause() {
     bool isFinished = false;
