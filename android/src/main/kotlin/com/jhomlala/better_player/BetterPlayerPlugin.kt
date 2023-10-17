@@ -412,7 +412,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
     private fun readyPictureInPicture(player: BetterPlayer) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            activity!!.setPictureInPictureParams(PictureInPictureParams.Builder().setActions(listOf()).build())
+            //activity!!.setPictureInPictureParams(PictureInPictureParams.Builder().setActions(listOf()).build())
         }
     }
 
