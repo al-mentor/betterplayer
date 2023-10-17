@@ -409,7 +409,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     private fun enablePictureInPicture(player: BetterPlayer) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             player.setupMediaSession(flutterState!!.applicationContext)
-            activity!!.enterPictureInPictureMode(PictureInPictureParams.Builder().build())
+            setPictureInPictureParams(PictureInPictureParams.Builder().setAutoEnterEnabled(true).setActions(listOf()).build())
+            //activity!!.enterPictureInPictureMode()
             startPictureInPictureListenerTimer(player)
             player.onPictureInPictureStatusChanged(true)
         }
