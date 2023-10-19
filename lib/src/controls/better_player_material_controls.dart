@@ -556,7 +556,7 @@ class _BetterPlayerMaterialControlsState
                   ),
                   child: FittedBox(
                     child: Text(
-                      "${_betterPlayerController!.translations.controlsNextVideoIn} $time...",
+                      "${_betterPlayerController!.translations.controlsNextVideoIn} $time",
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
