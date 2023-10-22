@@ -1,16 +1,17 @@
 import 'package:better_player/better_player.dart';
 import 'package:better_player_example/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
 
 class HlsSubtitlesPage extends StatefulWidget {
   @override
   _HlsSubtitlesPageState createState() => _HlsSubtitlesPageState();
 }
 
-class _HlsSubtitlesPageState extends State<HlsSubtitlesPage> {
+class _HlsSubtitlesPageState extends State<HlsSubtitlesPage>{
+   // with WidgetsBindingObserver {
   late BetterPlayerController _betterPlayerController;
-
+  GlobalKey _betterPlayerKey = GlobalKey();
   @override
   void initState() {
     BetterPlayerControlsConfiguration controlsConfiguration =
@@ -54,9 +55,30 @@ class _HlsSubtitlesPageState extends State<HlsSubtitlesPage> {
         BetterPlayerDataSourceType.network, Constants.hlsPlaylistUrl,
         useAsmsSubtitles: true);
     _betterPlayerController = BetterPlayerController(betterPlayerConfiguration);
+    _betterPlayerController.setBetterPlayerGlobalKey(_betterPlayerKey);
     _betterPlayerController.setupDataSource(dataSource);
+    //WidgetsBinding.instance.addObserver(this);
     super.initState();
   }
+
+  @override
+  void dispose() {
+    //WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // @override
+  // void didChangeAppLifecycleState(AppLifecycleState state) {
+  //   print("state is $state");
+  //   print(
+  //       "_betterPlayerController.isPlaying()${_betterPlayerController.isPlaying()!}");
+  //   print("_betterPlayerKey ${_betterPlayerKey.currentContext}");
+  //   if (state == AppLifecycleState.paused &&
+  //       _betterPlayerController.isPlaying()!) {
+  //     _betterPlayerController.enablePictureInPicture(_betterPlayerKey);
+  //   }
+  //   super.didChangeAppLifecycleState(state);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +100,8 @@ class _HlsSubtitlesPageState extends State<HlsSubtitlesPage> {
             ),
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: BetterPlayer(controller: _betterPlayerController),
+              child: BetterPlayer(
+                  key: _betterPlayerKey, controller: _betterPlayerController),
             ),
           ],
         ),
