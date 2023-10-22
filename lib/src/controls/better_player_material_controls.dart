@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:better_player/src/configuration/better_player_controls_configuration.dart';
 import 'package:better_player/src/controls/better_player_clickable_widget.dart';
@@ -258,6 +259,9 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildPipButtonWrapperWidget(
       bool hideStuff, void Function() onPlayerHide) {
+    if (!Platform.isIOS) {
+      return SizedBox.shrink();
+    }
     return FutureBuilder<bool>(
       future: betterPlayerController!.isPictureInPictureSupported(),
       builder: (context, snapshot) {

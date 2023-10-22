@@ -617,6 +617,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         if (!_pipController && self._playerLayer && [AVPictureInPictureController isPictureInPictureSupported]) {
             _pipController = [[AVPictureInPictureController alloc] initWithPlayerLayer:self._playerLayer];
             _pipController.delegate = self;
+            // _pipController.canStartPictureInPictureAutomaticallyFromInline = true;
         }
     } else {
         // Fallback on earlier versions

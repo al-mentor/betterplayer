@@ -1036,6 +1036,10 @@ class BetterPlayerController {
       if (appLifecycleState == AppLifecycleState.paused) {
         _wasPlayingBeforePause ??= isPlaying();
         pause();
+        // if (betterPlayerGlobalKey != null) {
+        //   print("IN ENABLE MODE");
+        //   enablePictureInPicture(betterPlayerGlobalKey!);
+        // }
       }
     }
   }
@@ -1092,6 +1096,7 @@ class BetterPlayerController {
         return;
       }
       if (Platform.isIOS) {
+        print("In IOS Support");
         final RenderBox? renderBox =
             (betterPlayerGlobalKey.currentContext ?? context)
                 ?.findRenderObject() as RenderBox?;
