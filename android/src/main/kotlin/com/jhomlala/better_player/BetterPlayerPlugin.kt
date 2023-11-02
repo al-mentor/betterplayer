@@ -31,7 +31,8 @@ import java.util.HashMap
  * Android platform implementation of the VideoPlayerPlugin.
  */
 class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
-    private val videoPlayers = LongSparseArray<BetterPlayer>()
+    private val textureId: Long? = null;
+    private val videoPlayer: BetterPlayer? = null;
     private val dataSources = LongSparseArray<Map<String, Any?>>()
     private var flutterState: FlutterState? = null
     private var currentNotificationTextureId: Long = -1
@@ -87,10 +88,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun disposeAllPlayers() {
-        for (i in 0 until videoPlayers.size()) {
-            videoPlayers.valueAt(i).dispose()
-        }
-        videoPlayers.clear()
+        videoPlayer.dispose()
         dataSources.clear()
     }
 
@@ -122,18 +120,19 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     flutterState?.applicationContext!!, eventChannel, handle,
                     customDefaultLoadControl, result
                 )
-                videoPlayers.put(handle.id(), player)
+                textureId = handle.id()
+                videoPlayer = player
             }
             PRE_CACHE_METHOD -> preCache(call, result)
             STOP_PRE_CACHE_METHOD -> stopPreCache(call, result)
             CLEAR_CACHE_METHOD -> clearCache(result)
             else -> {
                 val textureId = (call.argument<Any>(TEXTURE_ID_PARAMETER) as Number?)!!.toLong()
-                val player = videoPlayers[textureId]
+                val player = videoPlayer
                 if (player == null) {
                     result.error(
-                        "Unknown textureId",
-                        "No video player associated with texture id $textureId",
+                        "No player",
+                        "No video player associated",
                         null
                     )
                     return
@@ -237,7 +236,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         player: BetterPlayer
     ) {
         val dataSource = call.argument<Map<String, Any?>>(DATA_SOURCE_PARAMETER)!!
-        dataSources.put(getTextureId(player)!!, dataSource)
+        dataSources.put(textureId!!, dataSource)
         val key = getParameter(dataSource, KEY_PARAMETER, "")
         val headers: Map<String, String> = getParameter(dataSource, HEADERS_PARAMETER, HashMap())
         val overriddenDuration: Number = getParameter(dataSource, OVERRIDDEN_DURATION_PARAMETER, 0)
@@ -350,18 +349,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         BetterPlayer.clearCache(flutterState?.applicationContext, result)
     }
 
-    private fun getTextureId(betterPlayer: BetterPlayer): Long? {
-        for (index in 0 until videoPlayers.size()) {
-            if (betterPlayer === videoPlayers.valueAt(index)) {
-                return videoPlayers.keyAt(index)
-            }
-        }
-        return null
-    }
-
     private fun setupNotification(betterPlayer: BetterPlayer) {
         try {
-            val textureId = getTextureId(betterPlayer)
             if (textureId != null) {
                 val dataSource = dataSources[textureId]
                 //Don't setup notification for the same source.
@@ -392,9 +381,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun removeOtherNotificationListeners() {
-        for (index in 0 until videoPlayers.size()) {
-            videoPlayers.valueAt(index).disposeRemoteNotifications()
-        }
+        videoPlayer.disposeRemoteNotifications()
     }
     @Suppress("UNCHECKED_CAST")
     private fun <T> getParameter(parameters: Map<String, Any?>?, key: String, defaultValue: T): T {
@@ -453,7 +440,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
     private fun dispose(player: BetterPlayer, textureId: Long) {
         player.dispose()
-        videoPlayers.remove(textureId)
+        textureId = null
+        videoPlayer = null
         dataSources.remove(textureId)
         stopPipHandler()
     }
