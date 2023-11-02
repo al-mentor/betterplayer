@@ -31,7 +31,7 @@ import java.util.HashMap
  * Android platform implementation of the VideoPlayerPlugin.
  */
 class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
-    private var textureId: Long? = null;
+    private var textureId: Long = -1;
     private var videoPlayer: BetterPlayer? = null;
     private val dataSources = LongSparseArray<Map<String, Any?>>()
     private var flutterState: FlutterState? = null
