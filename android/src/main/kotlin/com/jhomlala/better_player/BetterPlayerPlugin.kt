@@ -99,7 +99,6 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         when (call.method) {
             INIT_METHOD -> disposeAllPlayers()
             CREATE_METHOD -> {
-                disposeAllPlayers()
                 val handle = flutterState!!.textureRegistry!!.createSurfaceTexture()
                 val eventChannel = EventChannel(
                     flutterState?.binaryMessenger, EVENTS_CHANNEL + handle.id()
@@ -134,7 +133,6 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                         "No video player associated with texture id $textureId",
                         null
                     )
-                    disposeAllPlayers()
                     return
                 }
                 onMethodCall(call, result, textureId, player)
