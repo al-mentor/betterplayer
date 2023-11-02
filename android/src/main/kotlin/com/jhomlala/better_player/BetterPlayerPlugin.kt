@@ -81,11 +81,14 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {}
 
-    override fun onDetachedFromActivity() {}
+    override fun onDetachedFromActivity() {
+        disposeAllPlayers()
+        releaseCache()
+    }
 
     private fun disposeAllPlayers() {
-        for (i in 0 until videoPlayers.size()) {
-            videoPlayers.valueAt(i).dispose()
+        for (videoPlayer in videoPlayers) {
+            videoPlayer.dispose();
         }
         videoPlayers.clear()
         dataSources.clear()
