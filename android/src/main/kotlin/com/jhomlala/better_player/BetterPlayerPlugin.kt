@@ -87,8 +87,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun disposeAllPlayers() {
-        for (videoPlayer in videoPlayers) {
-            videoPlayer.dispose();
+        for (i in 0 until videoPlayers.size()) {
+            videoPlayers.valueAt(i).dispose()
         }
         videoPlayers.clear()
         dataSources.clear()
