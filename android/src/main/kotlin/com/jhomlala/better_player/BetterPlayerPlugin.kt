@@ -134,7 +134,6 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                         "No video player associated with texture id $textureId",
                         null
                     )
-                    disposeAllPlayers()
                     return
                 }
                 onMethodCall(call, result, textureId, player)
