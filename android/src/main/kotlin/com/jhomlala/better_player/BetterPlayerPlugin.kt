@@ -350,34 +350,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun setupNotification(betterPlayer: BetterPlayer) {
-        try {
-            if (textureId != null) {
-                val dataSource = dataSources[textureId]
-                //Don't setup notification for the same source.
-                if (textureId == currentNotificationTextureId && currentNotificationDataSource != null && dataSource != null && currentNotificationDataSource === dataSource) {
-                    return
-                }
-                currentNotificationDataSource = dataSource
-                currentNotificationTextureId = textureId ?? -1
-                removeOtherNotificationListeners()
-                val showNotification = getParameter(dataSource, SHOW_NOTIFICATION_PARAMETER, false)
-                if (showNotification) {
-                    val title = getParameter(dataSource, TITLE_PARAMETER, "")
-                    val author = getParameter(dataSource, AUTHOR_PARAMETER, "")
-                    val imageUrl = getParameter(dataSource, IMAGE_URL_PARAMETER, "")
-                    val notificationChannelName =
-                        getParameter<String?>(dataSource, NOTIFICATION_CHANNEL_NAME_PARAMETER, null)
-                    val activityName =
-                        getParameter(dataSource, ACTIVITY_NAME_PARAMETER, "MainActivity")
-                    betterPlayer.setupPlayerNotification(
-                        flutterState?.applicationContext!!,
-                        title, author, imageUrl, notificationChannelName, activityName
-                    )
-                }
-            }
-        } catch (exception: Exception) {
-            Log.e(TAG, "SetupNotification failed", exception)
-        }
+        return
     }
 
     private fun removeOtherNotificationListeners() {
@@ -438,9 +411,9 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         }
     }
 
-    private fun dispose(player: BetterPlayer, textureId: Long) {
+    private fun dispose(player: BetterPlayer, textureIdArg: Long) {
         player.dispose()
-        textureId = null
+        textureId = -1
         videoPlayer = null
         dataSources.remove(textureId)
         stopPipHandler()
