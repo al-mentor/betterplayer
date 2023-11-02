@@ -88,7 +88,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun disposeAllPlayers() {
-        videoPlayer.dispose()
+        videoPlayer?.dispose()
         dataSources.clear()
     }
 
@@ -358,7 +358,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     return
                 }
                 currentNotificationDataSource = dataSource
-                currentNotificationTextureId = textureId
+                currentNotificationTextureId = textureId ?? -1
                 removeOtherNotificationListeners()
                 val showNotification = getParameter(dataSource, SHOW_NOTIFICATION_PARAMETER, false)
                 if (showNotification) {
@@ -381,7 +381,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun removeOtherNotificationListeners() {
-        videoPlayer.disposeRemoteNotifications()
+        videoPlayer?.disposeRemoteNotifications()
     }
     @Suppress("UNCHECKED_CAST")
     private fun <T> getParameter(parameters: Map<String, Any?>?, key: String, defaultValue: T): T {
