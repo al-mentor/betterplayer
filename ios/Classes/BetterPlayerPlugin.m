@@ -346,7 +346,7 @@ bool _remoteCommandsInitialized = false;
             result(nil);
         } else if ([@"dispose" isEqualToString:call.method]) {
             [player clear];
-            [self disposeNotificationData:player];
+            //[self disposeNotificationData:player];
             [self setRemoteCommandsNotificationNotActive];
             [_players removeObjectForKey:@(textureId)];
             // If the Flutter contains https://github.com/flutter/engine/pull/12695,
