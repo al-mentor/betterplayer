@@ -225,6 +225,9 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 dispose(player, textureId)
                 result.success(null)
             }
+            'cancel' -> {
+                result.success(null)
+            }
             else -> result.notImplemented()
         }
     }
