@@ -9,7 +9,7 @@
 @interface BetterPlayerEzDrmAssetsLoaderDelegate : NSObject
 
 @property(readonly, nonatomic) NSURL* certificateURL;
-@property(readonly, nonatomic) NSURL* licenseURL;
+@property(readonly, nonatomic) NSURL* key_request_url;
 - (instancetype)init:(NSURL *)certificateURL withLicenseURL:(NSURL *)licenseURL;
 
 @end
