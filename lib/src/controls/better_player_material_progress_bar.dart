@@ -33,12 +33,6 @@ class BetterPlayerMaterialVideoProgressBar extends StatefulWidget {
 
 class _VideoProgressBarState
     extends State<BetterPlayerMaterialVideoProgressBar> {
-  _VideoProgressBarState() {
-    listener = () {
-      if (mounted) setState(() {});
-    };
-  }
-
   late VoidCallback listener;
   bool _controllerWasPlaying = false;
 
@@ -54,7 +48,12 @@ class _VideoProgressBarState
   @override
   void initState() {
     super.initState();
-    controller!.addListener(listener);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      listener = () {
+        if (mounted) setState(() {});
+      };
+      controller!.addListener(listener);
+    });
   }
 
   @override
@@ -122,9 +121,9 @@ class _VideoProgressBarState
       },
       child: Center(
         child: Container(
-          height: MediaQuery.of(context).size.height / 2,
+          height: MediaQuery.of(context).size.height / 32,
           width: MediaQuery.of(context).size.width,
-          color: Colors.transparent,
+          //color: Colors.red,
           child: CustomPaint(
             painter: _ProgressBarPainter(
               _getValue(),

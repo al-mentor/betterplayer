@@ -40,35 +40,36 @@ class _BetterPlayerSubtitlesDrawerState
 
   @override
   void initState() {
-    _visibilityStreamSubscription =
-        widget.playerVisibilityStream.listen((state) {
-      setState(() {
-        _playerVisible = state;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _visibilityStreamSubscription =
+          widget.playerVisibilityStream.listen((state) {
+        setState(() {
+          _playerVisible = state;
+        });
       });
+
+      if (widget.betterPlayerSubtitlesConfiguration != null) {
+        _configuration = widget.betterPlayerSubtitlesConfiguration;
+      } else {
+        _configuration = setupDefaultConfiguration();
+      }
+
+      widget.betterPlayerController.videoPlayerController!
+          .addListener(_updateState);
+
+      _outerTextStyle = TextStyle(
+          fontSize: _configuration!.fontSize,
+          fontFamily: _configuration!.fontFamily,
+          foreground: Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = _configuration!.outlineSize
+            ..color = _configuration!.outlineColor);
+
+      _innerTextStyle = TextStyle(
+          fontFamily: _configuration!.fontFamily,
+          color: _configuration!.fontColor,
+          fontSize: _configuration!.fontSize);
     });
-
-    if (widget.betterPlayerSubtitlesConfiguration != null) {
-      _configuration = widget.betterPlayerSubtitlesConfiguration;
-    } else {
-      _configuration = setupDefaultConfiguration();
-    }
-
-    widget.betterPlayerController.videoPlayerController!
-        .addListener(_updateState);
-
-    _outerTextStyle = TextStyle(
-        fontSize: _configuration!.fontSize,
-        fontFamily: _configuration!.fontFamily,
-        foreground: Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = _configuration!.outlineSize
-          ..color = _configuration!.outlineColor);
-
-    _innerTextStyle = TextStyle(
-        fontFamily: _configuration!.fontFamily,
-        color: _configuration!.fontColor,
-        fontSize: _configuration!.fontSize);
-
     super.initState();
   }
 
@@ -104,10 +105,10 @@ class _BetterPlayerSubtitlesDrawerState
       child: Padding(
         padding: EdgeInsets.only(
             bottom: _playerVisible
-                ? _configuration!.bottomPadding + 30
-                : _configuration!.bottomPadding,
-            left: _configuration!.leftPadding,
-            right: _configuration!.rightPadding),
+                ? (_configuration?.bottomPadding ?? 20.0) + 30
+                : (_configuration?.bottomPadding ?? 20),
+            left: _configuration?.leftPadding ?? 8,
+            right: _configuration?.rightPadding ?? 8),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: textWidgets,

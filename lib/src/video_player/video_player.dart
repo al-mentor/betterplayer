@@ -455,7 +455,6 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     await _videoPlayerPlatform.setLooping(_textureId, value.isLooping);
   }
 
-
   Future<void> _applyPlayPause() async {
     if (!_created || _isDisposed) {
       return;
@@ -653,17 +652,6 @@ class VideoPlayer extends StatefulWidget {
 }
 
 class _VideoPlayerState extends State<VideoPlayer> {
-  _VideoPlayerState() {
-    _listener = () {
-      final int? newTextureId = widget.controller!.textureId;
-      if (newTextureId != _textureId) {
-        setState(() {
-          _textureId = newTextureId;
-        });
-      }
-    };
-  }
-
   late VoidCallback _listener;
   int? _textureId;
 
@@ -671,9 +659,19 @@ class _VideoPlayerState extends State<VideoPlayer> {
   void initState() {
     super.initState();
     _textureId = widget.controller!.textureId;
-    // Need to listen for initialization events since the actual texture ID
-    // becomes available after asynchronous initialization finishes.
-    widget.controller!.addListener(_listener);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _listener = () {
+        final int? newTextureId = widget.controller!.textureId;
+        if (newTextureId != _textureId) {
+          setState(() {
+            _textureId = newTextureId;
+          });
+        }
+      };
+      // Need to listen for initialization events since the actual texture ID
+      // becomes available after asynchronous initialization finishes.
+      widget.controller!.addListener(_listener);
+    });
   }
 
   @override
@@ -851,15 +849,6 @@ class VideoProgressIndicator extends StatefulWidget {
 }
 
 class _VideoProgressIndicatorState extends State<VideoProgressIndicator> {
-  _VideoProgressIndicatorState() {
-    listener = () {
-      if (!mounted) {
-        return;
-      }
-      setState(() {});
-    };
-  }
-
   late VoidCallback listener;
 
   VideoPlayerController get controller => widget.controller;
@@ -869,7 +858,15 @@ class _VideoProgressIndicatorState extends State<VideoProgressIndicator> {
   @override
   void initState() {
     super.initState();
-    controller.addListener(listener);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      listener = () {
+        if (!mounted) {
+          return;
+        }
+        setState(() {});
+      };
+      controller.addListener(listener);
+    });
   }
 
   @override

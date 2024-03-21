@@ -58,6 +58,8 @@ class _BetterPlayerMaterialControlsState
   BetterPlayerControlsConfiguration get betterPlayerControlsConfiguration =>
       _controlsConfiguration;
 
+  // bool get isFullScreen =>
+  //     MediaQuery.of(context).orientation == Orientation.landscape;
   @override
   Widget build(BuildContext context) {
     return buildLTRDirectionality(_buildMainWidget());
@@ -138,16 +140,18 @@ class _BetterPlayerMaterialControlsState
 
   @override
   void didChangeDependencies() {
-    final _oldController = _betterPlayerController;
-    _betterPlayerController = BetterPlayerController.of(context);
-    _controller = _betterPlayerController!.videoPlayerController;
-    _latestValue = _controller!.value;
+      final _oldController = _betterPlayerController;
+      _betterPlayerController = BetterPlayerController.of(context);
+      _controller = _betterPlayerController!.videoPlayerController;
+      _latestValue = _controller!.value;
 
-    if (_oldController != _betterPlayerController) {
-      _dispose();
-      _initialize();
-    }
-
+      if (_oldController != _betterPlayerController) {
+        _dispose();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initialize();
+        });
+      }
+  
     super.didChangeDependencies();
   }
 
@@ -194,15 +198,17 @@ class _BetterPlayerMaterialControlsState
     if (!betterPlayerController!.controlsEnabled) {
       return const SizedBox();
     }
-
-    return Container(
+    // final isFullScreen =
+    //     MediaQuery.of(context).orientation == Orientation.landscape;
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
       child: (_controlsConfiguration.enableOverflowMenu)
           ? AnimatedOpacity(
               opacity: controlsNotVisible ? 0.0 : 1.0,
               duration: _controlsConfiguration.controlsHideTime,
               onEnd: _onPlayerHide,
               child: Container(
-                height: _controlsConfiguration.controlBarHeight,
+                height: _controlsConfiguration.topBarHeight,
                 width: double.infinity,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -212,7 +218,20 @@ class _BetterPlayerMaterialControlsState
                           controlsNotVisible, _onPlayerHide)
                     else
                       const SizedBox(),
-                    _buildMoreButton(),
+                    if (_controlsConfiguration.topBarEndWidget != null) ...[
+                      Spacer(),
+                      _controlsConfiguration.topBarEndWidget!
+                    ],
+                    if (_controlsConfiguration.topBarCenterWidget != null) ...[
+                      Spacer(),
+                      _controlsConfiguration.topBarCenterWidget!
+                    ],
+                    if (betterPlayerController!.isFullScreen &&
+                        _controlsConfiguration
+                            .disableBuildMoreWidgetWhenFullScreen)
+                      const SizedBox.shrink()
+                    else
+                      _buildMoreButton(),
                   ],
                 ),
               ),
@@ -267,16 +286,22 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildMoreButton() {
-    return BetterPlayerMaterialClickableWidget(
-      onTap: () {
-        onShowMoreClicked();
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Icon(
-          _controlsConfiguration.overflowMenuIcon,
-          color: _controlsConfiguration.iconsColor,
-        ),
+    return Padding(
+      padding: _controlsConfiguration.overflowMenuPadding ??
+          const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          BetterPlayerMaterialClickableWidget(
+            onTap: () {
+              onShowMoreClicked();
+            },
+            child: _controlsConfiguration.overflowMenuWidget ??
+                Icon(
+                  _controlsConfiguration.overflowMenuIcon,
+                  color: _controlsConfiguration.iconsColor,
+                ),
+          ),
+        ],
       ),
     );
   }
@@ -292,7 +317,8 @@ class _BetterPlayerMaterialControlsState
       duration: _controlsConfiguration.controlsHideTime,
       onEnd: _onPlayerHide,
       child: Container(
-        height: _controlsConfiguration.controlBarHeight + 20.0,
+        height: _controlsConfiguration.bottomBarHeight,
+        // height: _controlsConfiguration.controlBarHeight + 20.0,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
@@ -334,11 +360,13 @@ class _BetterPlayerMaterialControlsState
               ),
             if (_controlsConfiguration.fullScreenControlsBuilder != null &&
                 isFullScreen &&
-                !_betterPlayerController!.isPIPStart)
+                !_betterPlayerController!.isPIPStart) ...[
               Expanded(
                 child: _controlsConfiguration.fullScreenControlsBuilder!
                     .call(context),
               ),
+              // SizedBox(height: MediaQuery.of(context).padding.bottom),
+            ]
           ],
         ),
       ),
@@ -356,24 +384,26 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildExpandButton() {
     return Padding(
-      padding: EdgeInsets.only(right: 12.0),
+      padding: _controlsConfiguration.fullScreenIconPadding ??
+          EdgeInsets.only(right: 12.0),
       child: BetterPlayerMaterialClickableWidget(
         onTap: _onExpandCollapse,
         child: AnimatedOpacity(
           opacity: controlsNotVisible ? 0.0 : 1.0,
           duration: _controlsConfiguration.controlsHideTime,
-          child: Container(
-            height: _controlsConfiguration.controlBarHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Center(
-              child: Icon(
-                _betterPlayerController!.isFullScreen
-                    ? _controlsConfiguration.fullscreenDisableIcon
-                    : _controlsConfiguration.fullscreenEnableIcon,
-                color: _controlsConfiguration.iconsColor,
+          child: _controlsConfiguration.fullScreenIconWidget ??
+              Container(
+                height: _controlsConfiguration.controlBarHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Center(
+                  child: Icon(
+                    _betterPlayerController!.isFullScreen
+                        ? _controlsConfiguration.fullscreenDisableIcon
+                        : _controlsConfiguration.fullscreenEnableIcon,
+                    color: _controlsConfiguration.iconsColor,
+                  ),
+                ),
               ),
-            ),
-          ),
         ),
       ),
     );
@@ -434,22 +464,24 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildSkipButton() {
     return _buildHitAreaClickableButton(
-      icon: Icon(
-        _controlsConfiguration.skipBackIcon,
-        size: 36,
-        color: _controlsConfiguration.iconsColor,
-      ),
+      icon: _controlsConfiguration.skipBackIconWidget ??
+          Icon(
+            _controlsConfiguration.skipBackIcon,
+            size: 36,
+            color: _controlsConfiguration.iconsColor,
+          ),
       onClicked: skipBack,
     );
   }
 
   Widget _buildForwardButton() {
     return _buildHitAreaClickableButton(
-      icon: Icon(
-        _controlsConfiguration.skipForwardIcon,
-        size: 36,
-        color: _controlsConfiguration.iconsColor,
-      ),
+      icon: _controlsConfiguration.skipForwardIconWidget ??
+          Icon(
+            _controlsConfiguration.skipForwardIcon,
+            size: 36,
+            color: _controlsConfiguration.iconsColor,
+          ),
       onClicked: skipForward,
     );
   }
@@ -664,12 +696,12 @@ class _BetterPlayerMaterialControlsState
   void _onExpandCollapse() {
     changePlayerControlsNotVisible(true);
     _betterPlayerController!.toggleFullScreen();
-    _showAfterExpandCollapseTimer =
-        Timer(_controlsConfiguration.controlsHideTime, () {
-      setState(() {
-        cancelAndRestartTimer();
-      });
-    });
+    // _showAfterExpandCollapseTimer =
+    //     Timer(_controlsConfiguration.controlsHideTime, () {
+    //   //  setState(() {
+    //   cancelAndRestartTimer();
+    //   // });
+    // });
   }
 
   void _onPlayPause() {

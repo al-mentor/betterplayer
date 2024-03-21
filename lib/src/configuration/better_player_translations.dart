@@ -13,6 +13,8 @@ class BetterPlayerTranslations {
   final String overflowMenuQuality;
   final String overflowMenuAudioTracks;
   final String qualityAuto;
+   String qualityAutoValue;
+
   final String properites;
   final String speed;
   final String? hdQuality;
@@ -34,11 +36,12 @@ class BetterPlayerTranslations {
     this.playlistLoadingNextVideo = "Loading next video",
     this.controlsLive = "LIVE",
     this.controlsNextVideoIn = "Next video in",
-    this.overflowMenuPlaybackSpeed = "Playback speed",
+    this.overflowMenuPlaybackSpeed = "Speed",
     this.overflowMenuSubtitles = "Subtitles",
     this.overflowMenuQuality = "Quality",
     this.overflowMenuAudioTracks = "Audio",
     this.qualityAuto = "Auto",
+    this.qualityAutoValue = "",
     this.properites = "Properties",
     this.speed = "Speed",
     this.hdQuality = "HD",
@@ -106,7 +109,7 @@ class BetterPlayerTranslations {
       playlistLoadingNextVideo: "تحميل الفيديو التالي",
       controlsLive: "مباشر",
       controlsNextVideoIn: "الفيديو التالي في",
-      overflowMenuPlaybackSpeed: "سرعة التشغيل",
+      overflowMenuPlaybackSpeed: "السرعة",
       overflowMenuSubtitles: "الترجمة",
       overflowMenuQuality: "الجودة",
       overflowMenuAudioTracks: "الصوت",
@@ -120,7 +123,9 @@ class BetterPlayerTranslations {
       lowQualityDesc: 'موفر البيانات',
       fullHdQualityDesc: 'تصل الي 1080p',
       hdQualityDesc: 'تصل الي 720p',
-      upToDesc: 'تصل الي'
+      upToDesc: 'تصل الي',
+      qualityAutoValue : "",
+
   );
 
   factory BetterPlayerTranslations.turkish() => BetterPlayerTranslations(

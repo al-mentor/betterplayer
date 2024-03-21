@@ -99,6 +99,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         when (call.method) {
             INIT_METHOD -> disposeAllPlayers()
             CREATE_METHOD -> {
+                disposeAllPlayers()
                 val handle = flutterState!!.textureRegistry!!.createSurfaceTexture()
                 val eventChannel = EventChannel(
                     flutterState?.binaryMessenger, EVENTS_CHANNEL + handle.id()
@@ -187,6 +188,10 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     call.argument(HEIGHT_PARAMETER)!!,
                     call.argument(BITRATE_PARAMETER)!!
                 )
+                result.success(null)
+            }
+            READY_PICTURE_IN_PICTURE_METHOD -> {
+                readyPictureInPicture(player)
                 result.success(null)
             }
             ENABLE_PICTURE_IN_PICTURE_METHOD -> {
@@ -406,10 +411,16 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             .hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
     }
 
+    private fun readyPictureInPicture(player: BetterPlayer) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            //activity!!.setPictureInPictureParams(PictureInPictureParams.Builder().setActions(listOf()).build())
+        }
+    }
+
     private fun enablePictureInPicture(player: BetterPlayer) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             player.setupMediaSession(flutterState!!.applicationContext)
-            activity!!.enterPictureInPictureMode(PictureInPictureParams.Builder().build())
+            activity!!.enterPictureInPictureMode()
             startPictureInPictureListenerTimer(player)
             player.onPictureInPictureStatusChanged(true)
         }
@@ -537,6 +548,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val SET_SPEED_METHOD = "setSpeed"
         private const val SET_TRACK_PARAMETERS_METHOD = "setTrackParameters"
         private const val SET_AUDIO_TRACK_METHOD = "setAudioTrack"
+        private const val READY_PICTURE_IN_PICTURE_METHOD = "readyPictureInPicture"
         private const val ENABLE_PICTURE_IN_PICTURE_METHOD = "enablePictureInPicture"
         private const val DISABLE_PICTURE_IN_PICTURE_METHOD = "disablePictureInPicture"
         private const val IS_PICTURE_IN_PICTURE_SUPPORTED_METHOD = "isPictureInPictureSupported"

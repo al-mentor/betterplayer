@@ -7,6 +7,8 @@ import 'package:better_player/src/core/better_player_utils.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../core/better_player_item_clicked_interface.dart';
+import 'dart:io' show Platform;
 
 ///Base class for both material and cupertino controls
 abstract class BetterPlayerControlsState<T extends StatefulWidget>
@@ -168,10 +170,10 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     void Function() onTap, {
     String? selectedValue,
   }) {
-    return BetterPlayerMaterialClickableWidget(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      child: BetterPlayerMaterialClickableWidget(
+        onTap: onTap,
         child: Row(
           children: [
             const SizedBox(width: 8),
@@ -382,11 +384,13 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
   ///Resolution selection is used for normal videos
   void _showQualitiesSelectionWidget() {
     final orientation = MediaQuery.of(context).orientation;
+
     // HLS / DASH
     final List<String> asmsTrackNames =
         betterPlayerController!.betterPlayerDataSource!.asmsTrackNames ?? [];
-    final List<BetterPlayerAsmsTrack> asmsTracks =
-        betterPlayerController!.betterPlayerAsmsTracks;
+    final List<BetterPlayerAsmsTrack> asmsTracks = Platform.isAndroid
+        ? betterPlayerController!.betterPlayerAsmsTracks
+        : betterPlayerController!.betterPlayerAsmsTracks.reversed.toList();
 
     final List<Widget> children = [];
     children.add(Padding(
@@ -429,10 +433,17 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
         ],
       ),
     ));
-    final autoTrack = _buildTrackRow(
-      BetterPlayerAsmsTrack.defaultTrack(),
-      betterPlayerController!.translations.qualityAuto,
-    );
+
+    if (Platform.isIOS) {
+      for (var i = 0; i < asmsTracks.length; i++) {
+        if (asmsTracks[i].height == 0) {
+          asmsTracks.removeAt(i);
+        }
+      }
+    }
+
+    final autoTrack = _buildTrackRow(BetterPlayerAsmsTrack.defaultTrack(),
+        betterPlayerController!.translations.qualityAuto, asmsTracks);
 
     if (orientation == Orientation.landscape) {
       children.add(_buildDivider(
@@ -443,24 +454,24 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
         color: Colors.grey.withOpacity(0.3),
       ));
     }
-
     if (autoTrack != null) {
       children.add(autoTrack);
       if (orientation == Orientation.portrait) {
         children.add(_buildDivider(true));
       }
     }
+
     for (var index = 0; index < asmsTracks.length; index++) {
       final track = asmsTracks[index];
-      String? preferredName;
+      String preferredName = "";
       if (track.height == 0 && track.width == 0 && track.bitrate == 0) {
         preferredName = betterPlayerController!.translations.qualityAuto;
       } else {
         preferredName =
-            asmsTrackNames.length > index ? asmsTrackNames[index] : null;
+            asmsTrackNames.length > index ? asmsTrackNames[index] : "";
       }
 
-      var data = _buildTrackRow(asmsTracks[index], preferredName);
+      var data = _buildTrackRow(asmsTracks[index], preferredName, asmsTracks);
 
       if (data != null) {
         children.add(data);
@@ -483,7 +494,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
 
     if (children.isEmpty) {
       var data = _buildTrackRow(BetterPlayerAsmsTrack.defaultTrack(),
-          betterPlayerController!.translations.qualityAuto);
+          betterPlayerController!.translations.qualityAuto, asmsTracks);
       if (data != null)
         children.add(
           data,
@@ -493,27 +504,24 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     _showModalBottomSheet(children);
   }
 
-  Widget? _buildTrackRow(BetterPlayerAsmsTrack track, String? preferredName) {
+  Widget? _buildTrackRow(BetterPlayerAsmsTrack track, String preferredName,
+      List<BetterPlayerAsmsTrack> asmsTracks) {
     final orientation = MediaQuery.of(context).orientation;
     final int width = track.width ?? 0;
     final int height = track.height ?? 0;
     final int bitrate = track.bitrate ?? 0;
     final String mimeType = (track.mimeType ?? '').replaceAll('video/', '');
-    String trackName = preferredName ??
-        "${width}x$height ${BetterPlayerUtils.formatBitrate(bitrate)} $mimeType";
+    String trackName = preferredName;
+    // String trackName = preferredName ??
+    //     "${width}x$height ${BetterPlayerUtils.formatBitrate(bitrate)} $mimeType";
     String? trackDesc;
-    // if (height == 360) {
-    //   trackName = betterPlayerController!.translations.hdQuality!;
-    //   trackDesc = betterPlayerController!.translations.hdQualityDesc!;
-    // } else if (height == 180) {
-    //   trackName = betterPlayerController!.translations.lowQuality!;
-    //   trackDesc = betterPlayerController!.translations.lowQualityDesc!;
-    // } else if (height == 720) {
-    //   trackName = betterPlayerController!.translations.fullHdQuality!;
-    //   trackDesc = betterPlayerController!.translations.fullHdQualityDesc!;
-    // } else
-    if (track.id == '') {
-      trackName = preferredName!;
+    if (track.height == 0) {
+      track.height = checkQuality(asmsTracks);
+      if (track.height != 0)
+        trackName = preferredName + " ( " + track.height.toString() + " )";
+      else
+        trackName = preferredName;
+
       trackDesc = betterPlayerController!.translations.autoQualityDesc!;
     } else {
       if (height == 1080) {
@@ -697,36 +705,36 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
     _showMaterialBottomSheet(children);
   }
 
-  void _showCupertinoModalBottomSheet(List<Widget> children) {
-    showCupertinoModalPopup<void>(
-      barrierColor: Colors.transparent,
-      context: context,
-      useRootNavigator:
-          betterPlayerController?.betterPlayerConfiguration.useRootNavigator ??
-              false,
-      builder: (context) {
-        return SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              decoration: BoxDecoration(
-                color: betterPlayerControlsConfiguration.overflowModalColor,
-                /*shape: RoundedRectangleBorder(side: Bor,borderRadius: 24,)*/
-                borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(10.0),
-                    topRight: Radius.circular(10.0)),
-              ),
-              child: Column(
-                children: children,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // void _showCupertinoModalBottomSheet(List<Widget> children) {
+  //   showCupertinoModalPopup<void>(
+  //     barrierColor: Colors.transparent,
+  //     context: context,
+  //     useRootNavigator:
+  //         betterPlayerController?.betterPlayerConfiguration.useRootNavigator ??
+  //             false,
+  //     builder: (context) {
+  //       return SafeArea(
+  //         top: false,
+  //         child: SingleChildScrollView(
+  //           physics: const BouncingScrollPhysics(),
+  //           child: Container(
+  //             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+  //             decoration: BoxDecoration(
+  //               color: betterPlayerControlsConfiguration.overflowModalColor,
+  //               /*shape: RoundedRectangleBorder(side: Bor,borderRadius: 24,)*/
+  //               borderRadius: const BorderRadius.only(
+  //                   topLeft: Radius.circular(10.0),
+  //                   topRight: Radius.circular(10.0)),
+  //             ),
+  //             child: Column(
+  //               children: children,
+  //             ),
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   void _showMaterialBottomSheet(List<Widget> children) {
     final size = MediaQuery.of(context).size;
@@ -790,6 +798,48 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       controlsNotVisible = notVisible;
     });
   }
-}
 
-//
+  int checkQuality(List<BetterPlayerAsmsTrack> asmsTracks) {
+    double? internetSpeed =
+        betterPlayerController!.betterPlayerControlsConfiguration.internetSpeed;
+    //  double? internetSpeed = 23;
+
+    QualityValues speeds = QualityValues();
+    for (var i = 0;
+        i < betterPlayerController!.betterPlayerAsmsTracks.length;
+        i++) {
+      final track = betterPlayerController!.betterPlayerAsmsTracks[i];
+      int? height = track.height;
+      if (height != null) {
+        if (height == 1080) speeds.avalivle1080 = true;
+        if (height == 720) speeds.avalivle720 = true;
+        if (height == 540) speeds.avalivle540 = true;
+        if (height == 360) speeds.avalivle360 = true;
+        if (height == 270) speeds.avalivle270 = true;
+        if (height == 180) speeds.avalivle180 = true;
+      }
+    }
+    int quality = 0;
+    if (internetSpeed != null) if (internetSpeed >= 100 &&
+        speeds.avalivle1080) {
+      quality = 1080;
+    } else if (internetSpeed >= 20 && speeds.avalivle720) {
+      quality = 720;
+    } else if (internetSpeed >= 5 && speeds.avalivle540) {
+      quality = 540;
+    } else if (internetSpeed >= 2.5 && speeds.avalivle360) {
+      quality = 360;
+    } else if (internetSpeed >= 1.1 && speeds.avalivle270) {
+      quality = 270;
+    } else if (internetSpeed < 1.1 && speeds.avalivle180) {
+      quality = 180;
+    }
+    // BetterPlayerTranslations().qualityAutoValue = quality.toString();
+    // BetterPlayerTranslations.arabic().qualityAutoValue = quality.toString();
+
+    print("quality ${quality}");
+    print('internetSpeed ${internetSpeed}');
+
+    return quality;
+  }
+}

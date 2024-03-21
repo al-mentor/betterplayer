@@ -1069,7 +1069,8 @@ class BetterPlayerController {
   ///Enable Picture in Picture (PiP) mode. [betterPlayerGlobalKey] is required
   ///to open PiP mode in iOS. When device is not supported, PiP mode won't be
   ///open.
-  Future<void> enablePictureInPicture(GlobalKey betterPlayerGlobalKey, [BuildContext? context]) async {
+  Future<void> enablePictureInPicture(GlobalKey betterPlayerGlobalKey,
+      [BuildContext? context]) async {
     if (videoPlayerController == null) {
       throw StateError("The data source has not been initialized");
     }
@@ -1091,8 +1092,9 @@ class BetterPlayerController {
         return;
       }
       if (Platform.isIOS) {
-        final RenderBox? renderBox = (betterPlayerGlobalKey.currentContext ?? context)
-            ?.findRenderObject() as RenderBox?;
+        final RenderBox? renderBox =
+            (betterPlayerGlobalKey.currentContext ?? context)
+                ?.findRenderObject() as RenderBox?;
         if (renderBox == null) {
           BetterPlayerUtils.log(
               "Can't show PiP. RenderBox is null. Did you provide valid global"
@@ -1200,13 +1202,18 @@ class BetterPlayerController {
   }
 
   ///Retry data source if playback failed.
-  Future retryDataSource() async {
-    await _setupDataSource(_betterPlayerDataSource!);
-    if (_videoPlayerValueOnError != null) {
-      final position = _videoPlayerValueOnError!.position;
-      await seekTo(position);
-      await play();
-      _videoPlayerValueOnError = null;
+  Future<bool> retryDataSource() async {
+    try {
+      await _setupDataSource(_betterPlayerDataSource!);
+      if (_videoPlayerValueOnError != null) {
+        final position = _videoPlayerValueOnError!.position;
+        await seekTo(position);
+        await play();
+        _videoPlayerValueOnError = null;
+      }
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 

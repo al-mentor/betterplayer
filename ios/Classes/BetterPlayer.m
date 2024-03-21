@@ -526,8 +526,6 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     }
 
     [_player seekToTime:CMTimeMake(location, 1000)
-        toleranceBefore:kCMTimeZero
-         toleranceAfter:kCMTimeZero
       completionHandler:^(BOOL finished){
         if (wasPlaying){
             _player.rate = _playerRate;

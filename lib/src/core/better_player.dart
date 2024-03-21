@@ -67,6 +67,7 @@ class _BetterPlayerState extends State<BetterPlayer>
     WidgetsBinding.instance.addObserver(this);
   }
 
+
   @override
   void didChangeDependencies() {
     if (!_initialized) {
