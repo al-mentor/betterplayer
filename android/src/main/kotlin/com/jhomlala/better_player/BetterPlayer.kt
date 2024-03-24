@@ -55,6 +55,7 @@ import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.drm.DrmSessionManagerProvider
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
+import com.google.android.exoplayer2.offline.DownloadRequest
 import com.google.android.exoplayer2.trackselection.TrackSelectionOverride
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultDataSource
@@ -109,6 +110,46 @@ internal class BetterPlayer(
         workManager = WorkManager.getInstance(context)
         workerObserverMap = HashMap()
         setupVideoPlayer(eventChannel, textureEntry, result)
+    }
+
+
+    private fun preparePlayerOrDownload(
+        context: Context,
+        key: String?,
+        dataSource: String?,
+        formatHint: String?,
+        cacheKey: String?,
+        overriddenDuration: Long,
+        result: MethodChannel.Result
+    ) {
+        val videoFile = File(context.filesDir, key)
+        if (videoFile.exists()) {
+            val fileUriString = videoFile.toURI().toString()
+            val uri = Uri.parse(fileUriString)
+            val dataSourceFactory = DefaultDataSource.Factory(context)
+            val mediaSource =
+                buildMediaSource(uri, dataSourceFactory, formatHint, cacheKey, context)
+            if (overriddenDuration != 0L) {
+                val clippingMediaSource =
+                    ClippingMediaSource(mediaSource, 0, overriddenDuration * 1000)
+                exoPlayer?.setMediaSource(clippingMediaSource)
+            } else {
+                exoPlayer?.setMediaSource(mediaSource)
+            }
+            exoPlayer?.prepare()
+            result.success(null)
+        } else {
+            downloadVideo(context, key, dataSource, result)
+        }
+    }
+
+    private fun downloadVideo(
+        context: Context, key: String?, dataSource: String?, result: MethodChannel.Result
+    ) {
+        val downloadRequest = DownloadRequest.Builder(key ?: "", Uri.parse(dataSource)).build()
+        MyDownloadService.startDownloadService(context, downloadRequest)
+        result.success(null)
+
     }
 
     fun setDataSource(
