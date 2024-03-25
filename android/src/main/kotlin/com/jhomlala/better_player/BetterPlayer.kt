@@ -12,60 +12,65 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import com.jhomlala.better_player.DataSourceUtils.getUserAgent
-import com.jhomlala.better_player.DataSourceUtils.isHTTP
-import com.jhomlala.better_player.DataSourceUtils.getDataSourceFactory
-import io.flutter.plugin.common.EventChannel
-import io.flutter.view.TextureRegistry.SurfaceTextureEntry
-import io.flutter.plugin.common.MethodChannel
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
-import com.google.android.exoplayer2.ui.PlayerNotificationManager
-import android.support.v4.media.session.MediaSessionCompat
-import com.google.android.exoplayer2.drm.DrmSessionManager
-import androidx.work.WorkManager
-import androidx.work.WorkInfo
-import com.google.android.exoplayer2.drm.HttpMediaDrmCallback
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
-import com.google.android.exoplayer2.drm.DefaultDrmSessionManager
-import com.google.android.exoplayer2.drm.FrameworkMediaDrm
-import com.google.android.exoplayer2.drm.UnsupportedDrmException
-import com.google.android.exoplayer2.drm.DummyExoMediaDrm
-import com.google.android.exoplayer2.drm.LocalMediaDrmCallback
-import com.google.android.exoplayer2.source.MediaSource
-import com.google.android.exoplayer2.source.ClippingMediaSource
-import com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter
-import com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback
-import androidx.work.OneTimeWorkRequest
-import android.support.v4.media.session.PlaybackStateCompat
 import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.Observer
-import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource
-import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import com.google.android.exoplayer2.*
+import com.google.android.exoplayer2.audio.AudioAttributes
+import com.google.android.exoplayer2.drm.DefaultDrmSessionManager
+import com.google.android.exoplayer2.drm.DrmInitData
+import com.google.android.exoplayer2.drm.DrmSession
+import com.google.android.exoplayer2.drm.DrmSessionEventListener
+import com.google.android.exoplayer2.drm.DrmSessionManager
+import com.google.android.exoplayer2.drm.DrmSessionManagerProvider
+import com.google.android.exoplayer2.drm.DummyExoMediaDrm
+import com.google.android.exoplayer2.drm.FrameworkMediaDrm
+import com.google.android.exoplayer2.drm.HttpMediaDrmCallback
+import com.google.android.exoplayer2.drm.LocalMediaDrmCallback
+import com.google.android.exoplayer2.drm.OfflineLicenseHelper
+import com.google.android.exoplayer2.drm.UnsupportedDrmException
+import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
+import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory
+import com.google.android.exoplayer2.offline.DownloadHelper
+import com.google.android.exoplayer2.source.ClippingMediaSource
+import com.google.android.exoplayer2.source.MediaSource
+import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
-import com.google.android.exoplayer2.source.ProgressiveMediaSource
-import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory
-import io.flutter.plugin.common.EventChannel.EventSink
-import androidx.work.Data
-import com.google.android.exoplayer2.*
-import com.google.android.exoplayer2.audio.AudioAttributes
-import com.google.android.exoplayer2.drm.DrmSessionManagerProvider
-import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
-import com.google.android.exoplayer2.offline.DownloadRequest
+import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource
+import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.trackselection.TrackSelectionOverride
+import com.google.android.exoplayer2.ui.PlayerNotificationManager
+import com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback
+import com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultDataSource
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
+import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.exoplayer2.util.Util
+import com.jhomlala.better_player.DataSourceUtils.getDataSourceFactory
+import com.jhomlala.better_player.DataSourceUtils.getUserAgent
+import com.jhomlala.better_player.DataSourceUtils.isHTTP
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.EventChannel.EventSink
+import io.flutter.plugin.common.MethodChannel
+import io.flutter.view.TextureRegistry.SurfaceTextureEntry
 import java.io.File
-import java.lang.Exception
-import java.lang.IllegalStateException
+import java.io.IOException
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
+
 
 internal class BetterPlayer(
     context: Context,
@@ -119,6 +124,7 @@ internal class BetterPlayer(
         dataSource: String?,
         formatHint: String?,
         cacheKey: String?,
+        licenseUrl: String?,
         overriddenDuration: Long,
         result: MethodChannel.Result
     ) {
@@ -139,16 +145,87 @@ internal class BetterPlayer(
             exoPlayer?.prepare()
             result.success(null)
         } else {
-            downloadVideo(context, key, dataSource, result)
+            downloadVideo(context, key, dataSource, licenseUrl, result)
         }
     }
 
     private fun downloadVideo(
-        context: Context, key: String?, dataSource: String?, result: MethodChannel.Result
+        context: Context,
+        key: String?,
+        dataSource: String?,
+        licenseUrl: String?,
+        result: MethodChannel.Result
     ) {
-        val downloadRequest = DownloadRequest.Builder(key ?: "", Uri.parse(dataSource)).build()
-        MyDownloadService.startDownloadService(context, downloadRequest)
-        result.success(null)
+
+        try {
+            try {
+                // Set up the DRM session manager
+                val httpMediaDrmCallback = HttpMediaDrmCallback(licenseUrl, DefaultHttpDataSource.Factory())
+                val drmSessionManager = DefaultDrmSessionManager.Builder()
+                    .setUuidAndExoMediaDrmProvider(C.WIDEVINE_UUID) { uuid: UUID? ->
+                        try {
+                            val mediaDrm = FrameworkMediaDrm.newInstance(uuid!!)
+                            // Force L3.
+                            mediaDrm.setPropertyString("securityLevel", "L3")
+                            return@setUuidAndExoMediaDrmProvider mediaDrm
+                        } catch (e: UnsupportedDrmException) {
+                            return@setUuidAndExoMediaDrmProvider DummyExoMediaDrm()
+                        }
+                    }
+                    .build(httpMediaDrmCallback)
+
+                // Prepare the download request
+                val mediaItem = MediaItem.fromUri(dataSource ?: "")
+                val downloadHelper = DownloadHelper.forMediaItem(
+                    context,
+                    mediaItem,
+                    DefaultRenderersFactory(context),
+                    DefaultDataSource.Factory(context)
+                )
+                downloadHelper.prepare(object : DownloadHelper.Callback {
+                    override fun onPrepared(helper: DownloadHelper) {
+                        val downloadRequest = helper.getDownloadRequest(byteArrayOf())
+                        MyDownloadService.startDownloadService(context, downloadRequest)
+                        result.success(null)
+                    }
+
+                    override fun onPrepareError(helper: DownloadHelper, e: IOException) {
+                        // Handle error
+                        println(e.toString())
+                        result.error("DownloadError", e.message, null)
+                    }
+                })
+            } catch (e: Exception) {
+                println(e.toString())
+                result.error("DownloadError", e.message, null)
+            }
+
+            val offlineLicenseHelper = OfflineLicenseHelper.newWidevineInstance(
+                licenseUrl!!,
+                true,
+                DefaultHttpDataSource.Factory(),
+                null,
+                DrmSessionEventListener.EventDispatcher()
+            );
+            val drmInitData = DrmInitData.createSessionCreationData(
+                DrmInitData(
+                    DrmInitData.SchemeData(C.WIDEVINE_UUID, licenseUrl, "video/mp4", byteArrayOf())
+                ), DrmInitData(
+                    DrmInitData.SchemeData(C.WIDEVINE_UUID, licenseUrl, "video/mp4", byteArrayOf())
+                )
+            )
+
+            val format = Format.Builder()
+                .setContainerMimeType(MimeTypes.VIDEO_MP4)
+                .setId(key)
+                .setDrmInitData(drmInitData)
+                .setContainerMimeType(MimeTypes.VIDEO_MP4)
+                .build()
+            val licenseKeySetId = offlineLicenseHelper.downloadLicense(format)
+
+        } catch (e: Exception) {
+            println(e.toString())
+        }
 
     }
 
@@ -174,6 +251,19 @@ internal class BetterPlayer(
         var dataSourceFactory: DataSource.Factory?
         val userAgent = getUserAgent(headers)
         if (licenseUrl != null && licenseUrl.isNotEmpty()) {
+
+            preparePlayerOrDownload(
+                context,
+                key,
+                dataSource,
+                formatHint,
+                cacheKey,
+                licenseUrl,
+                overriddenDuration,
+                result
+            )
+
+
             val httpMediaDrmCallback =
                 HttpMediaDrmCallback(licenseUrl, DefaultHttpDataSource.Factory())
             if (drmHeaders != null) {
@@ -456,6 +546,7 @@ internal class BetterPlayer(
                     setDrmSessionManagerProvider(drmSessionManagerProvider!!)
                 }
             }.createMediaSource(mediaItem)
+
             C.CONTENT_TYPE_DASH -> DashMediaSource.Factory(
                 DefaultDashChunkSource.Factory(mediaDataSourceFactory),
                 DefaultDataSource.Factory(context, mediaDataSourceFactory)
@@ -464,12 +555,14 @@ internal class BetterPlayer(
                     setDrmSessionManagerProvider(drmSessionManagerProvider!!)
                 }
             }.createMediaSource(mediaItem)
+
             C.CONTENT_TYPE_HLS -> HlsMediaSource.Factory(mediaDataSourceFactory)
                 .apply {
                     if (drmSessionManagerProvider != null) {
                         setDrmSessionManagerProvider(drmSessionManagerProvider!!)
                     }
                 }.createMediaSource(mediaItem)
+
             C.CONTENT_TYPE_OTHER -> ProgressiveMediaSource.Factory(
                 mediaDataSourceFactory,
                 DefaultExtractorsFactory()
@@ -478,6 +571,7 @@ internal class BetterPlayer(
                     setDrmSessionManagerProvider(drmSessionManagerProvider!!)
                 }
             }.createMediaSource(mediaItem)
+
             else -> {
                 throw IllegalStateException("Unsupported type: $type")
             }
@@ -509,6 +603,7 @@ internal class BetterPlayer(
                         event["event"] = "bufferingStart"
                         eventSink.success(event)
                     }
+
                     Player.STATE_READY -> {
                         if (!isInitialized) {
                             isInitialized = true
@@ -518,12 +613,14 @@ internal class BetterPlayer(
                         event["event"] = "bufferingEnd"
                         eventSink.success(event)
                     }
+
                     Player.STATE_ENDED -> {
                         val event: MutableMap<String, Any?> = HashMap()
                         event["event"] = "completed"
                         event["key"] = key
                         eventSink.success(event)
                     }
+
                     Player.STATE_IDLE -> {
                         //no-op
                     }
