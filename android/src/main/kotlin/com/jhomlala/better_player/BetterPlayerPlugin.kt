@@ -3,16 +3,25 @@
 // found in the LICENSE file.
 package com.jhomlala.better_player
 
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import android.app.Activity
-import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.LongSparseArray
+import com.blankj.utilcode.util.ActivityUtils
+import com.google.android.exoplayer2.C
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.MediaMetadata
+import com.google.android.exoplayer2.util.MimeTypes
 import com.jhomlala.better_player.BetterPlayerCache.releaseCache
+import com.jhomlala.better_player.common.DownloadUtil
+import com.jhomlala.better_player.common.MediaItemTag
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -43,14 +52,16 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         val loader = FlutterLoader()
         flutterState = FlutterState(
             binding.applicationContext,
-            binding.binaryMessenger, object : KeyForAssetFn {
+            binding.binaryMessenger,
+            object : KeyForAssetFn {
                 override fun get(asset: String?): String {
                     return loader.getLookupKeyForAsset(
                         asset!!
                     )
                 }
 
-            }, object : KeyForAssetAndPackageName {
+            },
+            object : KeyForAssetAndPackageName {
                 override fun get(asset: String?, packageName: String?): String {
                     return loader.getLookupKeyForAsset(
                         asset!!, packageName!!
@@ -105,9 +116,9 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     flutterState?.binaryMessenger, EVENTS_CHANNEL + handle.id()
                 )
                 var customDefaultLoadControl: CustomDefaultLoadControl? = null
-                if (call.hasArgument(MIN_BUFFER_MS) && call.hasArgument(MAX_BUFFER_MS) &&
-                    call.hasArgument(BUFFER_FOR_PLAYBACK_MS) &&
-                    call.hasArgument(BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS)
+                if (call.hasArgument(MIN_BUFFER_MS) && call.hasArgument(MAX_BUFFER_MS) && call.hasArgument(
+                        BUFFER_FOR_PLAYBACK_MS
+                    ) && call.hasArgument(BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS)
                 ) {
                     customDefaultLoadControl = CustomDefaultLoadControl(
                         call.argument(MIN_BUFFER_MS),
@@ -117,11 +128,15 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     )
                 }
                 val player = BetterPlayer(
-                    flutterState?.applicationContext!!, eventChannel, handle,
-                    customDefaultLoadControl, result
+                    flutterState?.applicationContext!!,
+                    eventChannel,
+                    handle,
+                    customDefaultLoadControl,
+                    result
                 )
                 videoPlayers.put(handle.id(), player)
             }
+
             PRE_CACHE_METHOD -> preCache(call, result)
             STOP_PRE_CACHE_METHOD -> stopPreCache(call, result)
             CLEAR_CACHE_METHOD -> clearCache(result)
@@ -142,49 +157,65 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun onMethodCall(
-        call: MethodCall,
-        result: MethodChannel.Result,
-        textureId: Long,
-        player: BetterPlayer
+        call: MethodCall, result: MethodChannel.Result, textureId: Long, player: BetterPlayer
     ) {
         when (call.method) {
             SET_DATA_SOURCE_METHOD -> {
                 setDataSource(call, result, player)
             }
+
             DOWNLOAD_METHOD -> {
                 download(call, result)
             }
+
+            DOWNLOAD_DATA -> {
+                downloadData(call, result)
+            }
+
+
+            DELETE_DOWNLOADED_VIDEO -> {
+                deleteDownloadedVideo(call, result)
+            }
+
+
             SET_LOOPING_METHOD -> {
                 player.setLooping(call.argument(LOOPING_PARAMETER)!!)
                 result.success(null)
             }
+
             SET_VOLUME_METHOD -> {
                 player.setVolume(call.argument(VOLUME_PARAMETER)!!)
                 result.success(null)
             }
+
             PLAY_METHOD -> {
                 setupNotification(player)
                 player.play()
                 result.success(null)
             }
+
             PAUSE_METHOD -> {
                 player.pause()
                 result.success(null)
             }
+
             SEEK_TO_METHOD -> {
                 val location = (call.argument<Any>(LOCATION_PARAMETER) as Number?)!!.toInt()
                 player.seekTo(location)
                 result.success(null)
             }
+
             POSITION_METHOD -> {
                 result.success(player.position)
                 player.sendBufferingUpdate(false)
             }
+
             ABSOLUTE_POSITION_METHOD -> result.success(player.absolutePosition)
             SET_SPEED_METHOD -> {
                 player.setSpeed(call.argument(SPEED_PARAMETER)!!)
                 result.success(null)
             }
+
             SET_TRACK_PARAMETERS_METHOD -> {
                 player.setTrackParameters(
                     call.argument(WIDTH_PARAMETER)!!,
@@ -193,21 +224,26 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 )
                 result.success(null)
             }
+
             READY_PICTURE_IN_PICTURE_METHOD -> {
                 readyPictureInPicture(player)
                 result.success(null)
             }
+
             ENABLE_PICTURE_IN_PICTURE_METHOD -> {
                 enablePictureInPicture(player)
                 result.success(null)
             }
+
             DISABLE_PICTURE_IN_PICTURE_METHOD -> {
                 disablePictureInPicture(player)
                 result.success(null)
             }
+
             IS_PICTURE_IN_PICTURE_SUPPORTED_METHOD -> result.success(
                 isPictureInPictureSupported()
             )
+
             SET_AUDIO_TRACK_METHOD -> {
                 val name = call.argument<String?>(NAME_PARAMETER)
                 val index = call.argument<Int?>(INDEX_PARAMETER)
@@ -216,6 +252,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 }
                 result.success(null)
             }
+
             SET_MIX_WITH_OTHERS_METHOD -> {
                 val mixWitOthers = call.argument<Boolean?>(
                     MIX_WITH_OTHERS_PARAMETER
@@ -224,18 +261,45 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     player.setMixWithOthers(mixWitOthers)
                 }
             }
+
             DISPOSE_METHOD -> {
                 dispose(player, textureId)
                 result.success(null)
             }
+
             else -> result.notImplemented()
         }
     }
 
+    private fun deleteDownloadedVideo(call: MethodCall, result: MethodChannel.Result) {
+        val uri = call.argument<String?>(
+            URI_PARAMETER
+        )
+        DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity())
+            .removeDownload(Uri.parse(uri));
+        result.success(null);
+    }
+
+    private fun downloadData(call: MethodCall, result: MethodChannel.Result) {
+        var data = DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity()).downloads;
+        // array of maps have uri and download state and download id and download percentage and put it in result
+        var downloadData = ArrayList<Map<String, String?>>()
+        for (download in data) {
+            var downloadMap = HashMap<String, String?>()
+            downloadMap["uri"] = download.key.toString();
+            downloadMap["downloadState"] = download.value.state.toString();
+            downloadMap["downloadId"] = download.value.request.id.toString();
+            downloadMap["downloadPercentage"] = download.value.percentDownloaded.toString();
+            downloadData.add(downloadMap)
+        }
+        val gson = Gson()
+        val json = gson.toJson(downloadData)
+        result.success(json)
+
+    }
+
     private fun setDataSource(
-        call: MethodCall,
-        result: MethodChannel.Result,
-        player: BetterPlayer
+        call: MethodCall, result: MethodChannel.Result, player: BetterPlayer
     ) {
         val dataSource = call.argument<Map<String, Any?>>(DATA_SOURCE_PARAMETER)!!
         dataSources.put(getTextureId(player)!!, dataSource)
@@ -246,9 +310,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             val asset = getParameter(dataSource, ASSET_PARAMETER, "")
             val assetLookupKey: String = if (dataSource[PACKAGE_PARAMETER] != null) {
                 val packageParameter = getParameter(
-                    dataSource,
-                    PACKAGE_PARAMETER,
-                    ""
+                    dataSource, PACKAGE_PARAMETER, ""
                 )
                 flutterState!!.keyForAssetAndPackageName[asset, packageParameter]
             } else {
@@ -266,7 +328,9 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 0L,
                 overriddenDuration.toLong(),
                 null,
-                null, null, null
+                null,
+                null,
+                null
             )
         } else {
             val useCache = getParameter(dataSource, USE_CACHE_PARAMETER, false)
@@ -303,67 +367,56 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
 
     private fun download(
-            call: MethodCall,
-            result: MethodChannel.Result,
+        call: MethodCall,
+        result: MethodChannel.Result,
     ) {
         val dataSource = call.argument<Map<String, Any?>>(DATA_SOURCE_PARAMETER)!!
-        dataSources.put(getTextureId(player)!!, dataSource)
         val key = getParameter(dataSource, KEY_PARAMETER, "")
-        val overriddenDuration: Number = getParameter(dataSource, OVERRIDDEN_DURATION_PARAMETER, 0)
-        else {
-            val uri = getParameter(dataSource, URI_PARAMETER, "")
-            val licenseUrl = getParameter<String?>(dataSource, LICENSE_URL_PARAMETER, null)
-            preparePlayerOrDownload(key,dataSource,licenseUrl,result,overriddenDuration)
-        }
+        val overriddenDuration: Number =
+            getParameter(dataSource, OVERRIDDEN_DURATION_PARAMETER, 0).toLong();
+        val uri = getParameter(dataSource, URI_PARAMETER, "")
+        val licenseUrl = getParameter<String?>(dataSource, LICENSE_URL_PARAMETER, null)
+        preparePlayerOrDownload(key, uri, licenseUrl, result, overriddenDuration.toLong())
     }
+
     private fun preparePlayerOrDownload(
-            key: String?,
-            dataSource: String?,
-            licenseUrl: String?,
-            result: MethodChannel.Result,
-            overriddenDuration: Long,
+        key: String?,
+        dataSource: String?,
+        licenseUrl: String?,
+        result: MethodChannel.Result,
+        overriddenDuration: Long,
     ): Boolean {
         var top = ActivityUtils.getTopActivity()
         val topView = top.window.decorView.rootView
 
         val mediaItem =
-                MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_MPD)
-                        .setDrmConfiguration(
-                                MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
-                                        .build()
-                        ).setMediaMetadata(
-                                MediaMetadata.Builder().setTitle("Licensed - HD H265 (cenc)").build()
-                        ).build();
+            MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_MPD)
+                .setDrmConfiguration(
+                    MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
+                        .build()
+                ).setMediaMetadata(
+                    MediaMetadata.Builder().setTitle("Licensed - HD H265 (cenc)").build()
+                ).build();
         if (DownloadUtil.getDownloadTracker(top).isDownloaded(mediaItem)) {
-            if (runDownloadVideoFromLocal(
-                            mediaItem,
-                            licenseUrl,
-                            result
-                    )
-            ) return true
-
+            result.error("already Downloaded", "This video is already downloaded", null);
         } else {
-            val duration: Long = if (overriddenDuration != 0L) {
-                (overriddenDuration / 10);
-            } else {
-                (exoPlayer?.duration ?: 0);
-            }
+            val duration: Long = (overriddenDuration / 10);
             if (duration > 0L) {
                 val item = mediaItem.buildUpon().setTag(MediaItemTag(duration, key!!))
 
-                        .build()
+                    .build()
                 if (!DownloadUtil.getDownloadTracker(top)
-                                .hasDownload(item.localConfiguration?.uri)
+                        .hasDownload(item.localConfiguration?.uri)
                 ) {
 //                    DownloadTracker.globalQualitySelected = 3
 //                    GlobalScope.launch(Dispatchers.IO) {
-                    DownloadUtil.getDownloadTracker(top).toggleDownloadDialogHelper(top, item)
+                    DownloadUtil.getDownloadTracker(top)
+                        .toggleDownloadDialogHelper(top, item, result = result)
 //                    }
-
                 } else {
 
                     DownloadUtil.getDownloadTracker(top).toggleDownloadPopupMenu(
-                            top, topView, item.localConfiguration?.uri
+                        top, topView, item.localConfiguration?.uri
                     )
                 }
 
@@ -457,7 +510,11 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                         getParameter(dataSource, ACTIVITY_NAME_PARAMETER, "MainActivity")
                     betterPlayer.setupPlayerNotification(
                         flutterState?.applicationContext!!,
-                        title, author, imageUrl, notificationChannelName, activityName
+                        title,
+                        author,
+                        imageUrl,
+                        notificationChannelName,
+                        activityName
                     )
                 }
             }
@@ -471,6 +528,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             videoPlayers.valueAt(index).disposeRemoteNotifications()
         }
     }
+
     @Suppress("UNCHECKED_CAST")
     private fun <T> getParameter(parameters: Map<String, Any?>?, key: String, defaultValue: T): T {
         if (parameters?.containsKey(key) == true) {
@@ -484,8 +542,9 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
 
     private fun isPictureInPictureSupported(): Boolean {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && activity != null && activity!!.packageManager
-            .hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && activity != null && activity!!.packageManager.hasSystemFeature(
+            PackageManager.FEATURE_PICTURE_IN_PICTURE
+        )
     }
 
     private fun readyPictureInPicture(player: BetterPlayer) {
@@ -616,6 +675,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val CREATE_METHOD = "create"
         private const val SET_DATA_SOURCE_METHOD = "setDataSource"
         private const val DOWNLOAD_METHOD = "download"
+        private const val DOWNLOAD_DATA = "download_data"
+        private const val DELETE_DOWNLOADED_VIDEO = "delete_downloaded_video"
         private const val SET_LOOPING_METHOD = "setLooping"
         private const val SET_VOLUME_METHOD = "setVolume"
         private const val PLAY_METHOD = "play"

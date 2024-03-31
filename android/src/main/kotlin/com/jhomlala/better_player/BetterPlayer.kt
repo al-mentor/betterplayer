@@ -150,53 +150,42 @@ internal class BetterPlayer(
                 )
             ) return true
 
-        } else {
-            val duration: Long = if (overriddenDuration != 0L) {
-                (overriddenDuration / 10);
-            } else {
-                (exoPlayer?.duration ?: 0);
-            }
-            if (duration > 0L) {
-                val item = mediaItem.buildUpon().setTag(MediaItemTag(duration, key!!))
-
-                    .build()
-                if (!DownloadUtil.getDownloadTracker(top)
-                        .hasDownload(item.localConfiguration?.uri)
-                ) {
-//                    DownloadTracker.globalQualitySelected = 3
-//                    GlobalScope.launch(Dispatchers.IO) {
-                        DownloadUtil.getDownloadTracker(top).toggleDownloadDialogHelper(top, item)
-//                    }
-
-                } else {
-
-                    DownloadUtil.getDownloadTracker(top).toggleDownloadPopupMenu(
-                        top, topView, item.localConfiguration?.uri
-                    )
-                }
-
-            }
-
         }
+
+//        else {
+//            val duration: Long = if (overriddenDuration != 0L) {
+//                (overriddenDuration / 10);
+//            } else {
+//                (exoPlayer?.duration ?: 0);
+//            }
+//            if (duration > 0L) {
+//                val item = mediaItem.buildUpon().setTag(MediaItemTag(duration, key!!))
+//
+//                    .build()
+//                if (!DownloadUtil.getDownloadTracker(top)
+//                        .hasDownload(item.localConfiguration?.uri)
+//                ) {
+////                    DownloadTracker.globalQualitySelected = 3
+////                    GlobalScope.launch(Dispatchers.IO) {
+//                        DownloadUtil.getDownloadTracker(top).toggleDownloadDialogHelper(top, item)
+////                    }
+//
+//                } else {
+//
+//                    DownloadUtil.getDownloadTracker(top).toggleDownloadPopupMenu(
+//                        top, topView, item.localConfiguration?.uri
+//                    )
+//                }
+//
+//            }
+//
+//        }
 
         return false;
 
     }
 
-    private fun download(
-            call: MethodCall,
-            result: MethodChannel.Result,
-    ) {
-        val dataSource = call.argument<Map<String, Any?>>(DATA_SOURCE_PARAMETER)!!
-        dataSources.put(getTextureId(player)!!, dataSource)
-        val key = getParameter(dataSource, KEY_PARAMETER, "")
-        val overriddenDuration: Number = getParameter(dataSource, OVERRIDDEN_DURATION_PARAMETER, 0)
-        else {
-            val uri = getParameter(dataSource, URI_PARAMETER, "")
-            val licenseUrl = getParameter<String?>(dataSource, LICENSE_URL_PARAMETER, null)
-            preparePlayerOrDownload(key,dataSource,licenseUrl,result,overriddenDuration)
-        }
-    }
+
     private fun runDownloadVideoFromLocal(
         mediaItem: MediaItem,
         licenseUrl: String?,

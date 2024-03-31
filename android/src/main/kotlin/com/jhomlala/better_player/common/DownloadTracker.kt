@@ -28,6 +28,7 @@ import com.google.android.exoplayer2.util.Assertions
 import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.exoplayer2.util.Util
 import com.jhomlala.better_player.R
+import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -49,7 +50,7 @@ class DownloadTracker(
     private val downloadManager: DownloadManager
 ) {
 
-     /**
+    /**
      * Listens for changes in the tracked downloads.
      */
     interface Listener {
@@ -88,6 +89,7 @@ class DownloadTracker(
         return download != null && download.state == Download.STATE_COMPLETED
     }
 
+
     fun hasDownload(uri: Uri?): Boolean = downloads.keys.contains(uri)
 
     fun getDownloadRequest(uri: Uri?): DownloadRequest? {
@@ -106,7 +108,8 @@ class DownloadTracker(
     fun toggleDownloadDialogHelper(
         context: Context, mediaItem: MediaItem,
         mediaItems: List<MediaItem>? = null,
-        positiveCallback: (() -> Unit)? = null, dismissCallback: (() -> Unit)? = null
+        positiveCallback: (() -> Unit)? = null, dismissCallback: (() -> Unit)? = null,
+        result: MethodChannel.Result? = null,
     ) {
         startDownloadDialogHelper?.release()
 
@@ -120,6 +123,7 @@ class DownloadTracker(
                             context,
                             getDownloadHelper(it),
                             it,
+                            positiveCallback, dismissCallback, result
                         )
                 }
             }
@@ -133,7 +137,7 @@ class DownloadTracker(
                 getDownloadHelper(mediaItem),
                 mediaItem,
                 positiveCallback,
-                dismissCallback
+                dismissCallback, result
             )
     }
 
@@ -288,7 +292,8 @@ class DownloadTracker(
         private val downloadHelper: DownloadHelper,
         private val mediaItem: MediaItem,
         private val positiveCallback: (() -> Unit)? = null,
-        private val dismissCallback: (() -> Unit)? = null
+        private val dismissCallback: (() -> Unit)? = null,
+        private val result: MethodChannel.Result? = null,
     ) : DownloadHelper.Callback {
 
         private var trackSelectionDialog: AlertDialog? = null
@@ -374,6 +379,7 @@ class DownloadTracker(
                     .build()
                 fireDownloadWithSelectQuality(helper, qualitySelected, formatSelected, mediaItemTag)
                 trackSelectionDialog = null
+                result?.success(true)
                 return;
             }
 
@@ -397,6 +403,8 @@ class DownloadTracker(
                         formatSelected,
                         mediaItemTag
                     )
+                    result?.success(true)
+
                 }.setOnDismissListener {
                     trackSelectionDialog = null
                     downloadHelper.release()
