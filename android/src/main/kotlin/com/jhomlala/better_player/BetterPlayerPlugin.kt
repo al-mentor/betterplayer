@@ -151,6 +151,9 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             SET_DATA_SOURCE_METHOD -> {
                 setDataSource(call, result, player)
             }
+            DOWNLOAD_METHOD -> {
+                download(call, result)
+            }
             SET_LOOPING_METHOD -> {
                 player.setLooping(call.argument(LOOPING_PARAMETER)!!)
                 result.success(null)
@@ -296,6 +299,80 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 clearKey
             )
         }
+    }
+
+
+    private fun download(
+            call: MethodCall,
+            result: MethodChannel.Result,
+    ) {
+        val dataSource = call.argument<Map<String, Any?>>(DATA_SOURCE_PARAMETER)!!
+        dataSources.put(getTextureId(player)!!, dataSource)
+        val key = getParameter(dataSource, KEY_PARAMETER, "")
+        val overriddenDuration: Number = getParameter(dataSource, OVERRIDDEN_DURATION_PARAMETER, 0)
+        else {
+            val uri = getParameter(dataSource, URI_PARAMETER, "")
+            val licenseUrl = getParameter<String?>(dataSource, LICENSE_URL_PARAMETER, null)
+            preparePlayerOrDownload(key,dataSource,licenseUrl,result,overriddenDuration)
+        }
+    }
+    private fun preparePlayerOrDownload(
+            key: String?,
+            dataSource: String?,
+            licenseUrl: String?,
+            result: MethodChannel.Result,
+            overriddenDuration: Long,
+    ): Boolean {
+        var top = ActivityUtils.getTopActivity()
+        val topView = top.window.decorView.rootView
+
+        val mediaItem =
+                MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_MPD)
+                        .setDrmConfiguration(
+                                MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
+                                        .build()
+                        ).setMediaMetadata(
+                                MediaMetadata.Builder().setTitle("Licensed - HD H265 (cenc)").build()
+                        ).build();
+        if (DownloadUtil.getDownloadTracker(top).isDownloaded(mediaItem)) {
+            if (runDownloadVideoFromLocal(
+                            mediaItem,
+                            licenseUrl,
+                            result
+                    )
+            ) return true
+
+        } else {
+            val duration: Long = if (overriddenDuration != 0L) {
+                (overriddenDuration / 10);
+            } else {
+                (exoPlayer?.duration ?: 0);
+            }
+            if (duration > 0L) {
+                val item = mediaItem.buildUpon().setTag(MediaItemTag(duration, key!!))
+
+                        .build()
+                if (!DownloadUtil.getDownloadTracker(top)
+                                .hasDownload(item.localConfiguration?.uri)
+                ) {
+//                    DownloadTracker.globalQualitySelected = 3
+//                    GlobalScope.launch(Dispatchers.IO) {
+                    DownloadUtil.getDownloadTracker(top).toggleDownloadDialogHelper(top, item)
+//                    }
+
+                } else {
+
+                    DownloadUtil.getDownloadTracker(top).toggleDownloadPopupMenu(
+                            top, topView, item.localConfiguration?.uri
+                    )
+                }
+
+            }
+
+        }
+
+        return false;
+
     }
 
     /**
@@ -538,6 +615,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val INIT_METHOD = "init"
         private const val CREATE_METHOD = "create"
         private const val SET_DATA_SOURCE_METHOD = "setDataSource"
+        private const val DOWNLOAD_METHOD = "download"
         private const val SET_LOOPING_METHOD = "setLooping"
         private const val SET_VOLUME_METHOD = "setVolume"
         private const val PLAY_METHOD = "play"

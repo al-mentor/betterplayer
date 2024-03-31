@@ -183,6 +183,20 @@ internal class BetterPlayer(
 
     }
 
+    private fun download(
+            call: MethodCall,
+            result: MethodChannel.Result,
+    ) {
+        val dataSource = call.argument<Map<String, Any?>>(DATA_SOURCE_PARAMETER)!!
+        dataSources.put(getTextureId(player)!!, dataSource)
+        val key = getParameter(dataSource, KEY_PARAMETER, "")
+        val overriddenDuration: Number = getParameter(dataSource, OVERRIDDEN_DURATION_PARAMETER, 0)
+        else {
+            val uri = getParameter(dataSource, URI_PARAMETER, "")
+            val licenseUrl = getParameter<String?>(dataSource, LICENSE_URL_PARAMETER, null)
+            preparePlayerOrDownload(key,dataSource,licenseUrl,result,overriddenDuration)
+        }
+    }
     private fun runDownloadVideoFromLocal(
         mediaItem: MediaItem,
         licenseUrl: String?,
