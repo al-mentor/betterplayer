@@ -86,6 +86,11 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('setDataSource() has not been implemented.');
   }
 
+  Future<void> download(int? textureId, DataSource dataSource) {
+    throw UnimplementedError('setDataSource() has not been implemented.');
+  }
+
+
   /// Returns a Stream of [VideoEventType]s.
   Stream<VideoEvent> videoEventsFor(int? textureId) {
     throw UnimplementedError('videoEventsFor() has not been implemented.');
