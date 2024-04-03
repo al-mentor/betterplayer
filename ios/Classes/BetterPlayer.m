@@ -223,6 +223,46 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
             [asset.resourceLoader setDelegate:_loaderDelegate queue:streamQueue];
         }
         item = [AVPlayerItem playerItemWithAsset:asset];
+        
+        
+        
+        NSURL * licenseNSURL = [[NSURL alloc] initWithString: licenseUrl];
+        NSString *licenseNSURLString = [licenseNSURL absoluteString];
+        ContentKeyManager *contentKeyManager = [ContentKeyManager sharedManager];
+        [contentKeyManager createContentKeySession];
+        contentKeyManager.licensingServiceUrl = licenseNSURLString;
+        contentKeyManager.fpsCertificateUrl = certificateUrl;
+        
+        AssetDownloader *downloader = [AssetDownloader sharedDownloader];
+         NSString *urlString = [url absoluteString];
+        NSArray *components = [urlString componentsSeparatedByString:@"/"];
+        NSString *targetComponent = components[3];
+        CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:targetComponent url:url];
+        assetCustom.urlAsset = asset;
+        
+        
+
+        
+        
+        // Run if video downloaded Before
+        CustomAsset *downloadedAsset = [downloader downloadedAssetWithName:assetCustom.name];
+        if (downloadedAsset) {
+            NSLog(@"OFFLINE PLAYBACK");
+            assetCustom = downloadedAsset;
+            [assetCustom addAsContentKeyRecipient];
+            ContentKeyManager.sharedManager.asset = assetCustom;
+            item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
+            NSLog(@"Run OFFLINE PLAYBACK");
+        }else{
+            // Download asset and save it in player
+            // Run the download operation in the background
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                // Download the asset
+                [downloader downloadWithAsset:assetCustom];
+            });
+        }
+        
+        
     }
 
     if (@available(iOS 10.0, *) && overriddenDuration > 0) {

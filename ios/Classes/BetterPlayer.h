@@ -14,6 +14,13 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class CacheManager;
+@class AssetDownloader;
+@class CustomAsset;
+@class ContentKeyManager;
+
+
+
+ 
 
 @interface BetterPlayer : NSObject <FlutterPlatformView, FlutterStreamHandler, AVPictureInPictureControllerDelegate>
 @property(readonly, nonatomic) AVPlayer* player;

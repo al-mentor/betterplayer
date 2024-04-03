@@ -107,6 +107,8 @@ bool _remoteCommandsInitialized = false;
 }
 
 - (void) setRemoteCommandsNotificationActive{
+    
+    
     [[AVAudioSession sharedInstance] setActive:true error:nil];
     [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
 }
