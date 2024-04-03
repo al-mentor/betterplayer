@@ -36,7 +36,7 @@ import AVFoundation
     }
     
     // Using different AVURLAsset to allow simultaneous playback and download
-    func createUrlAsset() {
+    @objc public func createUrlAsset() {
         urlAsset = AVURLAsset(url: url)
     }
 }

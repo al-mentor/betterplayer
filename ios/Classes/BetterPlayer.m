@@ -226,19 +226,14 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         
         
         
-        NSURL * licenseNSURL = [[NSURL alloc] initWithString: licenseUrl];
-        NSString *licenseNSURLString = [licenseNSURL absoluteString];
-        ContentKeyManager *contentKeyManager = [ContentKeyManager sharedManager];
-        [contentKeyManager createContentKeySession];
-        contentKeyManager.licensingServiceUrl = licenseNSURLString;
-        contentKeyManager.fpsCertificateUrl = certificateUrl;
+
         
         AssetDownloader *downloader = [AssetDownloader sharedDownloader];
          NSString *urlString = [url absoluteString];
         NSArray *components = [urlString componentsSeparatedByString:@"/"];
-        NSString *targetComponent = components[3];
-        CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:targetComponent url:url];
-        assetCustom.urlAsset = asset;
+        NSArray *components2 = [components[3] componentsSeparatedByString:@"-"];
+        CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:components2[0] url:url];
+        [assetCustom createUrlAsset];
         
         
 
@@ -254,12 +249,17 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
             item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
             NSLog(@"Run OFFLINE PLAYBACK");
         }else{
-            // Download asset and save it in player
-            // Run the download operation in the background
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-                // Download the asset
-                [downloader downloadWithAsset:assetCustom];
-            });
+            
+            NSURL * licenseNSURL = [[NSURL alloc] initWithString: licenseUrl];
+            NSString *licenseNSURLString = [licenseNSURL absoluteString];
+            ContentKeyManager *contentKeyManager = [ContentKeyManager sharedManager];
+            [contentKeyManager createContentKeySession];
+            contentKeyManager.licensingServiceUrl = licenseNSURLString;
+            contentKeyManager.fpsCertificateUrl = certificateUrl;
+            [[ContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
+            [downloader cancelDownloadOfAssetWithAsset:assetCustom];
+            [downloader downloadWithAsset:assetCustom];
+
         }
         
         

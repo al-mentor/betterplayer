@@ -4,18 +4,18 @@
 //  AssetDownloader demonstrates how to manage the downloading of HLS streams.
 //  It includes APIs for starting and canceling downloads,
 //  deleting existing assets of the user's device, and monitoring the download progress and status.
-//
+//@objc public
 
 import Foundation
 import AVFoundation
 
-@objc public  class AssetDownloader: NSObject, AVAssetDownloadDelegate  {
+@objc public class AssetDownloader: NSObject, AVAssetDownloadDelegate  {
     
     // A singleton instance of AssetDownloader
-    @objc public static let sharedDownloader = AssetDownloader()
+    @objc public   static let sharedDownloader = AssetDownloader()
     
     // The AVAssetDownloadURLSession to use for managing AVAssetDownloadTasks
-    @objc public var assetDownloadURLSession: AVAssetDownloadURLSession!
+    fileprivate var assetDownloadURLSession: AVAssetDownloadURLSession!
             
     // Internal map of AVAggregateAssetDownloadTask to its corresponding Asset
     fileprivate var activeDownloadsMap = [AVAggregateAssetDownloadTask: CustomAsset]()
@@ -96,7 +96,7 @@ import AVFoundation
     }
     
     // Returns an Asset pointing to a file on disk if it exists
-    @objc public func downloadedAsset(withName name: String) -> CustomAsset? {
+    @objc public func downloadedAsset(withName name: String) ->CustomAsset? {
         let userDefaults = UserDefaults.standard
         
         guard let localFileLocation = userDefaults.value(forKey: name) as? Data else { return nil }
@@ -120,7 +120,7 @@ import AVFoundation
     }
     
     // Returns the current download state for a given Asset
-     func downloadStateOfAsset(asset: CustomAsset) -> CustomAsset.DownloadState {
+  func downloadStateOfAsset(asset: CustomAsset) -> CustomAsset.DownloadState {
         // Check if there is a file URL stored for this asset
         if let localFileLocation = downloadedAsset(withName: asset.name)?.urlAsset?.url {
             // Check if the file exists on disk
@@ -181,7 +181,7 @@ import AVFoundation
     }
     
     // Return the display names for the media selection options that are currently selected in the specified group
-    @objc public   func displayNamesForSelectedMediaOptions(_ mediaSelection: AVMediaSelection) -> String {
+    @objc public func displayNamesForSelectedMediaOptions(_ mediaSelection: AVMediaSelection) -> String {
         
         var displayNames = ""
         
@@ -214,7 +214,7 @@ import AVFoundation
     // MARK: URLSessionTaskDelegate
 
     // Tells the delegate that the task finished transferring data
-    @objc public   func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+    @objc public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         let userDefaults = UserDefaults.standard
     
         print("DOWNLOADER: Downloading did complete")
@@ -284,7 +284,7 @@ import AVFoundation
     // MARK: AVAssetDownloadDelegate
     
     // Asks the delegate for the location this asset will be downloaded to
-    @objc public  func urlSession(_ session: URLSession, aggregateAssetDownloadTask: AVAggregateAssetDownloadTask,
+    @objc public func urlSession(_ session: URLSession, aggregateAssetDownloadTask: AVAggregateAssetDownloadTask,
                     willDownloadTo location: URL) {
         
         print("DOWNLOADER: will download to location: \(location)")
@@ -299,14 +299,14 @@ import AVFoundation
     }
     
     // Method called when a child AVAssetDownloadTask completes for each media selection.
-    @objc public   func urlSession(_ session: URLSession, aggregateAssetDownloadTask: AVAggregateAssetDownloadTask,
+    @objc public func urlSession(_ session: URLSession, aggregateAssetDownloadTask: AVAggregateAssetDownloadTask,
                     didCompleteFor mediaSelection: AVMediaSelection) {
         
         print("DOWNLOADER: Done with mediaSelection: \(mediaSelection)")
     }
     
     // Method to adopt to subscribe to progress updates of an AVAggregateAssetDownloadTask
-    @objc public  func urlSession(_ session: URLSession, aggregateAssetDownloadTask: AVAggregateAssetDownloadTask,
+    @objc public func urlSession(_ session: URLSession, aggregateAssetDownloadTask: AVAggregateAssetDownloadTask,
                     didLoad timeRange: CMTimeRange, totalTimeRangesLoaded loadedTimeRanges: [NSValue],
                     timeRangeExpectedToLoad: CMTimeRange, for mediaSelection: AVMediaSelection) {
         
