@@ -106,6 +106,23 @@ import AVFoundation
         handleOnlineContentKeyRequest(keyRequest: keyRequest)
     }
     
+    
+    func getValueAfterKeyInURL(urlString: String, key: String) -> String? {
+        // Create a URL from the input string
+        if let url = URL(string: urlString) {
+            // Get the query parameters from the URL
+            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+               let queryItems = components.queryItems {
+                // Find the query item with the specified key
+                if let item = queryItems.first(where: { $0.name == key }) {
+                    // Return the value of the query item
+                    return item.value
+                }
+            }
+        }
+        return nil
+    }
+    
     @objc public func handleOnlineContentKeyRequest(keyRequest: AVContentKeyRequest) {
         if self.fpsCertificate == nil {
             self.postToConsole("Application Certificate missing, will request")
@@ -144,6 +161,25 @@ import AVFoundation
         let keyIV = contentIdentifier.components(separatedBy: ":")[1]
         
         
+        
+        //
+        //        var keyIV = contentIdentifier.components(separatedBy: ":")[1]
+        //
+        //
+        //        for component in queryComponents {
+        //            let keyValue = component.components(separatedBy: "=")
+        //            if keyValue.count == 2 {
+        //                let key = keyValue[0]
+        //                let value = keyValue[1]
+        //                if key == "kid" {
+        //                    kidValue = value
+        //                    break
+        //                }
+        //            }
+        //        }
+        //        keyId = kidValue ?? <#default value#>;
+        //
+             
         
 //        
 //        var keyIV = contentIdentifier.components(separatedBy: ":")[1]

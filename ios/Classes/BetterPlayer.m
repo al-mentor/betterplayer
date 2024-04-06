@@ -201,6 +201,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         headers = @{};
     }
     
+ 
     AVPlayerItem* item;
     if (useCache){
         if (cacheKey == [NSNull null]){
@@ -225,43 +226,44 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         item = [AVPlayerItem playerItemWithAsset:asset];
         
         
+//        printf(withKey);
+//        printf([url absoluteString]);
+
+        
+//        AssetDownloader *downloader = [AssetDownloader sharedDownloader];
+//         NSString *urlString = [url absoluteString];
+//        NSArray *components = [urlString componentsSeparatedByString:@"/"];
+//        NSArray *components2 = [components[3] componentsSeparatedByString:@"-"];
+//        CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:components2[0] url:url];
+//        [assetCustom createUrlAsset];
+//        
         
 
         
-        AssetDownloader *downloader = [AssetDownloader sharedDownloader];
-         NSString *urlString = [url absoluteString];
-        NSArray *components = [urlString componentsSeparatedByString:@"/"];
-        NSArray *components2 = [components[3] componentsSeparatedByString:@"-"];
-        CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:components2[0] url:url];
-        [assetCustom createUrlAsset];
         
-        
-
-        
-        
-        // Run if video downloaded Before
-        CustomAsset *downloadedAsset = [downloader downloadedAssetWithName:assetCustom.name];
-        if (downloadedAsset) {
-            NSLog(@"OFFLINE PLAYBACK");
-            assetCustom = downloadedAsset;
-            [assetCustom addAsContentKeyRecipient];
-            ContentKeyManager.sharedManager.asset = assetCustom;
-            item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
-            NSLog(@"Run OFFLINE PLAYBACK");
-        }else{
-            
-            NSURL * licenseNSURL = [[NSURL alloc] initWithString: licenseUrl];
-            NSString *licenseNSURLString = [licenseNSURL absoluteString];
-            ContentKeyManager *contentKeyManager = [ContentKeyManager sharedManager];
-            [contentKeyManager createContentKeySession];
-            contentKeyManager.licensingServiceUrl = licenseNSURLString;
-            contentKeyManager.fpsCertificateUrl = certificateUrl;
-            [[ContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
-            [downloader cancelDownloadOfAssetWithAsset:assetCustom];
-            [downloader downloadWithAsset:assetCustom];
-
-        }
-        
+//        // Run if video downloaded Before
+//        CustomAsset *downloadedAsset = [downloader downloadedAssetWithName:assetCustom.name];
+//        if (downloadedAsset) {
+//            NSLog(@"OFFLINE PLAYBACK");
+//            assetCustom = downloadedAsset;
+//            [assetCustom addAsContentKeyRecipient];
+//            ContentKeyManager.sharedManager.asset = assetCustom;
+//            item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
+//            NSLog(@"Run OFFLINE PLAYBACK");
+//        }else{
+//            
+//            NSURL * licenseNSURL = [[NSURL alloc] initWithString: licenseUrl];
+//            NSString *licenseNSURLString = [licenseNSURL absoluteString];
+//            ContentKeyManager *contentKeyManager = [ContentKeyManager sharedManager];
+//            [contentKeyManager createContentKeySession];
+//            contentKeyManager.licensingServiceUrl = licenseNSURLString;
+//            contentKeyManager.fpsCertificateUrl = certificateUrl;
+//            [[ContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
+//            [downloader cancelDownloadOfAssetWithAsset:assetCustom];
+//            [downloader downloadWithAsset:assetCustom];
+//
+//        }
+//        
         
     }
 
