@@ -125,6 +125,35 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
     return;
   }
 
+
+
+  @override
+  Future<void> download(int? textureId, DataSource dataSource) async {
+    Map<String, dynamic>? dataSourceDescription;
+    if (dataSource.sourceType == DataSourceType.network) {
+        dataSourceDescription = <String, dynamic>{
+          'key': dataSource.key,
+          'uri': dataSource.uri,
+          'headers': dataSource.headers,
+          'title': dataSource.title,
+          'author': dataSource.author,
+          'imageUrl': dataSource.imageUrl,
+          'overriddenDuration': dataSource.overriddenDuration?.inMilliseconds,
+          'licenseUrl': dataSource.licenseUrl,
+          'certificateUrl': dataSource.certificateUrl,
+          'drmHeaders': dataSource.drmHeaders,
+          'videoExtension': dataSource.videoExtension,
+        };
+    }
+    await _channel.invokeMethod<void>(
+      'download',
+      <String, dynamic>{
+        'textureId': textureId,
+        'dataSource': dataSourceDescription,
+      },
+    );
+    return;
+  }
   @override
   Future<void> setLooping(int? textureId, bool looping) {
     return _channel.invokeMethod<void>(

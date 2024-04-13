@@ -455,37 +455,51 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     await _videoPlayerPlatform.setLooping(_textureId, value.isLooping);
   }
 
+
+
+
   Future<void> _applyPlayPause() async {
     if (!_created || _isDisposed) {
       return;
     }
-    _timer?.cancel();
+    _timer?.cancel(); // Cancel any existing timer
     if (value.isPlaying) {
-      await _videoPlayerPlatform.play(_textureId);
-      _timer = Timer.periodic(
-        const Duration(milliseconds: 300),
-        (Timer timer) async {
-          if (_isDisposed) {
-            return;
-          }
-          final Duration? newPosition = await position;
-          final DateTime? newAbsolutePosition = await absolutePosition;
-          // ignore: invariant_booleans
-          if (_isDisposed) {
-            return;
-          }
-          _updatePosition(newPosition, absolutePosition: newAbsolutePosition);
-          if (_seekPosition != null && newPosition != null) {
-            final difference =
-                newPosition.inMilliseconds - _seekPosition!.inMilliseconds;
-            if (difference > 0) {
-              _seekPosition = null;
+      try {
+        await _videoPlayerPlatform.play(_textureId);
+        _timer = Timer.periodic(
+          const Duration(milliseconds: 300),
+              (Timer timer) async {
+            if (_isDisposed) {
+              timer.cancel(); // Cancel the timer if the widget is disposed
+              return;
             }
-          }
-        },
-      );
+            final Duration? newPosition = await position;
+            final DateTime? newAbsolutePosition = await absolutePosition;
+            if (_isDisposed) {
+              timer.cancel(); // Cancel the timer if the widget is disposed
+              return;
+            }
+            _updatePosition(newPosition, absolutePosition: newAbsolutePosition);
+            if (_seekPosition != null && newPosition != null) {
+              final difference =
+                  newPosition.inMilliseconds - _seekPosition!.inMilliseconds;
+              if (difference > 0) {
+                _seekPosition = null;
+              }
+            }
+          },
+        );
+      } catch (e) {
+        // Handle any errors that occur during playback
+        print('Error playing video: $e');
+      }
     } else {
-      await _videoPlayerPlatform.pause(_textureId);
+      try {
+        await _videoPlayerPlatform.pause(_textureId);
+      } catch (e) {
+        // Handle any errors that occur during pausing
+        print('Error pausing video: $e');
+      }
     }
   }
 
