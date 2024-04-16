@@ -398,8 +398,8 @@ bool _remoteCommandsInitialized = false;
                 [contentKeyManager createContentKeySession];
 //            
                 [assetCustom addAsContentKeyRecipient];
-                contentKeyManager.downloadRequestedByUser = true;
-              [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
+//                contentKeyManager.downloadRequestedByUser = true;
+//              [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
 //
                 AssetDownloader.avalibelAsset = assetCustom;
                [downloader downloadWithAsset:assetCustom];
