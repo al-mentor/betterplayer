@@ -1,5 +1,5 @@
 //
-//  Copyright © 2020 Axinom. All rights reserved.
+//  Copyright © 2024 Amr Saied All rights reserved.
 //
 //  LogManager class. Writes messages to the TextView.
 //

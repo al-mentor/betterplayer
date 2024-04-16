@@ -1,5 +1,5 @@
 //
-//  Copyright © 2024 Amr Saied All rights reserved.
+//  Copyright © 2020 Axinom. All rights reserved.
 //
 //  The ContentKeyManager class configures the instance of AVContentKeySession to use for requesting content keys
 //  securely for playback or offline use.
@@ -8,13 +8,13 @@
 import Foundation
 import AVFoundation
 
-@objc public  class ContentKeyManager: NSObject, AVContentKeySessionDelegate {
+@objc public class BrightCoveContentKeyManager: NSObject, AVContentKeySessionDelegate {
     
     // Certificate Url
-    @objc public var fpsCertificateUrl: String = ""
+    @objc public  var fpsCertificateUrl: String = ""
 
     // Licensing Service Url
-    @objc public  var licensingServiceUrl: String = ""
+    @objc public var licensingServiceUrl: String = ""
 
     // Licensing Token
     @objc public var licensingToken: String = ""
@@ -23,10 +23,10 @@ import AVFoundation
     @objc public  var asset: CustomAsset!
     
     // A singleton instance of ContentKeyManager
-    @objc public  static let sharedManager = ContentKeyManager()
+    @objc public static let sharedManager = BrightCoveContentKeyManager()
     
     // Content Key session
-    @objc public var contentKeySession: AVContentKeySession!
+    @objc public  var contentKeySession: AVContentKeySession!
     
     // Content Key request
     @objc public var contentKeyRequest: AVContentKeyRequest!
@@ -38,7 +38,7 @@ import AVFoundation
     fileprivate var fpsCertificate:Data!
     
     // A set containing the currently pending content key identifiers associated with persistable content key requests that have not been completed.
-    @objc public var pendingPersistableContentKeyIdentifiers = Set<String>()
+    @objc public  var pendingPersistableContentKeyIdentifiers = Set<String>()
         
     // The directory that is used to save persistable content keys
     lazy var contentKeyDirectory: URL = {
@@ -72,6 +72,7 @@ import AVFoundation
     @objc public func createContentKeySession() {
         print("Creating new AVContentKeySession")
         contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
+        contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
         contentKeySession.setDelegate(self, queue: DispatchQueue(label: "\(Bundle.main.bundleIdentifier!).ContentKeyDelegateQueue"))
     }
     
@@ -90,7 +91,7 @@ import AVFoundation
      The following delegate callback gets called when the client initiates a key request or AVFoundation
      determines that the content is encrypted based on the playlist the client provided when it requests playback.
     */
-    @objc public   func contentKeySession(_ session: AVContentKeySession, didProvide keyRequest: AVContentKeyRequest) {
+    @objc public func contentKeySession(_ session: AVContentKeySession, didProvide keyRequest: AVContentKeyRequest) {
         self.postToConsole("Content is encrypted. Initiating key request")
         contentKeyRequest = keyRequest
         handleOnlineContentKeyRequest(keyRequest: keyRequest)
@@ -104,23 +105,6 @@ import AVFoundation
         self.postToConsole("Renewal of an existing content key")
         
         handleOnlineContentKeyRequest(keyRequest: keyRequest)
-    }
-    
-    
-    func getValueAfterKeyInURL(urlString: String, key: String) -> String? {
-        // Create a URL from the input string
-        if let url = URL(string: urlString) {
-            // Get the query parameters from the URL
-            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-               let queryItems = components.queryItems {
-                // Find the query item with the specified key
-                if let item = queryItems.first(where: { $0.name == key }) {
-                    // Return the value of the query item
-                    return item.value
-                }
-            }
-        }
-        return nil
     }
     
     @objc public func handleOnlineContentKeyRequest(keyRequest: AVContentKeyRequest) {
@@ -154,50 +138,9 @@ import AVFoundation
            return
         }
 
-        
-    
-        
         let keyId = contentIdentifier.components(separatedBy: ":")[0]
-        let keyIV = contentIdentifier.components(separatedBy: ":")[1]
-        
-        
-        
-        //
-        //        var keyIV = contentIdentifier.components(separatedBy: ":")[1]
-        //
-        //
-        //        for component in queryComponents {
-        //            let keyValue = component.components(separatedBy: "=")
-        //            if keyValue.count == 2 {
-        //                let key = keyValue[0]
-        //                let value = keyValue[1]
-        //                if key == "kid" {
-        //                    kidValue = value
-        //                    break
-        //                }
-        //            }
-        //        }
-        //        keyId = kidValue ?? <#default value#>;
-        //
-             
-        
-//        
-//        var keyIV = contentIdentifier.components(separatedBy: ":")[1]
-//
-//        
-//        for component in queryComponents {
-//            let keyValue = component.components(separatedBy: "=")
-//            if keyValue.count == 2 {
-//                let key = keyValue[0]
-//                let value = keyValue[1]
-//                if key == "kid" {
-//                    kidValue = value
-//                    break
-//                }
-//            }
-//        }
-//        keyId = kidValue ?? <#default value#>;
-//        
+//        let keyIV = contentIdentifier.components(separatedBy: ":")[1]
+        let keyIV = "";
         
         /*
          Console output
@@ -322,7 +265,7 @@ import AVFoundation
     /*
      Initiates content key loading process associated with an Asset for persisting on disk.
     */
-    @objc public  func requestPersistableContentKeys(forAsset asset: CustomAsset) {
+    @objc public func requestPersistableContentKeys(forAsset asset: CustomAsset) {
         postToConsole("OFFLINE KEY FLOW")
         
         for contentKeyId in asset.contentKeyIdList ?? [] {
@@ -339,7 +282,7 @@ import AVFoundation
       Parameter identifier: The asset ID associated with the content key request.
       - Returns: `true` if the content key request should be persistable, `false` otherwise.
     */
-    @objc public  func shouldRequestPersistableContentKey(withIdentifier identifier: String) -> Bool {
+    @objc public func shouldRequestPersistableContentKey(withIdentifier identifier: String) -> Bool {
         return pendingPersistableContentKeyIdentifiers.contains(identifier)
     }
     
@@ -347,7 +290,7 @@ import AVFoundation
      The following delegate callback gets called when the client initiates a key request or AVFoundation
      determines that the content is encrypted based on the playlist the client provided when it requests playback.
     */
-    @objc public  func contentKeySession(_ session: AVContentKeySession, didProvide keyRequest: AVPersistableContentKeyRequest) {
+    @objc public func contentKeySession(_ session: AVContentKeySession, didProvide keyRequest: AVPersistableContentKeyRequest) {
         postToConsole("Initiating persistable key request")
         
         handlePersistableContentKeyRequest(keyRequest: keyRequest)
@@ -395,7 +338,8 @@ import AVFoundation
         }
         
         let keyId = contentIdentifier.components(separatedBy: ":")[0]
-        let keyIV = contentIdentifier.components(separatedBy: ":")[1]
+//        let keyIV = contentIdentifier.components(separatedBy: ":")[1]
+        let keyIV = "";
         
         /*
          Console output
@@ -450,7 +394,9 @@ import AVFoundation
                 /*
                  Obtains a persistable content key from Content Key Context (CKC)
                 */
-                let persistentKey = try keyRequest.persistableContentKey(fromKeyVendorResponse: ckcData, options: nil)
+                
+                // OUR PROBLEM HERE
+               let persistentKey = try keyRequest.persistableContentKey(fromKeyVendorResponse: ckcData, options: nil)
                 
                 strongSelf.postToConsole("Persistable Content Key was obtained from Content Key Context (CKC)")
                 
@@ -719,22 +665,59 @@ import AVFoundation
         }
     }
     
-    @objc public  func requestContentKeyFromKeySecurityModule(spcData: Data) throws -> Data {
+
+
+    @objc public func requestContentKeyFromKeySecurityModule(spcData: Data) throws -> Data {
         var ckcData: Data? = nil
         
+        var customerRightsToken: String? = nil ;
+        var isOfflineLicense: Bool = false ;
+        
+        
+        customerRightsToken  = "eyJwcm9maWxlIjp7InB1cmNoYXNlIjp7fX19";
+        isOfflineLicense = true;
+        
+
         guard let url = URL(string: licensingServiceUrl) else {
             postToConsole("ERROR: missingLicensingServiceUrl")
-            
             throw ProgramError.missingLicensingServiceUrl
         }
         
-        /*
-         Before sending a SPC to Key Server (KSM) we need to set provided Licensing Token to "X-AxDRM-Message" HTTP header.
-        */
+        // Prepare the JSON block for the request
+        var jsonBlock: [String: Any] = [
+            "application_id": "",
+            "key_id": "",
+            "publisher_id": "",
+            "server_playback_context": spcData.base64EncodedString(options: []) // Encode SPC data as base64 string
+        ]
+        
+        // Add customerRightsToken and isOfflineLicense to the JSON block if provided
+        if let token = customerRightsToken {
+            jsonBlock["x-bc-crt-config"] = token
+        }
+        
+        if   isOfflineLicense {
+            jsonBlock["x-bolt-offline-license"] = String(isOfflineLicense)
+        }
+        
+        // Serialize the JSON block to data
+        guard let jsonBlockData = try? JSONSerialization.data(withJSONObject: jsonBlock, options: []) else {
+            throw ProgramError.serializationError
+        }
+        
         var ksmRequest = URLRequest(url: url)
         ksmRequest.httpMethod = "POST"
-        ksmRequest.setValue(licensingToken, forHTTPHeaderField: "X-AxDRM-Message")
-        ksmRequest.httpBody = spcData
+        ksmRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        ksmRequest.httpBody = jsonBlockData
+        
+        // Set additional headers if provided
+        if let token = customerRightsToken {
+            ksmRequest.setValue(token, forHTTPHeaderField: "x-bc-crt-config")
+        }
+        
+        if  isOfflineLicense {
+            ksmRequest.setValue(String(isOfflineLicense), forHTTPHeaderField: "x-bolt-offline-license")
+        }
         
         let (data, response, error) = URLSession.shared.synchronousDataTask(urlRequest: ksmRequest)
         
@@ -742,34 +725,45 @@ import AVFoundation
             postToConsole("ERROR: Error getting CKC: \(error)")
             throw ProgramError.noCKCReturnedByKSM
         }
+        
         guard response != nil else {
             postToConsole("ERROR: CKC request response empty")
             throw ProgramError.noCKCReturnedByKSM
-            
         }
-        guard data != nil else {
+        
+        guard let responseData = data else {
             postToConsole("ERROR: CKC response data is empty")
             throw ProgramError.noCKCReturnedByKSM
         }
         
+        if let responseDataString = String(data: data!, encoding: .utf8) {
+              // Print or log the decoded data as a string
+              print("Data as string: \(responseDataString)")
+          }
+        
+        
         postToConsole("SUCCESS Requesting Content Key Context (CKC) from Key Security Module (KSM)")
         
+        // Log custom headers from response
         if let httpUrlResponse = response as? HTTPURLResponse {
+            //print httpUrlResponse as string
+            
             let CKCResponseString = """
             - X-AxDRM-Identity: \(httpUrlResponse.allHeaderFields["X-AxDRM-Identity"] ?? "") \n \
             - X-AxDRM-Server: \(httpUrlResponse.allHeaderFields["X-AxDRM-Server"] ?? "") \n \
             - X-AxDRM-Version: \(httpUrlResponse.allHeaderFields["X-AxDRM-Version"] ?? "") \n
             """
-            self.postToConsole("CKC response custom headers:\n \(CKCResponseString)")
+            postToConsole("CKC response custom headers:\n \(CKCResponseString)")
         }
         
-        ckcData = data
-
+        ckcData = responseData
+        
         guard ckcData != nil else {
-            self.postToConsole("ERROR: No CKC returned By KSM")
+            postToConsole("ERROR: No CKC returned By KSM")
             throw ProgramError.noCKCReturnedByKSM
         }
         
         return ckcData!
     }
+
 }

@@ -1,5 +1,5 @@
 //
-//  Copyright © 2020 Axinom. All rights reserved.
+//  Copyright © 2024 Amr Saied All rights reserved.
 //
 //  A class that holds information about an Asset
 //  Adds Asset's AVURLAsset as a recipient to the Playback Content Key Session in a protected playback/download use case.
@@ -32,7 +32,7 @@ import AVFoundation
     // Link AVURLAsset to Content Key Session
     @objc public   func addAsContentKeyRecipient() {
         print("Adding AVURLAsset as a recepient to the Content Key Session")
-        ContentKeyManager.sharedManager.contentKeySession.addContentKeyRecipient(urlAsset)
+        AzureContentKeyManager.sharedManager.contentKeySession.addContentKeyRecipient(urlAsset)
     }
     
     // Using different AVURLAsset to allow simultaneous playback and download
@@ -45,8 +45,8 @@ import AVFoundation
  Extends `Asset` to add a simple download state enumeration used by the sample
  to track the download states of Assets.
  */
-extension CustomAsset {
-    enum DownloadState: String {
+@objc public extension CustomAsset {
+    @objc public enum DownloadState: Int {
         case notDownloaded
         case downloading
         case downloadedAndSavedToDevice

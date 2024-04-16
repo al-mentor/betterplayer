@@ -1,5 +1,5 @@
 //
-//  Copyright © 2020 Axinom. All rights reserved.
+//  Copyright © 2024 Amr Saied All rights reserved.
 //
 //  Utils
 //
@@ -52,4 +52,5 @@ enum ProgramError: Error {
     case applicationCertificateRequestFailed
     case missingLicensingServiceUrl
     case noCKCReturnedByKSM
+    case serializationError
 }

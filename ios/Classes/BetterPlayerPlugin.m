@@ -278,6 +278,34 @@ bool _remoteCommandsInitialized = false;
 
 }
 
+- (NSString *)downloadStateStringForAsset:(CustomAsset *)asset {
+    // Get the shared AssetDownloader instance
+    AssetDownloader *assetDownloader = [AssetDownloader sharedDownloader];
+    
+    // Retrieve the download state of the asset using AssetDownloader
+    NSInteger stateValue = [assetDownloader downloadStateOfAssetWithAsset:asset];
+    
+    // Convert the enum state to a string representation
+    NSString *stateString = @"unknown";
+    
+    // Map the enum value to corresponding string representation
+    switch (stateValue) {
+        case 2: // CustomAssetDownloadStateDownloadedAndSavedToDevice
+            stateString = @"downloaded_and_saved";
+            break;
+        case 1: // CustomAssetDownloadStateDownloading
+            stateString = @"downloading";
+            break;
+        case 0: // CustomAssetDownloadStateNotDownloaded
+            stateString = @"not_downloaded";
+            break;
+        default:
+            break;
+    }
+    
+    return stateString;
+}
+
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
 
@@ -346,7 +374,94 @@ bool _remoteCommandsInitialized = false;
                 result(FlutterMethodNotImplemented);
             }
             result(nil);
-        } else if ([@"dispose" isEqualToString:call.method]) {
+        }else if ([@"download" isEqualToString:call.method]) {
+            NSDictionary* dataSource = argsMap[@"dataSource"];
+            NSString* uriArg = dataSource[@"uri"];
+            NSString* key = dataSource[@"key"];
+            NSString* certificateUrl = dataSource[@"certificateUrl"];
+            NSString* licenseUrl = dataSource[@"licenseUrl"];
+            
+            dispatch_queue_t backgroundQueue = dispatch_queue_create("net.almentor.assetDownloader", NULL);
+
+            // Execute the download operation asynchronously on the background queue
+            dispatch_async(backgroundQueue, ^{
+                // Your asset download code
+                AssetDownloader *downloader = [AssetDownloader sharedDownloader];
+                NSURL *url = [[NSURL alloc] initWithString:uriArg];
+                 CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:uriArg url:url];
+                [assetCustom createUrlAsset];
+
+                
+                AzureContentKeyManager *contentKeyManager = [AzureContentKeyManager sharedManager];
+                contentKeyManager.licensingServiceUrl = licenseUrl;
+                contentKeyManager.fpsCertificateUrl = certificateUrl;
+                [contentKeyManager createContentKeySession];
+//            
+                [assetCustom addAsContentKeyRecipient];
+                contentKeyManager.downloadRequestedByUser = true;
+              [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
+//
+                AssetDownloader.avalibelAsset = assetCustom;
+               [downloader downloadWithAsset:assetCustom];
+                
+        
+            });
+
+     
+            
+            
+            
+        }else if ([@"delete_downloaded_video" isEqualToString:call.method]) {
+            NSDictionary* dataSource = argsMap[@"dataSource"];
+            NSString* uriArg = dataSource[@"uri"];
+            AssetDownloader *downloader = [AssetDownloader sharedDownloader];
+            NSURL *url = [[NSURL alloc] initWithString: uriArg];
+            NSArray *components = [uriArg componentsSeparatedByString:@"/"];
+             CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:components[0] url:url];
+            [[ContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
+            [downloader cancelDownloadOfAssetWithAsset:assetCustom];
+            [downloader deleteDownloadedAssetWithAsset:assetCustom];
+            
+        }else if ([@"download_data" isEqualToString:call.method]) {
+            
+            
+            AssetDownloader *assetDownloader = [AssetDownloader sharedDownloader];
+            
+            // Access the activeDownloadsMap from the AssetDownloader
+            NSDictionary<AVAggregateAssetDownloadTask *, CustomAsset *> *activeDownloadsMap = assetDownloader.activeDownloadsMap;
+            
+            NSMutableArray<NSDictionary *> *downloadData = [NSMutableArray array];
+            
+            for (AVAggregateAssetDownloadTask *task in activeDownloadsMap.allKeys) {
+                CustomAsset *asset = activeDownloadsMap[task];
+                
+                NSMutableDictionary<NSString *, NSString *> *downloadMap = [NSMutableDictionary dictionary];
+                downloadMap[@"uri"] = asset.urlAsset.URL.absoluteString;
+                downloadMap[@"downloadState"] = [self downloadStateStringForAsset:asset];
+                downloadMap[@"downloadId"] = [NSString stringWithFormat:@"%lu", (unsigned long)task.taskIdentifier];
+                downloadMap[@"downloadPercentage"] = [NSString stringWithFormat:@"%.2f", task.progress.fractionCompleted * 100.0];
+                
+                [downloadData addObject:[downloadMap copy]];
+            }
+            
+            // Convert downloadData array to JSON string
+            NSError *error = nil;
+            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:downloadData options:0 error:&error];
+            
+            if (error) {
+                result([FlutterError errorWithCode:@"json_error" message:@"Failed to serialize download data to JSON" details:nil]);
+            } else {
+                NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+                result(jsonString);
+            }
+
+            
+        }
+        
+        
+        
+        
+        else if ([@"dispose" isEqualToString:call.method]) {
             [player clear];
             //[self disposeNotificationData:player];
             [self setRemoteCommandsNotificationNotActive];

@@ -1,5 +1,5 @@
 //
-//  Copyright © 2020 Axinom. All rights reserved.
+//  Copyright © 2024 Amr Saied All rights reserved.
 //
 //  AssetDownloader demonstrates how to manage the downloading of HLS streams.
 //  It includes APIs for starting and canceling downloads,
@@ -9,19 +9,26 @@
 import Foundation
 import AVFoundation
 
+
+
 @objc public class AssetDownloader: NSObject, AVAssetDownloadDelegate  {
     
     // A singleton instance of AssetDownloader
     @objc public   static let sharedDownloader = AssetDownloader()
+    @objc public   static var avalibelAsset  : CustomAsset?
+
+    
+    
+    
     
     // The AVAssetDownloadURLSession to use for managing AVAssetDownloadTasks
-    fileprivate var assetDownloadURLSession: AVAssetDownloadURLSession!
+    @objc public var assetDownloadURLSession: AVAssetDownloadURLSession!
             
     // Internal map of AVAggregateAssetDownloadTask to its corresponding Asset
-    fileprivate var activeDownloadsMap = [AVAggregateAssetDownloadTask: CustomAsset]()
+    @objc public var activeDownloadsMap = [AVAggregateAssetDownloadTask: CustomAsset]()
     
     // Internal map of AVAggregateAssetDownloadTask to download URL
-    fileprivate var willDownloadToUrlMap = [AVAggregateAssetDownloadTask: URL]()
+    @objc public var willDownloadToUrlMap = [AVAggregateAssetDownloadTask: URL]()
     
     override init() {
         super.init()
@@ -120,7 +127,7 @@ import AVFoundation
     }
     
     // Returns the current download state for a given Asset
-  func downloadStateOfAsset(asset: CustomAsset) -> CustomAsset.DownloadState {
+    @objc public func downloadStateOfAsset(asset: CustomAsset) -> CustomAsset.DownloadState.RawValue {
         // Check if there is a file URL stored for this asset
         if let localFileLocation = downloadedAsset(withName: asset.name)?.urlAsset?.url {
             // Check if the file exists on disk
@@ -128,7 +135,7 @@ import AVFoundation
                 
                 print("DOWNLOADER: downloadState() \(CustomAsset.DownloadState.downloadedAndSavedToDevice.rawValue)")
                 
-                return .downloadedAndSavedToDevice
+                return CustomAsset.DownloadState.downloadedAndSavedToDevice.rawValue
             }
         }
         
@@ -136,12 +143,12 @@ import AVFoundation
         for (_, assetValue) in activeDownloadsMap where asset.name == assetValue.name {
             print("DOWNLOADER: downloadState() \(CustomAsset.DownloadState.downloading.rawValue)")
             
-            return .downloading
+            return CustomAsset.DownloadState.downloading.rawValue
         }
         
         print("DOWNLOADER: downloadState() \(CustomAsset.DownloadState.notDownloaded.rawValue)")
         
-        return .notDownloaded
+        return CustomAsset.DownloadState.notDownloaded.rawValue
     }
     
     // Deletes an Asset from the device if possible

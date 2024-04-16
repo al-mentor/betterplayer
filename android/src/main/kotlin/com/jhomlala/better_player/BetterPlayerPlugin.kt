@@ -18,6 +18,7 @@ import com.blankj.utilcode.util.ActivityUtils
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.MediaMetadata
+import com.google.android.exoplayer2.offline.Download
 import com.google.android.exoplayer2.util.MimeTypes
 import com.jhomlala.better_player.BetterPlayerCache.releaseCache
 import com.jhomlala.better_player.common.DownloadUtil
@@ -34,12 +35,12 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.view.TextureRegistry
 import java.lang.Exception
-import java.util.HashMap
 
 /**
  * Android platform implementation of the VideoPlayerPlugin.
  */
 class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
+
     private val videoPlayers = LongSparseArray<BetterPlayer>()
     private val dataSources = LongSparseArray<Map<String, Any?>>()
     private var flutterState: FlutterState? = null
@@ -107,14 +108,37 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             result.error("no_activity", "better_player plugin requires a foreground activity", null)
             return
         }
+
+
         when (call.method) {
             INIT_METHOD -> disposeAllPlayers()
+            DOWNLOAD_EVENTS_CHANNEL -> {
+                val evenet = EventChannel(flutterState?.binaryMessenger, DOWNLOAD_EVENTS_CHANNEL);
+
+
+                evenet.setStreamHandler(
+                    object : EventChannel.StreamHandler {
+                        override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                            DownloadUtil.eventChannel = events
+                         }
+
+                        override fun onCancel(arguments: Any?) {
+                            DownloadUtil.eventChannel = null
+                        }
+                    }
+                )
+                result.success(null);
+
+            }
             CREATE_METHOD -> {
                 disposeAllPlayers()
                 val handle = flutterState!!.textureRegistry!!.createSurfaceTexture()
                 val eventChannel = EventChannel(
                     flutterState?.binaryMessenger, EVENTS_CHANNEL + handle.id()
                 )
+
+
+
                 var customDefaultLoadControl: CustomDefaultLoadControl? = null
                 if (call.hasArgument(MIN_BUFFER_MS) && call.hasArgument(MAX_BUFFER_MS) && call.hasArgument(
                         BUFFER_FOR_PLAYBACK_MS
@@ -151,14 +175,16 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     )
                     return
                 }
-                onMethodCall(call, result, textureId, player)
+                onMethodCall(call, result, textureId, player,)
             }
         }
     }
 
     private fun onMethodCall(
-        call: MethodCall, result: MethodChannel.Result, textureId: Long, player: BetterPlayer
-    ) {
+        call: MethodCall, result: MethodChannel.Result, textureId: Long, player: BetterPlayer  ,
+
+
+        ) {
         when (call.method) {
             SET_DATA_SOURCE_METHOD -> {
                 setDataSource(call, result, player)
@@ -283,6 +309,28 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     private fun downloadData(call: MethodCall, result: MethodChannel.Result) {
         var data = DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity()).downloads;
         // array of maps have uri and download state and download id and download percentage and put it in result
+        buildDownloadObject(data, result)
+
+        val evenet = EventChannel(flutterState?.binaryMessenger, DOWNLOAD_EVENTS_CHANNEL);
+
+
+        evenet.setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                    DownloadUtil.eventChannel = events
+                }
+
+                override fun onCancel(arguments: Any?) {
+                    DownloadUtil.eventChannel = null
+                }
+            }
+        )
+    }
+
+    private fun buildDownloadObject(
+        data: HashMap<Uri, Download>,
+        result: MethodChannel.Result
+    ) {
         var downloadData = ArrayList<Map<String, String?>>()
         for (download in data) {
             var downloadMap = HashMap<String, String?>()
@@ -295,7 +343,6 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         val gson = Gson()
         val json = gson.toJson(downloadData)
         result.success(json)
-
     }
 
     private fun setDataSource(
@@ -631,6 +678,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val TAG = "BetterPlayerPlugin"
         private const val CHANNEL = "better_player_channel"
         private const val EVENTS_CHANNEL = "better_player_channel/videoEvents"
+        private const val DOWNLOAD_EVENTS_CHANNEL = "better_player_channel/downloadStream"
         private const val DATA_SOURCE_PARAMETER = "dataSource"
         private const val KEY_PARAMETER = "key"
         private const val HEADERS_PARAMETER = "headers"
@@ -698,3 +746,4 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val STOP_PRE_CACHE_METHOD = "stopPreCache"
     }
 }
+

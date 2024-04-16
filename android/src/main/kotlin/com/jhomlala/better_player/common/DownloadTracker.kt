@@ -27,7 +27,10 @@ import com.google.android.exoplayer2.upstream.HttpDataSource
 import com.google.android.exoplayer2.util.Assertions
 import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.exoplayer2.util.Util
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 import com.jhomlala.better_player.R
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -221,12 +224,17 @@ class DownloadTracker(
         }
     }
 
+
+
+
+
     @ExperimentalCoroutinesApi
     suspend fun getCurrentProgressDownload(uri: Uri?): Flow<Float?> {
         var percent: Float? =
             downloadManager.currentDownloads.find { it.request.uri == uri }?.percentDownloaded
         return callbackFlow {
             while (percent != null) {
+
                 percent =
                     downloadManager.currentDownloads.find { it.request.uri == uri }?.percentDownloaded
                 trySend(percent).isSuccess

@@ -17,6 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 @class AssetDownloader;
 @class CustomAsset;
 @class ContentKeyManager;
+@class AzureContentKeyManager;
+@class BrightCoveContentKeyManager;
 
 
 

@@ -2,6 +2,7 @@ package com.jhomlala.better_player.common
 
 import android.app.Notification
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import androidx.annotation.OptIn
 import com.google.android.exoplayer2.offline.Download
@@ -11,9 +12,13 @@ import com.google.android.exoplayer2.scheduler.PlatformScheduler
 import com.google.android.exoplayer2.ui.DownloadNotificationHelper
 import com.google.android.exoplayer2.util.NotificationUtil
 import com.google.android.exoplayer2.util.Util
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 
 import com.jhomlala.better_player.R
 import com.jhomlala.better_player.common.DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.MethodChannel
 
 private const val JOB_ID = 8888
 private const val FOREGROUND_NOTIFICATION_ID = 8989
@@ -51,6 +56,9 @@ class MyDownloadService : DownloadService(
         downloads: MutableList<Download>,
         notMetRequirements: Int
     ): Notification {
+
+        buildDownloadObject(downloads);
+
         return DownloadUtil.getDownloadNotificationHelper(this)
             .buildProgressNotification(
                 this,
@@ -60,6 +68,34 @@ class MyDownloadService : DownloadService(
                 downloads,
                 notMetRequirements
             )
+    }
+
+    private fun buildDownloadObject(
+        downloads: MutableList<Download>
+    ) {
+        var downloadData = ArrayList<Map<String, String?>>()
+        for (download in downloads) {
+            var downloadMap = HashMap<String, String?>()
+            downloadMap["uri"] = download.request.uri.toString();
+            downloadMap["downloadState"] = download.state.toString();
+            downloadMap["downloadId"] = download.request.id.toString();
+            downloadMap["downloadPercentage"] = download.percentDownloaded.toString();
+            downloadData.add(downloadMap)
+        }
+        val gson = Gson()
+        val json = gson.toJson(downloadData)
+        DownloadUtil.eventChannel?.success(json)
+    }
+
+
+    // Utility function to create JSON object with download progress information
+    private fun createProgressJson(uri: String, status: Int?, percent: Float): String {
+        val jsonObject = JsonObject()
+        jsonObject.addProperty("uri", uri)
+        jsonObject.addProperty("status", status)
+        jsonObject.addProperty("percentage", percent)
+
+        return Gson().toJson(jsonObject)
     }
 
     /**

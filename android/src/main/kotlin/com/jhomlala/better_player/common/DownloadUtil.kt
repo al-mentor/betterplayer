@@ -2,7 +2,6 @@ package com.jhomlala.better_player.common
 
 
 import android.content.Context
-import androidx.annotation.OptIn
 import com.google.android.exoplayer2.database.DatabaseProvider
 import com.google.android.exoplayer2.database.StandaloneDatabaseProvider
 import com.google.android.exoplayer2.offline.Download
@@ -16,10 +15,9 @@ import com.google.android.exoplayer2.upstream.cache.Cache
 import com.google.android.exoplayer2.upstream.cache.CacheDataSource
 import com.google.android.exoplayer2.upstream.cache.NoOpCacheEvictor
 import com.google.android.exoplayer2.upstream.cache.SimpleCache
-
 import com.jhomlala.better_player.R
-import com.jhomlala.better_player.common.DownloadTracker
-
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.EventChannel.EventSink
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -37,6 +35,9 @@ object DownloadUtil {
     private lateinit var downloadDirectory: File
     private lateinit var downloadManager: DownloadManager
     private lateinit var downloadTracker: DownloadTracker
+
+     var eventChannel:  EventSink? = null
+
 
     @Synchronized
     fun getHttpDataSourceFactory(context: Context): HttpDataSource.Factory {
