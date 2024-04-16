@@ -120,7 +120,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     object : EventChannel.StreamHandler {
                         override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                             DownloadUtil.eventChannel = events
-                         }
+                        }
 
                         override fun onCancel(arguments: Any?) {
                             DownloadUtil.eventChannel = null
@@ -130,13 +130,13 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 result.success(null);
 
             }
+
             CREATE_METHOD -> {
                 disposeAllPlayers()
                 val handle = flutterState!!.textureRegistry!!.createSurfaceTexture()
                 val eventChannel = EventChannel(
                     flutterState?.binaryMessenger, EVENTS_CHANNEL + handle.id()
                 )
-
 
 
                 var customDefaultLoadControl: CustomDefaultLoadControl? = null
@@ -175,13 +175,13 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     )
                     return
                 }
-                onMethodCall(call, result, textureId, player,)
+                onMethodCall(call, result, textureId, player)
             }
         }
     }
 
     private fun onMethodCall(
-        call: MethodCall, result: MethodChannel.Result, textureId: Long, player: BetterPlayer  ,
+        call: MethodCall, result: MethodChannel.Result, textureId: Long, player: BetterPlayer,
 
 
         ) {
@@ -331,17 +331,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         data: HashMap<Uri, Download>,
         result: MethodChannel.Result
     ) {
-        var downloadData = ArrayList<Map<String, String?>>()
-        for (download in data) {
-            var downloadMap = HashMap<String, String?>()
-            downloadMap["uri"] = download.key.toString();
-            downloadMap["downloadState"] = download.value.state.toString();
-            downloadMap["downloadId"] = download.value.request.id.toString();
-            downloadMap["downloadPercentage"] = download.value.percentDownloaded.toString();
-            downloadData.add(downloadMap)
-        }
-        val gson = Gson()
-        val json = gson.toJson(downloadData)
+
+        val json = DownloadUtil.buildDownloadObject(data.values.toList())
         result.success(json)
     }
 

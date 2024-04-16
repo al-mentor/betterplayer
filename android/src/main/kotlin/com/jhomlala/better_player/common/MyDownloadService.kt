@@ -49,7 +49,7 @@ class MyDownloadService : DownloadService(
     }
 
     override fun getScheduler(): PlatformScheduler? {
-        return if(Build.VERSION.SDK_INT >= 21) PlatformScheduler(this, JOB_ID) else null
+        return if (Build.VERSION.SDK_INT >= 21) PlatformScheduler(this, JOB_ID) else null
     }
 
     override fun getForegroundNotification(
@@ -57,7 +57,8 @@ class MyDownloadService : DownloadService(
         notMetRequirements: Int
     ): Notification {
 
-        buildDownloadObject(downloads);
+        DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(downloads));
+
 
         return DownloadUtil.getDownloadNotificationHelper(this)
             .buildProgressNotification(
@@ -70,33 +71,6 @@ class MyDownloadService : DownloadService(
             )
     }
 
-    private fun buildDownloadObject(
-        downloads: MutableList<Download>
-    ) {
-        var downloadData = ArrayList<Map<String, String?>>()
-        for (download in downloads) {
-            var downloadMap = HashMap<String, String?>()
-            downloadMap["uri"] = download.request.uri.toString();
-            downloadMap["downloadState"] = download.state.toString();
-            downloadMap["downloadId"] = download.request.id.toString();
-            downloadMap["downloadPercentage"] = download.percentDownloaded.toString();
-            downloadData.add(downloadMap)
-        }
-        val gson = Gson()
-        val json = gson.toJson(downloadData)
-        DownloadUtil.eventChannel?.success(json)
-    }
-
-
-    // Utility function to create JSON object with download progress information
-    private fun createProgressJson(uri: String, status: Int?, percent: Float): String {
-        val jsonObject = JsonObject()
-        jsonObject.addProperty("uri", uri)
-        jsonObject.addProperty("status", status)
-        jsonObject.addProperty("percentage", percent)
-
-        return Gson().toJson(jsonObject)
-    }
 
     /**
      * Creates and displays notifications for downloads when they complete or fail.
@@ -128,17 +102,21 @@ class MyDownloadService : DownloadService(
                         Util.fromUtf8Bytes(download.request.data)
                     )
                 }
+
                 Download.STATE_FAILED -> {
                     notificationHelper.buildDownloadFailedNotification(
                         context,
-                        R.drawable.ic_download_done,  /* contentIntent = */
+                        android.R.drawable.stat_notify_error,
                         null,
                         Util.fromUtf8Bytes(download.request.data)
                     )
                 }
+
                 else -> return
             }
             NotificationUtil.setNotification(context, nextNotificationId++, notification)
+            DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(List(1) { download }));
+
         }
 
     }

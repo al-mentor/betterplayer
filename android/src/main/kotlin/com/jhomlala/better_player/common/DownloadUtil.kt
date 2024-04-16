@@ -15,6 +15,7 @@ import com.google.android.exoplayer2.upstream.cache.Cache
 import com.google.android.exoplayer2.upstream.cache.CacheDataSource
 import com.google.android.exoplayer2.upstream.cache.NoOpCacheEvictor
 import com.google.android.exoplayer2.upstream.cache.SimpleCache
+import com.google.gson.Gson
 import com.jhomlala.better_player.R
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.EventSink
@@ -39,16 +40,25 @@ object DownloadUtil {
      var eventChannel:  EventSink? = null
 
 
+
+    fun buildDownloadObject(
+        downloads: List<Download>
+    ): String? {
+        var downloadData = ArrayList<Map<String, String?>>()
+        for (download in downloads) {
+            var downloadMap = HashMap<String, String?>()
+            downloadMap["uri"] = download.request.uri.toString();
+            downloadMap["downloadState"] = download.state.toString();
+            downloadMap["downloadId"] = download.request.id.toString();
+            downloadMap["downloadPercentage"] = download.percentDownloaded.toString();
+            downloadData.add(downloadMap)
+        }
+        val gson = Gson()
+        val json = gson.toJson(downloadData)
+        return json;
+    }
     @Synchronized
     fun getHttpDataSourceFactory(context: Context): HttpDataSource.Factory {
-//        if(!DownloadUtil::httpDataSourceFactory.isInitialized) {
-//            httpDataSourceFactory = CronetDataSource.Factory(
-//                CronetEngine.Builder(context).build(),
-//                Executors.newSingleThreadExecutor()
-//            )
-//        }
-
-
         if(!DownloadUtil::httpDataSourceFactory.isInitialized) {
             httpDataSourceFactory = DefaultHttpDataSource.Factory()
                 .setConnectTimeoutMs(8000)
