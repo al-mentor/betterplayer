@@ -2,6 +2,8 @@ package com.jhomlala.better_player.common
 
 import android.app.Notification
 import android.content.Context
+import android.content.pm.ServiceInfo
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.OptIn
@@ -12,6 +14,7 @@ import com.google.android.exoplayer2.scheduler.PlatformScheduler
 import com.google.android.exoplayer2.ui.DownloadNotificationHelper
 import com.google.android.exoplayer2.util.NotificationUtil
 import com.google.android.exoplayer2.util.Util
+import com.google.common.util.concurrent.Service
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 
@@ -56,19 +59,28 @@ class MyDownloadService : DownloadService(
         downloads: MutableList<Download>,
         notMetRequirements: Int
     ): Notification {
+        val notificationHelper = DownloadUtil.getDownloadNotificationHelper(this)
 
+        val notification = notificationHelper.buildProgressNotification(
+            this,
+            R.drawable.ic_download,
+            null,
+            null,
+            downloads,
+            notMetRequirements
+        )
         DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(downloads));
 
+        // Start foreground service with media playback type
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Use startForeground with type on Android 12 (SDK 31) and higher
+            startForeground(FOREGROUND_NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+        } else {
+            // Use startForeground without type for older versions
+            startForeground(FOREGROUND_NOTIFICATION_ID, notification)
+        }
 
-        return DownloadUtil.getDownloadNotificationHelper(this)
-            .buildProgressNotification(
-                this,
-                R.drawable.ic_download,
-                null,
-                null,
-                downloads,
-                notMetRequirements
-            )
+        return notification
     }
 
 

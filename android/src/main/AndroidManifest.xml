@@ -3,10 +3,19 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
     <application>
-        <service android:name=".common.MyDownloadService" android:exported="false">
-            <!-- This is needed for Scheduler -->
+
+        <service android:name=".common.MyDownloadService"
+            android:foregroundServiceType="mediaPlayback"
+            android:enabled="true"
+            android:exported="false">
+
+
+
             <intent-filter>
+                <action android:name="com.google.android.exoplayer.downloadService.action.ADD_DOWNLOAD" />
                 <action android:name="androidx.media3.exoplayer.downloadService.action.RESTART"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
