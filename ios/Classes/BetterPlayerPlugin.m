@@ -278,34 +278,9 @@ bool _remoteCommandsInitialized = false;
 
 }
 
-- (NSString *)downloadStateStringForAsset:(CustomAsset *)asset {
-    // Get the shared AssetDownloader instance
-    AssetDownloader *assetDownloader = [AssetDownloader sharedDownloader];
-    
-    // Retrieve the download state of the asset using AssetDownloader
-    NSInteger stateValue = [assetDownloader downloadStateOfAssetWithAsset:asset];
-    
-    // Convert the enum state to a string representation
-    NSString *stateString = @"unknown";
-    
-    // Map the enum value to corresponding string representation
-    switch (stateValue) {
-        case 2: // CustomAssetDownloadStateDownloadedAndSavedToDevice
-            stateString = @"downloaded_and_saved";
-            break;
-        case 1: // CustomAssetDownloadStateDownloading
-            stateString = @"downloading";
-            break;
-        case 0: // CustomAssetDownloadStateNotDownloaded
-            stateString = @"not_downloaded";
-            break;
-        default:
-            break;
-    }
-    
-    return stateString;
-}
-
+ 
+ 
+ 
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
 
@@ -321,7 +296,12 @@ bool _remoteCommandsInitialized = false;
     } else if ([@"create" isEqualToString:call.method]) {
         BetterPlayer* player = [[BetterPlayer alloc] initWithFrame:CGRectZero];
         [self onPlayerSetup:player result:result];
-    } else {
+    }else if ([@"better_player_channel/downloadStream" isEqualToString:call.method]) {
+        FlutterEventChannel* downloadEventsChannel = [FlutterEventChannel eventChannelWithName:@"better_player_channel/downloadStream"
+                                                                                binaryMessenger:_messenger];
+        [downloadEventsChannel setStreamHandler:AssetDownloader.sharedDownloader];
+        result(nil);
+    }  else {
         NSDictionary* argsMap = call.arguments;
         int64_t textureId = ((NSNumber*)argsMap[@"textureId"]).unsignedIntegerValue;
         BetterPlayer* player = _players[@(textureId)];
@@ -396,8 +376,8 @@ bool _remoteCommandsInitialized = false;
                 contentKeyManager.licensingServiceUrl = licenseUrl;
                 contentKeyManager.fpsCertificateUrl = certificateUrl;
                 [contentKeyManager createContentKeySession];
-//            
-                [assetCustom addAsContentKeyRecipient];
+//
+ //               [assetCustom addAsContentKeyRecipient];
 //                contentKeyManager.downloadRequestedByUser = true;
 //              [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
 //
@@ -408,8 +388,11 @@ bool _remoteCommandsInitialized = false;
             });
 
      
+            FlutterEventChannel* downloadEventsChannel = [FlutterEventChannel eventChannelWithName:@"better_player_channel/downloadStream"
+                                                                                    binaryMessenger:_messenger];
+            [downloadEventsChannel setStreamHandler:AssetDownloader.sharedDownloader];
             
-            
+            result(nil);
             
         }else if ([@"delete_downloaded_video" isEqualToString:call.method]) {
             NSDictionary* dataSource = argsMap[@"dataSource"];
@@ -426,36 +409,18 @@ bool _remoteCommandsInitialized = false;
             
             
             AssetDownloader *assetDownloader = [AssetDownloader sharedDownloader];
-            
-            // Access the activeDownloadsMap from the AssetDownloader
-            NSDictionary<AVAggregateAssetDownloadTask *, CustomAsset *> *activeDownloadsMap = assetDownloader.activeDownloadsMap;
-            
-            NSMutableArray<NSDictionary *> *downloadData = [NSMutableArray array];
-            
-            for (AVAggregateAssetDownloadTask *task in activeDownloadsMap.allKeys) {
-                CustomAsset *asset = activeDownloadsMap[task];
-                
-                NSMutableDictionary<NSString *, NSString *> *downloadMap = [NSMutableDictionary dictionary];
-                downloadMap[@"uri"] = asset.urlAsset.URL.absoluteString;
-                downloadMap[@"downloadState"] = [self downloadStateStringForAsset:asset];
-                downloadMap[@"downloadId"] = [NSString stringWithFormat:@"%lu", (unsigned long)task.taskIdentifier];
-                downloadMap[@"downloadPercentage"] = [NSString stringWithFormat:@"%.2f", task.progress.fractionCompleted * 100.0];
-                
-                [downloadData addObject:[downloadMap copy]];
-            }
-            
-            // Convert downloadData array to JSON string
-            NSError *error = nil;
-            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:downloadData options:0 error:&error];
-            
-            if (error) {
+            NSString *jsonString  =  [assetDownloader allDownloadedAssets];
+
+            if (jsonString == nil) {
                 result([FlutterError errorWithCode:@"json_error" message:@"Failed to serialize download data to JSON" details:nil]);
             } else {
-                NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
                 result(jsonString);
             }
 
-            
+            FlutterEventChannel* downloadEventsChannel = [FlutterEventChannel eventChannelWithName:@"better_player_channel/downloadStream"
+                                                                                    binaryMessenger:_messenger];
+            [downloadEventsChannel setStreamHandler:AssetDownloader.sharedDownloader];
+            result(nil);
         }
         
         

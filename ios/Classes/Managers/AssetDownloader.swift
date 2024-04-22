@@ -8,14 +8,124 @@
 
 import Foundation
 import AVFoundation
+import Flutter
 
 
+@objc public class AssetDownloader: NSObject, AVAssetDownloadDelegate , FlutterStreamHandler  {
+    public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        AssetDownloader.eventSink = events
+        return nil
 
-@objc public class AssetDownloader: NSObject, AVAssetDownloadDelegate  {
+    }
+    
+    public func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        AssetDownloader.eventSink = nil;
+        
+        return nil
+    }
+    
+    @objc public   func serializeDownloadData() -> String? {
+ 
+
+        var downloadData = [[String: Any]]()
+
+        for (task, asset) in AssetDownloader.sharedDownloader.activeDownloadsMap {
+            var downloadMap = [String: Any]()
+            downloadMap["uri"] =  asset.urlAsset.url.absoluteString
+            downloadMap["downloadState"] = AssetDownloader.sharedDownloader.downloadStateString(for: asset)
+            downloadMap["downloadId"] = "\(task.taskIdentifier)"
+            downloadMap["downloadPercentage"] = String(format: "%.2f", task.progress.fractionCompleted * 100.0)
+            downloadData.append(downloadMap)
+        }
+
+        // Convert downloadData array to JSON string
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: downloadData, options: [])
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                print(jsonString)
+                return jsonString
+            } else {
+                return nil
+            }
+        } catch {
+            return nil
+        }
+    }
+    
+    @objc public func allDownloadedAssets() -> String? {
+        let userDefaults = UserDefaults.standard
+        var downloadData = [[String: Any]]()
+        let allKeys = userDefaults.dictionaryRepresentation().keys
+        for key in allKeys {
+            var downloadMap = [String: Any]()
+
+            guard let localFileLocation = userDefaults.value(forKey: key) as? Data else {
+                continue // Skip if data is not of expected type
+            }
+            var bookmarkDataIsStale = false
+            do {
+                let url = try URL(resolvingBookmarkData: localFileLocation,
+                                  bookmarkDataIsStale: &bookmarkDataIsStale)
+                if bookmarkDataIsStale {
+                    fatalError("Bookmark data is stale for key: \(key)")
+                }
+                // get value of this key
+ 
+                let asset = CustomAsset(name: key, url: url)
+                downloadMap["uri"] = key
+                downloadMap["downloadState"] = AssetDownloader.sharedDownloader.downloadStateString(for: asset)
+                downloadMap["downloadId"] = asset.urlAsset.url.absoluteString
+                downloadMap["downloadPercentage"] = String(format: "%.2f", 1 * 100.0)
+                downloadData.append(downloadMap)
+            } catch {
+                print("Failed to create URL from bookmark for key \(key) with error: \(error)")
+            }
+        }
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: downloadData, options: [])
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                return jsonString
+            } else {
+                return nil
+            }
+        } catch {
+            return nil
+        }
+    }
+    
+    @objc public func downloadStateString(for asset: CustomAsset) -> String {
+        // Get the shared AssetDownloader instance
+        let assetDownloader = AssetDownloader.sharedDownloader
+        
+        // Retrieve the download state of the asset using AssetDownloader
+        let stateValue = AssetDownloader.sharedDownloader.downloadStateOfAsset(asset: asset)
+        
+        // Convert the enum state to a string representation
+        var stateString = "10"
+        
+        // Map the enum value to corresponding string representation
+        switch stateValue {
+        case 2: // CustomAssetDownloadStateDownloadedAndSavedToDevice
+            stateString = "3"
+        case 1: // CustomAssetDownloadStateDownloading
+            stateString = "2"
+        case 0: // CustomAssetDownloadStateNotDownloaded
+            stateString = "10"
+        default:
+            break
+        }
+        
+        return stateString
+    }
+
+
+    
     
     // A singleton instance of AssetDownloader
     @objc public   static let sharedDownloader = AssetDownloader()
     @objc public   static var avalibelAsset  : CustomAsset?
+    
+    @objc public   static var eventSink  : FlutterEventSink?
 
     
     
@@ -309,6 +419,9 @@ import AVFoundation
     @objc public func urlSession(_ session: URLSession, aggregateAssetDownloadTask: AVAggregateAssetDownloadTask,
                     didCompleteFor mediaSelection: AVMediaSelection) {
         
+        if(AssetDownloader.eventSink != nil){
+            AssetDownloader.eventSink!(AssetDownloader.sharedDownloader.serializeDownloadData())
+        }
         print("DOWNLOADER: Done with mediaSelection: \(mediaSelection)")
     }
     
@@ -331,5 +444,8 @@ import AVFoundation
         userInfo[CustomAsset.Keys.percentDownloaded] = percentComplete
         
         NotificationCenter.default.post(name: .AssetDownloadProgress, object: nil, userInfo: userInfo)
+        if(AssetDownloader.eventSink != nil){
+            AssetDownloader.eventSink!(AssetDownloader.sharedDownloader.serializeDownloadData())
+        }
     }
 }

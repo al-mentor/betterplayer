@@ -44,12 +44,12 @@ object DownloadUtil {
     fun buildDownloadObject(
         downloads: List<Download>
     ): String? {
-        var downloadData = ArrayList<Map<String, String?>>()
+        val downloadData = ArrayList<Map<String, String?>>()
         for (download in downloads) {
-            var downloadMap = HashMap<String, String?>()
+            val downloadMap = HashMap<String, String?>()
             downloadMap["uri"] = download.request.uri.toString();
             downloadMap["downloadState"] = download.state.toString();
-            downloadMap["downloadId"] = download.request.id.toString();
+            downloadMap["downloadId"] = download.request.id;
             downloadMap["downloadPercentage"] = download.percentDownloaded.toString();
             downloadData.add(downloadMap)
         }
