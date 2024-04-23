@@ -1,7 +1,6 @@
 import 'package:better_player/better_player.dart';
 import 'package:better_player_example/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class HlsSubtitlesPage extends StatefulWidget {
   @override
@@ -20,8 +19,6 @@ class _HlsSubtitlesPageState extends State<HlsSubtitlesPage> {
       playIcon: Icons.play_arrow_outlined,
       progressBarPlayedColor: Colors.indigo,
       progressBarHandleColor: Colors.indigo,
-      skipBackIcon: Icons.replay_10_outlined,
-      skipForwardIcon: Icons.forward_10_outlined,
       backwardSkipTimeInMilliseconds: 10000,
       forwardSkipTimeInMilliseconds: 10000,
       enableSkips: true,

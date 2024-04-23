@@ -2,11 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import 'dart:async';
+import 'dart:developer';
 import 'package:better_player/src/configuration/better_player_buffering_configuration.dart';
 import 'package:better_player/src/core/better_player_utils.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'download_video_list.dart';
 import 'video_player_platform_interface.dart';
 
 const MethodChannel _channel = MethodChannel('better_player_channel');
@@ -50,6 +53,34 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
           : null;
     }
     return response?['textureId'] as int?;
+  }
+
+  @override
+  Future<void> download(int? textureId, DataSource dataSource) async {
+    Map<String, dynamic>? dataSourceDescription;
+    if (dataSource.sourceType == DataSourceType.network) {
+      dataSourceDescription = <String, dynamic>{
+        'key': dataSource.key,
+        'uri': dataSource.uri,
+        'headers': dataSource.headers,
+        'title': dataSource.title,
+        'author': dataSource.author,
+        'imageUrl': dataSource.imageUrl,
+        'overriddenDuration': dataSource.overriddenDuration?.inMilliseconds,
+        'licenseUrl': dataSource.licenseUrl,
+        'certificateUrl': dataSource.certificateUrl,
+        'drmHeaders': dataSource.drmHeaders,
+        'videoExtension': dataSource.videoExtension,
+      };
+    }
+    await _channel.invokeMethod<void>(
+      'download',
+      <String, dynamic>{
+        'textureId': textureId,
+        'dataSource': dataSourceDescription,
+      },
+    );
+    return;
   }
 
   @override
@@ -125,35 +156,6 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
     return;
   }
 
-
-
-  @override
-  Future<void> download(int? textureId, DataSource dataSource) async {
-    Map<String, dynamic>? dataSourceDescription;
-    if (dataSource.sourceType == DataSourceType.network) {
-        dataSourceDescription = <String, dynamic>{
-          'key': dataSource.key,
-          'uri': dataSource.uri,
-          'headers': dataSource.headers,
-          'title': dataSource.title,
-          'author': dataSource.author,
-          'imageUrl': dataSource.imageUrl,
-          'overriddenDuration': dataSource.overriddenDuration?.inMilliseconds,
-          'licenseUrl': dataSource.licenseUrl,
-          'certificateUrl': dataSource.certificateUrl,
-          'drmHeaders': dataSource.drmHeaders,
-          'videoExtension': dataSource.videoExtension,
-        };
-    }
-    await _channel.invokeMethod<void>(
-      'download',
-      <String, dynamic>{
-        'textureId': textureId,
-        'dataSource': dataSourceDescription,
-      },
-    );
-    return;
-  }
   @override
   Future<void> setLooping(int? textureId, bool looping) {
     return _channel.invokeMethod<void>(
@@ -230,12 +232,36 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
 
   @override
   Future<Duration> getPosition(int? textureId) async {
-    return Duration(
-        milliseconds: await _channel.invokeMethod<int>(
-              'position',
-              <String, dynamic>{'textureId': textureId},
-            ) ??
-            0);
+    try {
+      if (textureId == null) return const Duration(microseconds: 0);
+      return Duration(
+          milliseconds: await _channel.invokeMethod<int>(
+                'position',
+                <String, dynamic>{'textureId': textureId},
+              ) ??
+              0);
+    } catch (e, stackTrace) {
+      log("error on video player $e, trace $stackTrace");
+      rethrow;
+    }
+  }
+
+  @override
+  Future<String?> getDownloadData(int? textureId) async {
+    var data = await _channel.invokeMethod<String?>(
+      'download_data',
+      <String, dynamic>{'textureId': textureId},
+    );
+
+    return data;
+  }
+
+  @override
+  Future<void> deleteDownloadedVideo(int? textureId, String? url) async {
+    var data = await _channel.invokeMethod<String?>(
+      'delete_downloaded_video',
+      <String, dynamic>{'textureId': textureId, 'uri': url},
+    );
   }
 
   @override
@@ -280,6 +306,15 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
   Future<void> disablePictureInPicture(int? textureId) {
     return _channel.invokeMethod<bool>(
       'disablePictureInPicture',
+      <String, dynamic>{
+        'textureId': textureId,
+      },
+    );
+  }
+  @override
+  Future<void> deleteAllDownloadedVideo(int? textureId) {
+    return _channel.invokeMethod<bool>(
+      'delete_all_downloaded_video',
       <String, dynamic>{
         'textureId': textureId,
       },
@@ -338,12 +373,28 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
     );
   }
 
+
+
   @override
   Future<void> stopPreCache(String url, String? cacheKey) {
     return _channel.invokeMethod<void>(
       'stopPreCache',
       <String, dynamic>{'url': url, 'cacheKey': cacheKey},
     );
+  }
+
+  @override
+  Stream<DownloadVideoList> videoDownloadEventsFor(int? textureId) {
+    return eventChannelForDownload(textureId)
+        .receiveBroadcastStream()
+        .map((dynamic event) {
+
+      var listOfDownload = DownloadVideoList.fromJson(event.toString() );
+
+
+      return listOfDownload;
+
+    });
   }
 
   @override
@@ -371,7 +422,9 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
               final num heightNum = map["height"] as num;
               height = heightNum.toDouble();
             }
-          } catch (exception) {
+          } catch (exception, stackTrace) {
+            log("non-fetal, error $exception, trace $stackTrace");
+            FirebaseCrashlytics.instance.recordError(exception, stackTrace);
             BetterPlayerUtils.log(exception.toString());
           }
 
@@ -462,6 +515,10 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
 
   EventChannel _eventChannelFor(int? textureId) {
     return EventChannel('better_player_channel/videoEvents$textureId');
+  }
+
+  EventChannel eventChannelForDownload(int? textureId) {
+    return const EventChannel('better_player_channel/downloadStream');
   }
 
   DurationRange _toDurationRange(dynamic value) {

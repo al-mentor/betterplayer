@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'package:better_player/src/core/better_player_utils.dart';
 import 'package:better_player/src/dash/better_player_dash_utils.dart';
 import 'package:better_player/src/hls/better_player_hls_utils.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'better_player_asms_data_holder.dart';
 
@@ -51,8 +53,10 @@ class BetterPlayerAsmsUtils {
       }).asFuture<String?>();
 
       return data;
-    } catch (exception) {
+    } catch (exception, stackTrace) {
       BetterPlayerUtils.log("GetDataFromUrl failed: $exception");
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
       return null;
     }
   }

@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:better_player/src/core/better_player_utils.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 class BetterPlayerSubtitle {
   static const String timerSeparator = ' --> ';
@@ -24,8 +27,10 @@ class BetterPlayerSubtitle {
         return _handle3LinesAndMoreSubtitles(scanner, isWebVTT);
       }
       return BetterPlayerSubtitle._();
-    } catch (exception) {
-      BetterPlayerUtils.log("Failed to parse subtitle line: $value");
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
+      BetterPlayerUtils.log(exception.toString());
       return BetterPlayerSubtitle._();
     }
   }
@@ -39,8 +44,10 @@ class BetterPlayerSubtitle {
 
       return BetterPlayerSubtitle._(
           index: -1, start: start, end: end, texts: texts);
-    } catch (exception) {
-      BetterPlayerUtils.log("Failed to parse subtitle line: $scanner");
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
+      BetterPlayerUtils.log(exception.toString());
       return BetterPlayerSubtitle._();
     }
   }
@@ -65,8 +72,10 @@ class BetterPlayerSubtitle {
       final texts = scanner.sublist(firstLineOfText, scanner.length);
       return BetterPlayerSubtitle._(
           index: index, start: start, end: end, texts: texts);
-    } catch (exception) {
-      BetterPlayerUtils.log("Failed to parse subtitle line: $scanner");
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
+      BetterPlayerUtils.log(exception.toString());
       return BetterPlayerSubtitle._();
     }
   }
@@ -102,8 +111,10 @@ class BetterPlayerSubtitle {
           seconds: int.tryParse(secsAndMillsSplit[0])!,
           milliseconds: int.tryParse(secsAndMillsSplit[1])!);
       return result;
-    } catch (exception) {
-      BetterPlayerUtils.log("Failed to process value: $value");
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
+      BetterPlayerUtils.log(exception.toString());
       return const Duration();
     }
   }

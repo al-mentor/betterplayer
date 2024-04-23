@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:better_player/better_player.dart';
@@ -14,7 +13,7 @@ import 'package:flutter/material.dart';
 class BetterPlayerWithControls extends StatefulWidget {
   final BetterPlayerController? controller;
 
-  const BetterPlayerWithControls({Key? key, this.controller}) : super(key: key);
+  const BetterPlayerWithControls({ this.controller});
 
   @override
   _BetterPlayerWithControlsState createState() =>
@@ -61,6 +60,9 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
   }
 
   void _onControllerChanged(BetterPlayerControllerEvent event) {
+    if (widget.controller?.videoPlayerController?.value.initialized ?? false) {
+      return;
+    }
     setState(() {
       if (!_initialized) {
         _initialized = true;
@@ -139,7 +141,7 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
             ),
           ),
           betterPlayerController.betterPlayerConfiguration.overlay ??
-              Container(),
+              const SizedBox.shrink(),
           BetterPlayerSubtitlesDrawer(
             betterPlayerController: betterPlayerController,
             betterPlayerSubtitlesConfiguration: subtitlesConfiguration,
@@ -165,14 +167,7 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
   ) {
     if (controlsConfiguration.showControls) {
       BetterPlayerTheme? playerTheme = controlsConfiguration.playerTheme;
-      if (playerTheme == null) {
-        playerTheme = BetterPlayerTheme.material;
-        // if (Platform.isAndroid) {
-        //   playerTheme = BetterPlayerTheme.material;
-        // } else {
-        //   playerTheme = BetterPlayerTheme.cupertino;
-        // }
-      }
+      playerTheme ??= BetterPlayerTheme.material;
 
       if (controlsConfiguration.customControlsBuilder != null &&
           playerTheme == BetterPlayerTheme.custom) {
@@ -180,10 +175,11 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
           betterPlayerController,
           onControlsVisibilityChanged,
         );
-      } else{ //if (playerTheme == BetterPlayerTheme.material) {
+      } else {
+        //if (playerTheme == BetterPlayerTheme.material) {
         return _buildMaterialControl();
       }
-    //  } 
+      //  }
       // else if (playerTheme == BetterPlayerTheme.cupertino) {
       //   return _buildCupertinoControl();
       // }
@@ -213,11 +209,7 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
 
 ///Widget used to set the proper box fit of the video. Default fit is 'fill'.
 class _BetterPlayerVideoFitWidget extends StatefulWidget {
-  const _BetterPlayerVideoFitWidget(
-    this.betterPlayerController,
-    this.boxFit, {
-    Key? key,
-  }) : super(key: key);
+  const _BetterPlayerVideoFitWidget(this.betterPlayerController, this.boxFit);
 
   final BetterPlayerController betterPlayerController;
   final BoxFit boxFit;
@@ -304,13 +296,20 @@ class _BetterPlayerVideoFitWidgetState
   @override
   Widget build(BuildContext context) {
     if (_initialized && _started) {
+      if (widget.betterPlayerController.isFullScreen) {
+        return Center(
+          child: AspectRatio(
+            aspectRatio:
+                controller!.value.size!.width / controller!.value.size!.height,
+            child: VideoPlayer(controller),
+          ),
+        );
+      }
       return Center(
         child: ClipRect(
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
+          child: IntrinsicHeight(
             child: FittedBox(
-              fit: widget.boxFit,
+              fit: BoxFit.contain,
               child: SizedBox(
                 width: controller!.value.size?.width ?? 0,
                 height: controller!.value.size?.height ?? 0,

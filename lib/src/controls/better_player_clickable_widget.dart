@@ -5,17 +5,18 @@ class BetterPlayerMaterialClickableWidget extends StatelessWidget {
   final Widget child;
   final void Function() onTap;
   final double? raduis;
+  final EdgeInsets padding;
   const BetterPlayerMaterialClickableWidget({
-    Key? key,
     required this.onTap,
     required this.child,
     this.raduis,
-  }) : super(key: key);
+    this.padding = EdgeInsets.zero,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      animationDuration: Duration(microseconds: 10),
+      animationDuration: const Duration(microseconds: 10),
       borderOnForeground: false,
       type: MaterialType.transparency,
       borderRadius: BorderRadius.circular(raduis ?? 60),
@@ -23,7 +24,10 @@ class BetterPlayerMaterialClickableWidget extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: child,
+        child: Padding(
+          padding: padding,
+          child: child,
+        ),
       ),
     );
   }

@@ -1,17 +1,19 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:better_player/better_player.dart';
 import 'package:better_player/src/configuration/better_player_controller_event.dart';
 import 'package:better_player/src/core/better_player_utils.dart';
 import 'package:better_player/src/core/better_player_with_controls.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-// import 'package:wakelock/wakelock.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 ///Widget which uses provided controller to render video player.
 class BetterPlayer extends StatefulWidget {
-  const BetterPlayer({Key? key, required this.controller}) : super(key: key);
+  const BetterPlayer({super.key, required this.controller});
 
   factory BetterPlayer.network(
     String url, {
@@ -67,7 +69,6 @@ class _BetterPlayerState extends State<BetterPlayer>
     WidgetsBinding.instance.addObserver(this);
   }
 
-
   @override
   void didChangeDependencies() {
     if (!_initialized) {
@@ -92,7 +93,9 @@ class _BetterPlayerState extends State<BetterPlayer>
         final contextLocale = Localizations.localeOf(context);
         locale = contextLocale;
       }
-    } catch (exception) {
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
       BetterPlayerUtils.log(exception.toString());
     }
     widget.controller.setupTranslations(locale);
@@ -103,8 +106,10 @@ class _BetterPlayerState extends State<BetterPlayer>
     ///If somehow BetterPlayer widget has been disposed from widget tree and
     ///full screen is on, then full screen route must be pop and return to normal
     ///state.
+    ///
+    WakelockPlus.disable();
+
     if (_isFullScreen) {
-      // Wakelock.disable();
       _navigatorState.maybePop();
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
           overlays: _betterPlayerConfiguration.systemOverlaysAfterFullScreen);
@@ -147,16 +152,23 @@ class _BetterPlayerState extends State<BetterPlayer>
   // ignore: avoid_void_async
   Future<void> onFullScreenChanged() async {
     final controller = widget.controller;
-    if (controller.isFullScreen && !_isFullScreen) {
-      _isFullScreen = true;
-      controller
-          .postEvent(BetterPlayerEvent(BetterPlayerEventType.openFullscreen));
-      await _pushFullScreenWidget(context);
-    } else if (_isFullScreen) {
-      Navigator.of(context, rootNavigator: true).pop();
-      _isFullScreen = false;
-      controller
-          .postEvent(BetterPlayerEvent(BetterPlayerEventType.hideFullscreen));
+    try {
+      if (controller.isFullScreen && !_isFullScreen) {
+        _isFullScreen = true;
+        controller
+            .postEvent(BetterPlayerEvent(BetterPlayerEventType.openFullscreen));
+        await _pushFullScreenWidget(context);
+      } else if (_isFullScreen) {
+        if (mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+        _isFullScreen = false;
+        controller
+            .postEvent(BetterPlayerEvent(BetterPlayerEventType.hideFullscreen));
+      }
+    } catch (e, stackTrace) {
+      log("non-fetal, error $e, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(e, stackTrace);
     }
   }
 
@@ -172,12 +184,18 @@ class _BetterPlayerState extends State<BetterPlayer>
       BuildContext context,
       Animation<double> animation,
       BetterPlayerControllerProvider controllerProvider) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Container(
-        alignment: Alignment.center,
-        color: Colors.black,
-        child: controllerProvider,
+    return WillPopScope(
+      onWillPop: () async {
+        controllerProvider.controller.toggleFullScreen();
+        return false;
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: Container(
+          alignment: Alignment.center,
+          color: Colors.black,
+          child: controllerProvider,
+        ),
       ),
     );
   }
@@ -256,7 +274,7 @@ class _BetterPlayerState extends State<BetterPlayer>
     }
 
     if (!_betterPlayerConfiguration.allowedScreenSleep) {
-      // Wakelock.enable();
+      WakelockPlus.enable();
     }
 
     await Navigator.of(context, rootNavigator: true).push(route);
@@ -265,7 +283,7 @@ class _BetterPlayerState extends State<BetterPlayer>
 
     // The wakelock plugins checks whether it needs to perform an action internally,
     // so we do not need to check Wakelock.isEnabled.
-    // Wakelock.disable();
+    WakelockPlus.disable();
 
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: _betterPlayerConfiguration.systemOverlaysAfterFullScreen);

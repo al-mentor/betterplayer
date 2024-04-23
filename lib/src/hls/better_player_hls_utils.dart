@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:better_player/src/asms/better_player_asms_audio_track.dart';
 import 'package:better_player/src/asms/better_player_asms_data_holder.dart';
 import 'package:better_player/src/asms/better_player_asms_subtitle.dart';
@@ -11,6 +13,7 @@ import 'package:better_player/src/hls/hls_parser/hls_playlist_parser.dart';
 import 'package:better_player/src/hls/hls_parser/rendition.dart';
 import 'package:better_player/src/hls/hls_parser/segment.dart';
 import 'package:better_player/src/hls/hls_parser/util.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 ///HLS helper class
 class BetterPlayerHlsUtils {
@@ -28,8 +31,10 @@ class BetterPlayerHlsUtils {
       tracks = list[0] as List<BetterPlayerAsmsTrack>;
       subtitles = list[1] as List<BetterPlayerAsmsSubtitle>;
       audios = list[2] as List<BetterPlayerAsmsAudioTrack>;
-    } catch (exception) {
-      BetterPlayerUtils.log("Exception on hls parse: $exception");
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
+      BetterPlayerUtils.log(exception.toString());
     }
     return BetterPlayerAsmsDataHolder(
         tracks: tracks, audios: audios, subtitles: subtitles);
@@ -42,19 +47,19 @@ class BetterPlayerHlsUtils {
       final parsedPlaylist = await HlsPlaylistParser.create()
           .parseString(Uri.parse(masterPlaylistUrl), data);
       if (parsedPlaylist is HlsMasterPlaylist) {
-        parsedPlaylist.variants.forEach(
-          (variant) {
+        for (var variant in parsedPlaylist.variants) {
             tracks.add(BetterPlayerAsmsTrack('', variant.format.width,
                 variant.format.height, variant.format.bitrate, 0, '', ''));
-          },
-        );
+          }
       }
 
       if (tracks.isNotEmpty) {
         tracks.insert(0, BetterPlayerAsmsTrack.defaultTrack());
       }
-    } catch (exception) {
-      BetterPlayerUtils.log("Exception on parseSubtitles: $exception");
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
+      BetterPlayerUtils.log(exception.toString());
     }
     return tracks;
   }
@@ -75,8 +80,10 @@ class BetterPlayerHlsUtils {
           }
         }
       }
-    } catch (exception) {
-      BetterPlayerUtils.log("Exception on parseSubtitles: $exception");
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
+      BetterPlayerUtils.log(exception.toString());
     }
 
     return subtitles;
@@ -91,7 +98,7 @@ class BetterPlayerHlsUtils {
   static Future<BetterPlayerAsmsSubtitle?> _parseSubtitlesPlaylist(
       Rendition rendition) async {
     try {
-      final HlsPlaylistParser _hlsPlaylistParser = HlsPlaylistParser.create();
+      final HlsPlaylistParser hlsPlaylistParser = HlsPlaylistParser.create();
       final subtitleData =
           await BetterPlayerAsmsUtils.getDataFromUrl(rendition.url.toString());
       if (subtitleData == null) {
@@ -99,7 +106,7 @@ class BetterPlayerHlsUtils {
       }
 
       final parsedSubtitle =
-          await _hlsPlaylistParser.parseString(rendition.url, subtitleData);
+          await hlsPlaylistParser.parseString(rendition.url, subtitleData);
       final hlsMediaPlaylist = parsedSubtitle as HlsMediaPlaylist;
       final hlsSubtitlesUrls = <String>[];
 
@@ -155,8 +162,10 @@ class BetterPlayerHlsUtils {
           segmentsTime: targetDuration,
           segments: asmsSegments,
           isDefault: isDefault);
-    } catch (exception) {
-      BetterPlayerUtils.log("Failed to process subtitles playlist: $exception");
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
+      BetterPlayerUtils.log(exception.toString());
       return null;
     }
   }

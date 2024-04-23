@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 import 'package:better_player/better_player.dart';
 import 'package:better_player/src/configuration/better_player_controller_event.dart';
@@ -8,6 +9,7 @@ import 'package:better_player/src/subtitles/better_player_subtitles_factory.dart
 import 'package:better_player/src/video_player/video_player.dart';
 import 'package:better_player/src/video_player/video_player_platform_interface.dart';
 import 'package:collection/collection.dart' show IterableExtension;
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -41,6 +43,9 @@ class BetterPlayerController {
       StreamController.broadcast();
 
   final StreamController<bool> _qualityVisibilityStreamController =
+      StreamController.broadcast();
+
+  final StreamController<bool> _speedVisibilityStreamController =
       StreamController.broadcast();
 
   ///Instance of video player controller which is adapter used to communicate
@@ -139,6 +144,9 @@ class BetterPlayerController {
   Stream<bool> get qualityVisibilityStream =>
       _qualityVisibilityStreamController.stream;
 
+  Stream<bool> get speedVisibilityStream =>
+      _speedVisibilityStreamController.stream;
+
   ///Current app lifecycle state.
   AppLifecycleState _appLifecycleState = AppLifecycleState.resumed;
 
@@ -223,7 +231,7 @@ class BetterPlayerController {
     this.betterPlayerPlaylistConfiguration,
     BetterPlayerDataSource? betterPlayerDataSource,
   }) {
-    this._betterPlayerControlsConfiguration =
+    _betterPlayerControlsConfiguration =
         betterPlayerConfiguration.controlsConfiguration;
     _eventListeners.add(eventListener);
     if (betterPlayerDataSource != null) {
@@ -240,7 +248,8 @@ class BetterPlayerController {
   }
 
   ///Setup new data source in Better Player.
-  Future setupDataSource(BetterPlayerDataSource betterPlayerDataSource) async {
+  Future setupDataSource(BetterPlayerDataSource betterPlayerDataSource,
+      {double? speed, BetterPlayerAsmsTrack? currentTrack}) async {
     postEvent(BetterPlayerEvent(BetterPlayerEventType.setupDataSource,
         parameters: <String, dynamic>{
           _dataSourceParameter: betterPlayerDataSource,
@@ -279,8 +288,11 @@ class BetterPlayerController {
     }
 
     ///Process data source
-    await _setupDataSource(betterPlayerDataSource);
-    setTrack(BetterPlayerAsmsTrack.defaultTrack());
+    await _setupDataSource(betterPlayerDataSource.copyWith());
+    setTrack(currentTrack ?? BetterPlayerAsmsTrack.defaultTrack());
+    if (speed != null) {
+      setSpeed(speed);
+    }
   }
 
   ///Configure subtitles based on subtitles source.
@@ -313,19 +325,19 @@ class BetterPlayerController {
       _getHeaders(),
     );
     if (data != null) {
-      final BetterPlayerAsmsDataHolder _response =
+      final BetterPlayerAsmsDataHolder response =
           await BetterPlayerAsmsUtils.parse(data, betterPlayerDataSource!.url);
 
       /// Load tracks
       if (_betterPlayerDataSource?.useAsmsTracks == true) {
-        _betterPlayerAsmsTracks = _response.tracks ?? [];
+        _betterPlayerAsmsTracks = response.tracks ?? [];
       }
 
       /// Load subtitles
       if (betterPlayerDataSource?.useAsmsSubtitles == true) {
         final List<BetterPlayerAsmsSubtitle> asmsSubtitles =
-            _response.subtitles ?? [];
-        asmsSubtitles.forEach((BetterPlayerAsmsSubtitle asmsSubtitle) {
+            response.subtitles ?? [];
+        for (var asmsSubtitle in asmsSubtitles) {
           _betterPlayerSubtitlesSourceList.add(
             BetterPlayerSubtitlesSource(
               type: BetterPlayerSubtitlesSourceType.network,
@@ -337,13 +349,13 @@ class BetterPlayerController {
               selectedByDefault: asmsSubtitle.isDefault,
             ),
           );
-        });
+        }
       }
 
       ///Load audio tracks
       if (betterPlayerDataSource?.useAsmsAudioTracks == true &&
           _isDataSourceAsms(betterPlayerDataSource!)) {
-        _betterPlayerAsmsAudioTracks = _response.audios ?? [];
+        _betterPlayerAsmsAudioTracks = response.audios ?? [];
         if (_betterPlayerAsmsAudioTracks?.isNotEmpty == true) {
           setAudioTrack(_betterPlayerAsmsAudioTracks!.first);
         }
@@ -583,6 +595,8 @@ class BetterPlayerController {
     final startAt = betterPlayerConfiguration.startAt;
     if (startAt != null) {
       seekTo(startAt);
+    } else {
+      seekTo(Duration.zero);
     }
   }
 
@@ -739,6 +753,10 @@ class BetterPlayerController {
     _qualityVisibilityStreamController.add(isVisible);
   }
 
+  void setSpeedVisibility(bool isVisible) {
+    _speedVisibilityStreamController.add(isVisible);
+  }
+
   ///Enable/disable controls (when enabled = false, controls will be always hidden)
   void setControlsEnabled(bool enabled) {
     if (!enabled) {
@@ -872,9 +890,9 @@ class BetterPlayerController {
       }
 
       _nextVideoTimer =
-          Timer.periodic(const Duration(milliseconds: 1000), (_timer) async {
+          Timer.periodic(const Duration(milliseconds: 1000), (timer) async {
         if (_nextVideoTime == 1) {
-          _timer.cancel();
+          timer.cancel();
           _nextVideoTimer = null;
         }
         if (_nextVideoTime != null) {
@@ -1212,7 +1230,9 @@ class BetterPlayerController {
         _videoPlayerValueOnError = null;
       }
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      log("non-fetal, error $e, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(e, stackTrace);
       return false;
     }
   }
@@ -1297,7 +1317,7 @@ class BetterPlayerController {
   /// controller.
   void setBetterPlayerControlsConfiguration(
       BetterPlayerControlsConfiguration betterPlayerControlsConfiguration) {
-    this._betterPlayerControlsConfiguration = betterPlayerControlsConfiguration;
+    _betterPlayerControlsConfiguration = betterPlayerControlsConfiguration;
   }
 
   /// Add controller internal event.
@@ -1330,7 +1350,9 @@ class BetterPlayerController {
       _controllerEventStreamController.close();
 
       ///Delete files async
-      _tempFiles.forEach((file) => file.delete());
+      for (var file in _tempFiles) {
+        file.delete();
+      }
     }
   }
 }

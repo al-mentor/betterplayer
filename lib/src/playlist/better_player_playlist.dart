@@ -1,5 +1,4 @@
 import 'package:better_player/better_player.dart';
-import 'package:better_player/src/core/better_player_utils.dart';
 
 // Flutter imports:
 import 'package:flutter/material.dart';
@@ -11,11 +10,11 @@ class BetterPlayerPlaylist extends StatefulWidget {
   final BetterPlayerPlaylistConfiguration betterPlayerPlaylistConfiguration;
 
   const BetterPlayerPlaylist({
-    Key? key,
+    super.key,
     required this.betterPlayerDataSourceList,
     required this.betterPlayerConfiguration,
     required this.betterPlayerPlaylistConfiguration,
-  }) : super(key: key);
+  });
 
   @override
   BetterPlayerPlaylistState createState() => BetterPlayerPlaylistState();
@@ -25,31 +24,25 @@ class BetterPlayerPlaylist extends StatefulWidget {
 class BetterPlayerPlaylistState extends State<BetterPlayerPlaylist> {
   BetterPlayerPlaylistController? _betterPlayerPlaylistController;
 
-  BetterPlayerController? get _betterPlayerController =>
-      _betterPlayerPlaylistController!.betterPlayerController;
+  BetterPlayerController? get _betterPlayerController => _betterPlayerPlaylistController!.betterPlayerController;
 
   ///Get BetterPlayerPlaylistController
-  BetterPlayerPlaylistController? get betterPlayerPlaylistController =>
-      _betterPlayerPlaylistController;
+  BetterPlayerPlaylistController? get betterPlayerPlaylistController => _betterPlayerPlaylistController;
 
   @override
   void initState() {
     _betterPlayerPlaylistController = BetterPlayerPlaylistController(
-        widget.betterPlayerDataSourceList,
-        betterPlayerConfiguration: widget.betterPlayerConfiguration,
-        betterPlayerPlaylistConfiguration:
-            widget.betterPlayerPlaylistConfiguration);
+      widget.betterPlayerDataSourceList,
+      betterPlayerConfiguration: widget.betterPlayerConfiguration,
+      betterPlayerPlaylistConfiguration: widget.betterPlayerPlaylistConfiguration,
+    );
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: _betterPlayerController!.getAspectRatio() ??
-          BetterPlayerUtils.calculateAspectRatio(context),
-      child: BetterPlayer(
-        controller: _betterPlayerController!,
-      ),
+    return BetterPlayer(
+      controller: _betterPlayerController!,
     );
   }
 

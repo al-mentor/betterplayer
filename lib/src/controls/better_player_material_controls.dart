@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:math';
+
 
 import 'package:better_player/src/configuration/better_player_controls_configuration.dart';
 import 'package:better_player/src/controls/better_player_clickable_widget.dart';
@@ -12,6 +15,11 @@ import 'package:better_player/src/video_player/video_player.dart';
 // Flutter imports:
 import 'package:flutter/material.dart';
 
+import '../../better_player.dart';
+import '../colors.dart';
+
+
+
 class BetterPlayerMaterialControls extends StatefulWidget {
   ///Callback used to send information if player bar is hidden or not
   final Function(bool visbility) onControlsVisibilityChanged;
@@ -20,30 +28,30 @@ class BetterPlayerMaterialControls extends StatefulWidget {
   final BetterPlayerControlsConfiguration controlsConfiguration;
 
   const BetterPlayerMaterialControls({
-    Key? key,
     required this.onControlsVisibilityChanged,
     required this.controlsConfiguration,
-  }) : super(key: key);
+  });
 
   @override
-  State<StatefulWidget> createState() {
+  State<BetterPlayerMaterialControls> createState() {
     return _BetterPlayerMaterialControlsState();
   }
 }
 
 class _BetterPlayerMaterialControlsState
-    extends BetterPlayerControlsState<BetterPlayerMaterialControls> {
+    extends BetterPlayerControlsState<BetterPlayerMaterialControls>
+    with WidgetsBindingObserver {
   VideoPlayerValue? _latestValue;
   double? _latestVolume;
   Timer? _hideTimer;
   Timer? _initTimer;
   Timer? _showAfterExpandCollapseTimer;
-  bool _displayTapped = false;
   bool _wasLoading = false;
   VideoPlayerController? _controller;
   BetterPlayerController? _betterPlayerController;
-  StreamSubscription? _controlsVisibilityStreamSubscription;
-  StreamSubscription? _qualityVisibilityStreamSubscription;
+  static StreamSubscription? _controlsVisibilityStreamSubscription;
+  static StreamSubscription? _qualityVisibilityStreamSubscription;
+  static StreamSubscription? _speedVisibilityStreamSubscription;
 
   BetterPlayerControlsConfiguration get _controlsConfiguration =>
       widget.controlsConfiguration;
@@ -65,17 +73,31 @@ class _BetterPlayerMaterialControlsState
     return buildLTRDirectionality(_buildMainWidget());
   }
 
+  // void callSpeedSheetFunc() {
+  //   callSpeedSheet();
+  // }
+
   ///Builds main widget of the controls.
   Widget _buildMainWidget() {
     _wasLoading = isLoading(_latestValue);
     if (_latestValue?.hasError == true) {
-      return Container(
-        color: Colors.black,
-        child: _buildErrorWidget(),
+      return Stack(
+        children: [
+          Container(
+            color: Colors.black,
+            child: _buildErrorWidget(),
+          ),
+           Positioned(
+            top: 16,
+            left: 16,
+            child: BetterPlayerConstant.videoCloseIcon ,
+          ),
+        ],
       );
     }
 
     return GestureDetector(
+      behavior: HitTestBehavior.translucent,
       onTap: () {
         if (BetterPlayerMultipleGestureDetector.of(context) != null) {
           BetterPlayerMultipleGestureDetector.of(context)!.onTap?.call();
@@ -95,38 +117,40 @@ class _BetterPlayerMaterialControlsState
           BetterPlayerMultipleGestureDetector.of(context)!.onLongPress?.call();
         }
       },
-      child: AbsorbPointer(
-        absorbing: controlsNotVisible,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (_wasLoading)
-              Center(child: _buildLoadingWidget())
-            else
-              _buildHitArea(),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _buildTopBar(),
-            ),
-            Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomBar()),
-            Positioned(
-              right: 0,
-              bottom: _controlsConfiguration.controlBarHeight,
-              width: MediaQuery.of(context).size.width * 0.4,
-              child: _buildNextVideoWidget(),
-            ),
-          ],
-        ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (_wasLoading)
+            Center(child: _buildLoadingWidget())
+          else
+            _buildHitArea(),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _buildTopBar(),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0.0,
+            right: 0.0,
+            child: _buildBottomBar(),
+          ),
+          Positioned(
+            right: 0,
+            bottom: _controlsConfiguration.controlBarHeight,
+            width: MediaQuery.of(context).size.width * 0.4,
+            child: _buildNextVideoWidget(),
+          ),
+        ],
       ),
     );
   }
 
   @override
   void dispose() {
-    _dispose();
     super.dispose();
+    _dispose();
   }
 
   void _dispose() {
@@ -136,22 +160,23 @@ class _BetterPlayerMaterialControlsState
     _initTimer?.cancel();
     _showAfterExpandCollapseTimer?.cancel();
     _controlsVisibilityStreamSubscription?.cancel();
+    _qualityVisibilityStreamSubscription?.cancel();
   }
 
   @override
   void didChangeDependencies() {
-      final _oldController = _betterPlayerController;
-      _betterPlayerController = BetterPlayerController.of(context);
-      _controller = _betterPlayerController!.videoPlayerController;
-      _latestValue = _controller!.value;
+    final oldController = _betterPlayerController;
+    _betterPlayerController = BetterPlayerController.of(context);
+    _controller = _betterPlayerController!.videoPlayerController;
+    _latestValue = _controller!.value;
 
-      if (_oldController != _betterPlayerController) {
-        _dispose();
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (oldController != _betterPlayerController) {
+      _dispose();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         _initialize();
-        });
-      }
-  
+      });
+    }
+
     super.didChangeDependencies();
   }
 
@@ -203,37 +228,55 @@ class _BetterPlayerMaterialControlsState
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: (_controlsConfiguration.enableOverflowMenu)
-          ? AnimatedOpacity(
-              opacity: controlsNotVisible ? 0.0 : 1.0,
-              duration: _controlsConfiguration.controlsHideTime,
-              onEnd: _onPlayerHide,
-              child: Container(
-                height: _controlsConfiguration.topBarHeight,
-                width: double.infinity,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (_controlsConfiguration.enablePip)
-                      _buildPipButtonWrapperWidget(
-                          controlsNotVisible, _onPlayerHide)
-                    else
-                      const SizedBox(),
-                    if (_controlsConfiguration.topBarEndWidget != null) ...[
-                      Spacer(),
-                      _controlsConfiguration.topBarEndWidget!
-                    ],
-                    if (_controlsConfiguration.topBarCenterWidget != null) ...[
-                      Spacer(),
-                      _controlsConfiguration.topBarCenterWidget!
-                    ],
-                    if (betterPlayerController!.isFullScreen &&
+          ? SizedBox(
+              width: double.infinity,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (!(betterPlayerController?.isPIPStart ?? false))
+                    if (_controlsConfiguration
+                                .topBarEndWidgetWhenVideoIsNotLocked !=
+                            null ||
                         _controlsConfiguration
-                            .disableBuildMoreWidgetWhenFullScreen)
-                      const SizedBox.shrink()
-                    else
-                      _buildMoreButton(),
+                                .topBarEndWidgetWhenVideoIsLocked !=
+                            null) ...[
+                      !controlsNotVisible
+                          ? (_controlsConfiguration
+                                  .topBarEndWidgetWhenVideoIsNotLocked ??
+                              const SizedBox.shrink())
+                          : (_controlsConfiguration
+                                  .topBarEndWidgetWhenVideoIsLocked ??
+                              const SizedBox.shrink())
+                    ],
+                  const Spacer(),
+                  if (_controlsConfiguration.topBarCenterWidget != null &&
+                      _betterPlayerController!.isFullScreen) ...[
+                    AnimatedOpacity(
+                        opacity: controlsNotVisible ? 0.0 : 1.0,
+                        duration: _controlsConfiguration.controlsHideTime,
+                        onEnd: _onPlayerHide,
+                        child: _controlsConfiguration.topBarCenterWidget!),
                   ],
-                ),
+                  const Spacer(),
+                  if (_controlsConfiguration.enablePip)
+                    _buildPipButtonWrapperWidget(
+                        controlsNotVisible, _onPlayerHide)
+                  else
+                    const SizedBox(),
+                  if (betterPlayerController!.isFullScreen &&
+                      _controlsConfiguration
+                          .disableBuildMoreWidgetWhenFullScreen)
+                    const SizedBox.shrink()
+                  else
+                    AbsorbPointer(
+                      absorbing: controlsNotVisible,
+                      child: AnimatedOpacity(
+                          opacity: controlsNotVisible ? 0.0 : 1.0,
+                          duration: _controlsConfiguration.controlsHideTime,
+                          onEnd: _onPlayerHide,
+                          child: _buildMoreButton()),
+                    ),
+                ],
               ),
             )
           : const SizedBox(),
@@ -246,128 +289,111 @@ class _BetterPlayerMaterialControlsState
         betterPlayerController!.enablePictureInPicture(
             betterPlayerController!.betterPlayerGlobalKey!);
       },
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Icon(
-          betterPlayerControlsConfiguration.pipMenuIcon,
-          color: betterPlayerControlsConfiguration.iconsColor,
-        ),
+      padding: const EdgeInsets.all(8.0),
+      child: Icon(
+        betterPlayerControlsConfiguration.pipMenuIcon,
+        color: betterPlayerControlsConfiguration.iconsColor,
       ),
     );
   }
 
   Widget _buildPipButtonWrapperWidget(
       bool hideStuff, void Function() onPlayerHide) {
-    return FutureBuilder<bool>(
-      future: betterPlayerController!.isPictureInPictureSupported(),
-      builder: (context, snapshot) {
-        final bool isPipSupported = snapshot.data ?? false;
-        if (isPipSupported &&
-            _betterPlayerController!.betterPlayerGlobalKey != null) {
-          return AnimatedOpacity(
-            opacity: hideStuff ? 0.0 : 1.0,
-            duration: betterPlayerControlsConfiguration.controlsHideTime,
-            onEnd: onPlayerHide,
-            child: Container(
-              height: betterPlayerControlsConfiguration.controlBarHeight,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  _buildPipButton(),
-                ],
-              ),
-            ),
-          );
-        } else {
-          return const SizedBox();
-        }
-      },
-    );
+    //  if (!Platform.isIOS) {
+    return const SizedBox.shrink();
+    //}
+    // return FutureBuilder<bool>(
+    //   future: betterPlayerController!.isPictureInPictureSupported(),
+    //   builder: (context, snapshot) {
+    //     final bool isPipSupported = snapshot.data ?? false;
+    //     if (isPipSupported &&
+    //         _betterPlayerController!.betterPlayerGlobalKey != null) {
+    //       return AnimatedOpacity(
+    //         opacity: hideStuff ? 0.0 : 1.0,
+    //         duration: betterPlayerControlsConfiguration.controlsHideTime,
+    //         onEnd: onPlayerHide,
+    //         child: Container(
+    //           child: Row(
+    //             mainAxisAlignment: MainAxisAlignment.end,
+    //             children: [
+    //               _buildPipButton(),
+    //             ],
+    //           ),
+    //         ),
+    //       );
+    //     } else {
+    //       return const SizedBox();
+    //     }
+    //   },
+    // );
   }
 
   Widget _buildMoreButton() {
-    return Padding(
-      padding: _controlsConfiguration.overflowMenuPadding ??
-          const EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          BetterPlayerMaterialClickableWidget(
-            onTap: () {
-              onShowMoreClicked();
-            },
-            child: _controlsConfiguration.overflowMenuWidget ??
-                Icon(
-                  _controlsConfiguration.overflowMenuIcon,
-                  color: _controlsConfiguration.iconsColor,
-                ),
-          ),
-        ],
-      ),
+    return Row(
+      children: [
+        IconButton(
+          //padding: const EdgeInsets.all(8.0),
+          onPressed: () {
+            onShowMoreClicked();
+          },
+          icon: _controlsConfiguration.overflowMenuWidget ??
+              Icon(
+                _controlsConfiguration.overflowMenuIcon,
+                color: _controlsConfiguration.iconsColor,
+                size: 35.0,
+              ),
+        ),
+      ],
     );
   }
 
   Widget _buildBottomBar() {
-    final isFullScreen =
-        MediaQuery.of(context).orientation == Orientation.landscape;
+    final isFullScreen = betterPlayerController!.isFullScreen;
     // if (!betterPlayerController!.controlsEnabled) {
     //   return const SizedBox();
     // }
-    return AnimatedOpacity(
-      opacity: controlsNotVisible ? 0.0 : 1.0,
-      duration: _controlsConfiguration.controlsHideTime,
-      onEnd: _onPlayerHide,
-      child: Container(
-        height: _controlsConfiguration.bottomBarHeight,
-        // height: _controlsConfiguration.controlBarHeight + 20.0,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            if (!betterPlayerController!.controlsEnabled)
-              const Expanded(child: SizedBox())
-            else
-              Expanded(
-                flex: 1,
-                child: Row(
-                  children: [
-                    // if (_controlsConfiguration.enablePlayPause)
-                    //   _buildPlayPause(_controller!)
-                    // else
-                    //   const SizedBox(),
-
-                    if (_betterPlayerController!.isLiveStream())
-                      const SizedBox()
-                    else
-                      _controlsConfiguration.enableProgressBar
-                          ? _buildProgressBar()
-                          : const SizedBox(),
-                    if (_betterPlayerController!.isLiveStream())
-                      _buildLiveWidget()
-                    else
-                      _controlsConfiguration.enableProgressText
-                          ? _buildPosition()
-                          : const SizedBox(),
-                    if (_controlsConfiguration.enableMute)
-                      _buildMuteButton(_controller)
-                    else
-                      const SizedBox(),
-
-                    if (_controlsConfiguration.enableFullscreen)
-                      _buildExpandButton()
-                    else
-                      const SizedBox(),
-                  ],
+    return ListenableBuilder(
+      listenable: _controller!,
+      builder: (context, child) => AnimatedCrossFade(
+        alignment: Alignment.bottomCenter,
+        crossFadeState: controlsNotVisible
+            ? CrossFadeState.showSecond
+            : CrossFadeState.showFirst,
+        duration: _controlsConfiguration.controlsHideTime,
+        //onEnd: _onPlayerHide,
+        secondChild: _buildStickyProgressBar(),
+        firstChild: Container(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              if (betterPlayerController!.controlsEnabled)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  child: Row(
+                    children: [
+                      _buildPosition(),
+                      if (!_betterPlayerController!.isLiveStream() &&
+                          _controlsConfiguration.enableProgressBar)
+                        _buildProgressBar(),
+                      _buildDuration(),
+                      if (_controlsConfiguration.enableMute)
+                        _buildMuteButton(_controller)
+                      else
+                        const SizedBox(),
+                      if (_controlsConfiguration.enableFullscreen)
+                        _buildExpandButton()
+                      else
+                        const SizedBox(),
+                    ],
+                  ),
                 ),
-              ),
-            if (_controlsConfiguration.fullScreenControlsBuilder != null &&
-                isFullScreen &&
-                !_betterPlayerController!.isPIPStart) ...[
-              Expanded(
-                child: _controlsConfiguration.fullScreenControlsBuilder!
-                    .call(context),
-              ),
-              // SizedBox(height: MediaQuery.of(context).padding.bottom),
-            ]
-          ],
+              if (_controlsConfiguration.fullScreenControlsBuilder != null &&
+                  isFullScreen &&
+                  !_betterPlayerController!.isPIPStart) ...[
+                _controlsConfiguration.fullScreenControlsBuilder!.call(context),
+              ]
+            ],
+          ),
         ),
       ),
     );
@@ -383,28 +409,25 @@ class _BetterPlayerMaterialControlsState
   }
 
   Widget _buildExpandButton() {
-    return Padding(
-      padding: _controlsConfiguration.fullScreenIconPadding ??
-          EdgeInsets.only(right: 12.0),
-      child: BetterPlayerMaterialClickableWidget(
-        onTap: _onExpandCollapse,
-        child: AnimatedOpacity(
-          opacity: controlsNotVisible ? 0.0 : 1.0,
-          duration: _controlsConfiguration.controlsHideTime,
-          child: _controlsConfiguration.fullScreenIconWidget ??
-              Container(
-                height: _controlsConfiguration.controlBarHeight,
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Center(
-                  child: Icon(
-                    _betterPlayerController!.isFullScreen
-                        ? _controlsConfiguration.fullscreenDisableIcon
-                        : _controlsConfiguration.fullscreenEnableIcon,
-                    color: _controlsConfiguration.iconsColor,
-                  ),
+    return BetterPlayerMaterialClickableWidget(
+      onTap: _onExpandCollapse,
+      raduis: _controlsConfiguration.fullScreenIconWidget != null ? 0 : null,
+      child: AnimatedOpacity(
+        opacity: controlsNotVisible ? 0.0 : 1.0,
+        duration: _controlsConfiguration.controlsHideTime,
+        child: _controlsConfiguration.fullScreenIconWidget ??
+            Container(
+              height: _controlsConfiguration.controlBarHeight,
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Center(
+                child: Icon(
+                  _betterPlayerController!.isFullScreen
+                      ? _controlsConfiguration.fullscreenDisableIcon
+                      : _controlsConfiguration.fullscreenEnableIcon,
+                  color: _controlsConfiguration.iconsColor,
                 ),
               ),
-        ),
+            ),
       ),
     );
   }
@@ -413,12 +436,15 @@ class _BetterPlayerMaterialControlsState
     if (!betterPlayerController!.controlsEnabled) {
       return const SizedBox();
     }
-    return Container(
-      child: Center(
-        child: AnimatedOpacity(
-          opacity: controlsNotVisible ? 0.0 : 1.0,
-          duration: _controlsConfiguration.controlsHideTime,
-          child: _buildMiddleRow(),
+    return AbsorbPointer(
+      absorbing: controlsNotVisible,
+      child: Container(
+        child: Center(
+          child: AnimatedOpacity(
+            opacity: controlsNotVisible ? 0.0 : 1.0,
+            duration: _controlsConfiguration.controlsHideTime,
+            child: _buildMiddleRow(),
+          ),
         ),
       ),
     );
@@ -435,14 +461,10 @@ class _BetterPlayerMaterialControlsState
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 if (_controlsConfiguration.enableSkips)
-                  Flexible(child: _buildSkipButton())
-                else
-                  const SizedBox(),
+                  Flexible(child: _buildSkipButton()),
                 Flexible(child: _buildReplayButton(_controller!)),
                 if (_controlsConfiguration.enableSkips)
-                  Flexible(child: _buildForwardButton())
-                else
-                  const SizedBox(),
+                  Flexible(child: _buildForwardButton()),
               ],
             ),
     );
@@ -464,24 +486,14 @@ class _BetterPlayerMaterialControlsState
 
   Widget _buildSkipButton() {
     return _buildHitAreaClickableButton(
-      icon: _controlsConfiguration.skipBackIconWidget ??
-          Icon(
-            _controlsConfiguration.skipBackIcon,
-            size: 36,
-            color: _controlsConfiguration.iconsColor,
-          ),
+      icon: _controlsConfiguration.skipBackIconWidget,
       onClicked: skipBack,
     );
   }
 
   Widget _buildForwardButton() {
     return _buildHitAreaClickableButton(
-      icon: _controlsConfiguration.skipForwardIconWidget ??
-          Icon(
-            _controlsConfiguration.skipForwardIcon,
-            size: 36,
-            color: _controlsConfiguration.iconsColor,
-          ),
+      icon: _controlsConfiguration.skipForwardIconWidget,
       onClicked: skipForward,
     );
   }
@@ -556,7 +568,7 @@ class _BetterPlayerMaterialControlsState
                   ),
                   child: FittedBox(
                     child: Text(
-                      "${_betterPlayerController!.translations.controlsNextVideoIn} $time...",
+                      "${_betterPlayerController!.translations.controlsNextVideoIn} $time",
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
@@ -624,32 +636,47 @@ class _BetterPlayerMaterialControlsState
   Widget _buildPosition() {
     final position =
         _latestValue != null ? _latestValue!.position : Duration.zero;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+      child: RichText(
+        text: TextSpan(
+          text: BetterPlayerUtils.formatDuration(position),
+          style: TextStyle(
+            fontSize: 12.0,
+            color: _controlsConfiguration.textColor,
+            decoration: TextDecoration.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDuration() {
     final duration = _latestValue != null && _latestValue!.duration != null
         ? _latestValue!.duration!
         : Duration.zero;
 
     return Padding(
-      padding: _controlsConfiguration.enablePlayPause
-          ? const EdgeInsets.only(right: 24)
-          : const EdgeInsets.symmetric(horizontal: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0),
       child: RichText(
         text: TextSpan(
-            text: BetterPlayerUtils.formatDuration(position),
-            style: TextStyle(
-              fontSize: 10.0,
-              color: _controlsConfiguration.textColor,
-              decoration: TextDecoration.none,
+          style: TextStyle(
+            fontSize: 12.0,
+            color: _controlsConfiguration.textColor,
+            decoration: TextDecoration.none,
+          ),
+          children: <TextSpan>[
+            TextSpan(
+              text: BetterPlayerUtils.formatDuration(duration),
+              style: TextStyle(
+                fontSize: 12.0,
+                color: _controlsConfiguration.textColor,
+                decoration: TextDecoration.none,
+              ),
             ),
-            children: <TextSpan>[
-              TextSpan(
-                text: ' / ${BetterPlayerUtils.formatDuration(duration)}',
-                style: TextStyle(
-                  fontSize: 10.0,
-                  color: _controlsConfiguration.textColor,
-                  decoration: TextDecoration.none,
-                ),
-              )
-            ]),
+          ],
+        ),
       ),
     );
   }
@@ -660,7 +687,6 @@ class _BetterPlayerMaterialControlsState
     _startHideTimer();
 
     changePlayerControlsNotVisible(false);
-    _displayTapped = true;
   }
 
   Future<void> _initialize() async {
@@ -687,9 +713,17 @@ class _BetterPlayerMaterialControlsState
       }
     });
 
+    await _qualityVisibilityStreamSubscription?.cancel();
+    await _speedVisibilityStreamSubscription?.cancel();
+
     _qualityVisibilityStreamSubscription =
         _betterPlayerController!.qualityVisibilityStream.listen((state) {
-      showQualityBottomSheet(true);
+      showQualityBottomSheet(state);
+    });
+
+    _speedVisibilityStreamSubscription =
+        _betterPlayerController!.speedVisibilityStream.listen((state) {
+      callSpeedSheet();
     });
   }
 
@@ -741,65 +775,132 @@ class _BetterPlayerMaterialControlsState
     if (_betterPlayerController!.controlsAlwaysVisible) {
       return;
     }
-    _hideTimer = Timer(const Duration(milliseconds: 3000), () {
+    _hideTimer = Timer(const Duration(milliseconds: 4000), () {
       changePlayerControlsNotVisible(true);
     });
   }
 
   void _updateState() {
     if (mounted) {
-      if (!controlsNotVisible ||
-          isVideoFinished(_controller!.value) ||
-          _wasLoading ||
-          isLoading(_controller!.value) &&
-              betterPlayerController!.isPlaying()!) {
-        setState(() {
-          _latestValue = _controller!.value;
-          if (isVideoFinished(_latestValue) &&
-              _betterPlayerController?.isLiveStream() == false &&
-              betterPlayerController!.isPlaying()!) {
-            changePlayerControlsNotVisible(false);
-            print("IN UPDATE STATE");
-            _hideTimer?.cancel();
-            _initTimer?.cancel();
-            _showAfterExpandCollapseTimer?.cancel();
-            _betterPlayerController!.pause();
-            //_dispose();
-            // _hideTimer?.cancel();
-            // _initTimer?.cancel();
-            //_controller?.removeListener(_updateState);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!controlsNotVisible ||
+            isVideoFinished(_controller!.value) ||
+            _wasLoading ||
+            isLoading(_controller!.value) &&
+                betterPlayerController!.isPlaying()!) {
+          if (mounted) {
+            setState(() {
+              _latestValue = _controller!.value;
+              if (isVideoFinished(_latestValue) &&
+                  _betterPlayerController?.isLiveStream() == false &&
+                  betterPlayerController!.isPlaying()!) {
+                changePlayerControlsNotVisible(false);
+                _hideTimer?.cancel();
+                _initTimer?.cancel();
+                _showAfterExpandCollapseTimer?.cancel();
+                _betterPlayerController!.pause();
+                //_dispose();
+                // _hideTimer?.cancel();
+                // _initTimer?.cancel();
+                //_controller?.removeListener(_updateState);
+              }
+            });
           }
-        });
-      }
+        }
+      });
     }
   }
 
+  int? seekDurationViewOnly;
   Widget _buildProgressBar() {
+    final controller = _controller!;
+    final positionInSeconds = controller.value.position.inSeconds;
+    final bufferedAfter = controller.value.buffered
+        .where((element) => element.end.inSeconds > positionInSeconds);
+    double? bufferValue;
+    if (bufferedAfter.isNotEmpty) {
+      if (bufferedAfter.length == 1) {
+        bufferValue = bufferedAfter.elementAt(0).end.inSeconds.toDouble();
+      } else {
+        bufferValue =
+            bufferedAfter.map((e) => e.end.inSeconds).reduce(max).toDouble();
+      }
+    }
+    if (!controller.value.initialized) {
+      return const Expanded(
+        child: SizedBox(),
+      );
+    }
+
+    final maxDuration = controller.value.duration?.inSeconds.toDouble() ?? 1;
+    if (maxDuration != 1 && positionInSeconds > maxDuration) {
+      _betterPlayerController
+          ?.seekTo(const Duration())
+          .then((value) => controller.play());
+    }
+
     return Expanded(
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        alignment: Alignment.bottomCenter,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: BetterPlayerMaterialVideoProgressBar(
-          _controller,
-          _betterPlayerController,
-          onDragStart: () {
+      child: SizedBox(
+        height: 50.0,
+        child: Slider(
+          value:
+              seekDurationViewOnly?.toDouble() ?? positionInSeconds.toDouble(),
+          secondaryTrackValue:
+              bufferValue != null ? min(maxDuration, bufferValue) : null,
+          max: maxDuration,
+          onChanged: (v) {
+            if (!Platform.isIOS) {
+              _betterPlayerController?.seekTo(Duration(seconds: v.toInt()));
+            } else {
+              if (seekDurationViewOnly != null) {
+                setState(() {
+                  seekDurationViewOnly = v.toInt();
+                });
+              }
+            }
+          },
+          onChangeStart: (v) {
+            if (Platform.isIOS) {
+              seekDurationViewOnly = v.toInt();
+            }
             _hideTimer?.cancel();
           },
-          onDragEnd: () {
-            _startHideTimer();
-          },
-          onTapDown: () {
+          onChangeEnd: (v) async {
+            if (Platform.isIOS) {
+              _betterPlayerController
+                  ?.seekTo(Duration(seconds: v.toInt()))
+                  .then((value) {
+                setState(() {
+                  seekDurationViewOnly = null;
+                });
+              });
+            }
+            while (controller.value.isBuffering) {
+              await Future.delayed(const Duration(milliseconds: 200));
+            }
             cancelAndRestartTimer();
           },
-          colors: BetterPlayerProgressColors(
-              playedColor: _controlsConfiguration.progressBarPlayedColor,
-              handleColor: _controlsConfiguration.progressBarHandleColor,
-              bufferedColor: _controlsConfiguration.progressBarBufferedColor,
-              backgroundColor:
-                  _controlsConfiguration.progressBarBackgroundColor),
+          activeColor: _controlsConfiguration.progressBarPlayedColor,
+          secondaryActiveColor: _controlsConfiguration.progressBarBufferedColor,
+          inactiveColor: Pallete.gray4,
         ),
       ),
+    );
+  }
+
+  Widget _buildStickyProgressBar() {
+    if (betterPlayerController!.isFullScreen) {
+      return const SizedBox.shrink();
+    }
+    return BetterPlayerMaterialVideoProgressBar(
+      _controller,
+      _betterPlayerController,
+      height: 8.0,
+      colors: BetterPlayerProgressColors(
+          playedColor: _controlsConfiguration.progressBarPlayedColor,
+          handleColor: Colors.transparent,
+          bufferedColor: _controlsConfiguration.progressBarBufferedColor,
+          backgroundColor: Pallete.gray4),
     );
   }
 

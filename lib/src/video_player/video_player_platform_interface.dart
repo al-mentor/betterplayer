@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:better_player/src/configuration/better_player_buffering_configuration.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'download_video_list.dart';
 import 'method_channel_video_player.dart';
 
 /// The interface that implementations of video_player must implement.
@@ -81,18 +82,23 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('stopPreCache() has not been implemented.');
   }
 
+
+
   /// Set data source of video.
   Future<void> setDataSource(int? textureId, DataSource dataSource) {
     throw UnimplementedError('setDataSource() has not been implemented.');
   }
 
+
+
   Future<void> download(int? textureId, DataSource dataSource) {
     throw UnimplementedError('download() has not been implemented.');
   }
-
-
   /// Returns a Stream of [VideoEventType]s.
   Stream<VideoEvent> videoEventsFor(int? textureId) {
+    throw UnimplementedError('videoEventsFor() has not been implemented.');
+  }
+  Stream<DownloadVideoList> videoDownloadEventsFor(int? textureId) {
     throw UnimplementedError('videoEventsFor() has not been implemented.');
   }
 
@@ -138,6 +144,18 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('getPosition() has not been implemented.');
   }
 
+
+  Future<String?> getDownloadData(int? textureId) {
+    throw UnimplementedError('getDownloadData() has not been implemented.');
+  }
+
+
+  Future<void> deleteDownloadedVideo(int? textureId , String? url) {
+    throw UnimplementedError('getDownloadData() has not been implemented.');
+  }
+
+
+
   /// Gets the video position as [DateTime].
   Future<DateTime?> getAbsolutePosition(int? textureId) {
     throw UnimplementedError('getAbsolutePosition() has not been implemented.');
@@ -152,6 +170,11 @@ abstract class VideoPlayerPlatform {
 
   ///Disables PiP mode.
   Future<void> disablePictureInPicture(int? textureId) {
+    throw UnimplementedError(
+        'disablePictureInPicture() has not been implemented.');
+  }
+
+  Future<void> deleteAllDownloadedVideo(int? textureId) {
     throw UnimplementedError(
         'disablePictureInPicture() has not been implemented.');
   }

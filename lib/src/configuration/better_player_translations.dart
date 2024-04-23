@@ -47,10 +47,10 @@ class BetterPlayerTranslations {
     this.hdQuality = "HD",
     this.lowQuality = "Low Quality",
     this.fullHdQuality = 'Full HD',
-    this.autoQualityDesc = 'To get the best possible experience',
+    this.autoQualityDesc = '',//'To get the best possible experience',
     this.lowQualityDesc = 'data saver',
-    this.fullHdQualityDesc = 'up to 1080p',
-    this.hdQualityDesc = 'up to 720p',
+    this.fullHdQualityDesc = '1080p',
+    this.hdQualityDesc = '720p',
   });
 
   factory BetterPlayerTranslations.polish() => BetterPlayerTranslations(
@@ -115,14 +115,14 @@ class BetterPlayerTranslations {
       overflowMenuAudioTracks: "الصوت",
       qualityAuto: "تلقائي",
       properites: "الخصائص",
-      speed: "السرعه",
+      speed: "السرعة",
       fullHdQuality: "Full HD",
       hdQuality: "HD",
       lowQuality: "جودة منخفضة",
-      autoQualityDesc: 'للحصول على افضل تجربة ممكنة',
+      autoQualityDesc: '',//'للحصول على افضل تجربة ممكنة',
       lowQualityDesc: 'موفر البيانات',
-      fullHdQualityDesc: 'تصل الي 1080p',
-      hdQualityDesc: 'تصل الي 720p',
+      fullHdQualityDesc :'1080p',
+      hdQualityDesc : '720p',
       upToDesc: 'تصل الي',
       qualityAutoValue : "",
 

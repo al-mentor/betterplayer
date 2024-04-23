@@ -77,10 +77,10 @@ class BetterPlayerPlaylistController {
       return;
     }
     if (_betterPlayerController!.isFullScreen) {
-      _betterPlayerController!.exitFullScreen();
+      // _betterPlayerController!.exitFullScreen();
     }
     _changingToNextVideo = true;
-    setupDataSource(nextDataSourceId);
+    setupDataSource(nextDataSourceId,speed: betterPlayerController?.videoPlayerController?.value.speed,currentTrack: betterPlayerController?.betterPlayerAsmsTrack);
 
     _changingToNextVideo = false;
   }
@@ -98,7 +98,7 @@ class BetterPlayerPlaylistController {
 
   ///Setup data source with index based on [_betterPlayerDataSourceList] provided
   ///in constructor. Index must
-  void setupDataSource(int index) {
+  void setupDataSource(int index,{double? speed, BetterPlayerAsmsTrack? currentTrack}) {
     assert(
         index >= 0 && index < _betterPlayerDataSourceList.length,
         "Index must be greater than 0 and less than size of data source "
@@ -106,7 +106,7 @@ class BetterPlayerPlaylistController {
     if (index <= _dataSourceLength) {
       _currentDataSourceIndex = index;
       _betterPlayerController!
-          .setupDataSource(_betterPlayerDataSourceList[index]);
+          .setupDataSource(_betterPlayerDataSourceList[index],speed: speed,currentTrack: currentTrack);
     }
   }
 

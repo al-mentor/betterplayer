@@ -5,25 +5,18 @@ import 'package:better_player/src/video_player/video_player_platform_interface.d
 import 'package:flutter/material.dart';
 
 class BetterPlayerMaterialVideoProgressBar extends StatefulWidget {
+  final double height;
+
   BetterPlayerMaterialVideoProgressBar(
     this.controller,
     this.betterPlayerController, {
     BetterPlayerProgressColors? colors,
-    this.onDragEnd,
-    this.onDragStart,
-    this.onDragUpdate,
-    this.onTapDown,
-    Key? key,
-  })  : colors = colors ?? BetterPlayerProgressColors(),
-        super(key: key);
+    required this.height,
+  })  : colors = colors ?? BetterPlayerProgressColors();
 
   final VideoPlayerController? controller;
   final BetterPlayerController? betterPlayerController;
   final BetterPlayerProgressColors colors;
-  final Function()? onDragStart;
-  final Function()? onDragEnd;
-  final Function()? onDragUpdate;
-  final Function()? onTapDown;
 
   @override
   _VideoProgressBarState createState() {
@@ -34,7 +27,6 @@ class BetterPlayerMaterialVideoProgressBar extends StatefulWidget {
 class _VideoProgressBarState
     extends State<BetterPlayerMaterialVideoProgressBar> {
   late VoidCallback listener;
-  bool _controllerWasPlaying = false;
 
   VideoPlayerController? get controller => widget.controller;
 
@@ -46,97 +38,33 @@ class _VideoProgressBarState
   Timer? _updateBlockTimer;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      listener = () {
-        if (mounted) setState(() {});
-      };
-      controller!.addListener(listener);
-    });
+  void deactivate() {
+    super.deactivate();
+    _cancelUpdateBlockTimer();
   }
 
   @override
-  void deactivate() {
-    controller!.removeListener(listener);
+  void dispose() {
+    super.dispose();
     _cancelUpdateBlockTimer();
-    super.deactivate();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool enableProgressBarDrag = betterPlayerController!
-        .betterPlayerConfiguration.controlsConfiguration.enableProgressBarDrag;
-
-    return GestureDetector(
-      onHorizontalDragStart: (DragStartDetails details) {
-        if (!controller!.value.initialized || !enableProgressBarDrag) {
-          return;
-        }
-
-        _controllerWasPlaying = controller!.value.isPlaying;
-        if (_controllerWasPlaying) {
-          controller!.pause();
-        }
-
-        if (widget.onDragStart != null) {
-          widget.onDragStart!();
-        }
-      },
-      onHorizontalDragUpdate: (DragUpdateDetails details) {
-        if (!controller!.value.initialized || !enableProgressBarDrag) {
-          return;
-        }
-
-        seekToRelativePosition(details.globalPosition);
-
-        if (widget.onDragUpdate != null) {
-          widget.onDragUpdate!();
-        }
-      },
-      onHorizontalDragEnd: (DragEndDetails details) {
-        if (!enableProgressBarDrag) {
-          return;
-        }
-
-        if (_controllerWasPlaying) {
-          betterPlayerController?.play();
-          shouldPlayAfterDragEnd = true;
-        }
-        _setupUpdateBlockTimer();
-
-        if (widget.onDragEnd != null) {
-          widget.onDragEnd!();
-        }
-      },
-      onTapDown: (TapDownDetails details) {
-        if (!controller!.value.initialized || !enableProgressBarDrag) {
-          return;
-        }
-        seekToRelativePosition(details.globalPosition);
-        _setupUpdateBlockTimer();
-        if (widget.onTapDown != null) {
-          widget.onTapDown!();
-        }
-      },
-      child: Center(
-        child: Container(
-          height: MediaQuery.of(context).size.height / 32,
-          width: MediaQuery.of(context).size.width,
-          //color: Colors.red,
-          child: CustomPaint(
-            painter: _ProgressBarPainter(
-              _getValue(),
-              widget.colors,
-            ),
-          ),
+    return SizedBox(
+      height: widget.height,
+      width: MediaQuery.of(context).size.width,
+      child: CustomPaint(
+        painter: _ProgressBarPainter(
+          _getValue(),
+          widget.colors,
         ),
       ),
     );
   }
 
   void _setupUpdateBlockTimer() {
-    _updateBlockTimer = Timer(const Duration(milliseconds: 1000), () {
+    _updateBlockTimer = Timer(const Duration(milliseconds: 500), () {
       lastSeek = null;
       _cancelUpdateBlockTimer();
     });
@@ -161,16 +89,15 @@ class _VideoProgressBarState
       final box = renderObject as RenderBox;
       final Offset tapPos = box.globalToLocal(globalPosition);
       final double relative = tapPos.dx / box.size.width;
-      if (relative > 0) {
+      if (relative > 0 && relative < 1) {
         final Duration position = controller!.value.duration! * relative;
         lastSeek = position;
         await betterPlayerController!.seekTo(position);
         onFinishedLastSeek();
-        if (relative >= 1) {
-          lastSeek = controller!.value.duration;
-          await betterPlayerController!.seekTo(controller!.value.duration!);
-          onFinishedLastSeek();
-        }
+      } else if (relative >= 1) {
+        lastSeek = controller!.value.duration;
+        await betterPlayerController!.seekTo(controller!.value.duration!);
+        onFinishedLastSeek();
       }
     }
   }
@@ -184,19 +111,17 @@ class _VideoProgressBarState
 }
 
 class _ProgressBarPainter extends CustomPainter {
-  _ProgressBarPainter(this.value, this.colors);
+  _ProgressBarPainter(
+    this.value,
+    this.colors,
+  );
 
   VideoPlayerValue value;
   BetterPlayerProgressColors colors;
 
   @override
-  bool shouldRepaint(CustomPainter painter) {
-    return true;
-  }
-
-  @override
   void paint(Canvas canvas, Size size) {
-    const height = 2.0;
+    final height = size.height;
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -233,7 +158,7 @@ class _ProgressBarPainter extends CustomPainter {
             Offset(start, size.height / 2),
             Offset(end, size.height / 2 + height),
           ),
-          const Radius.circular(4.0),
+          Radius.zero,
         ),
         colors.bufferedPaint,
       );
@@ -244,14 +169,14 @@ class _ProgressBarPainter extends CustomPainter {
           Offset(0.0, size.height / 2),
           Offset(playedPart, size.height / 2 + height),
         ),
-        const Radius.circular(4.0),
+        Radius.zero,
       ),
       colors.playedPaint,
     );
-    canvas.drawCircle(
-      Offset(playedPart, size.height / 2 + height / 2),
-      height * 3,
-      colors.handlePaint,
-    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
   }
 }

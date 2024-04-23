@@ -8,7 +8,7 @@ homepage: https://github.com/jhomlala/betterplayer
 documentation: https://jhomlala.github.io/betterplayer/
 
 environment:
-  sdk: '>=2.12.0 <3.0.0'
+  sdk: '>=2.17.0 <3.0.0'
   flutter: ">=2.2.3"
 
 dependencies:
@@ -22,6 +22,14 @@ dependencies:
   path_provider: ^2.0.11
   collection: ^1.16.0
   xml: ^6.1.0
+  flutter_screenutil: ^5.9.0
+  firebase_crashlytics: ^3.4.19
+  get: ^4.6.6
+  flutter_svg: ^2.0.9
+  wakelock_plus: ^1.1.4
+
+
+
 
 
 

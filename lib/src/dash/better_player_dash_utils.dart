@@ -1,9 +1,12 @@
+import 'dart:developer';
+
 import 'package:better_player/src/asms/better_player_asms_audio_track.dart';
 import 'package:better_player/src/asms/better_player_asms_data_holder.dart';
 import 'package:better_player/src/asms/better_player_asms_subtitle.dart';
 import 'package:better_player/src/asms/better_player_asms_track.dart';
 import 'package:better_player/src/core/better_player_utils.dart';
 import 'package:better_player/src/hls/hls_parser/mime_types.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:xml/xml.dart';
 
 ///DASH helper class
@@ -17,7 +20,7 @@ class BetterPlayerDashUtils {
       int audiosCount = 0;
       final document = XmlDocument.parse(data);
       final adaptationSets = document.findAllElements('AdaptationSet');
-      adaptationSets.forEach((node) {
+      for (var node in adaptationSets) {
         final mimeType = node.getAttribute('mimeType');
 
         if (mimeType != null) {
@@ -30,9 +33,11 @@ class BetterPlayerDashUtils {
             subtitles.add(parseSubtitle(masterPlaylistUrl, node));
           }
         }
-      });
-    } catch (exception) {
-      BetterPlayerUtils.log("Exception on dash parse: $exception");
+      }
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
+      BetterPlayerUtils.log(exception.toString());
     }
     return BetterPlayerAsmsDataHolder(
         tracks: tracks, audios: audios, subtitles: subtitles);
@@ -43,19 +48,20 @@ class BetterPlayerDashUtils {
 
     final representations = node.findAllElements('Representation');
 
-    representations.forEach((representation) {
+    for (var representation in representations) {
       final String? id = representation.getAttribute('id');
       final int width = int.parse(representation.getAttribute('width') ?? '0');
       final int height =
           int.parse(representation.getAttribute('height') ?? '0');
       final int bitrate =
           int.parse(representation.getAttribute('bandwidth') ?? '0');
-     // final int frameRate =
-          int frameRate = 0;
+      // final int frameRate =
+      int frameRate = 0;
       final String? framRateStr = representation.getAttribute('frameRate');
       final arr = framRateStr?.split('/');
-      if (arr?[1].isEmpty == false ) {
-        frameRate = (int.parse(arr?[0] ?? '0') / int.parse(arr?[1] ?? '1')).round();
+      if (arr?[1].isEmpty == false) {
+        frameRate =
+            (int.parse(arr?[0] ?? '0') / int.parse(arr?[1] ?? '1')).round();
       } else {
         frameRate = int.parse(framRateStr ?? '0');
       }
@@ -63,7 +69,7 @@ class BetterPlayerDashUtils {
       final String? mimeType = MimeTypes.getMediaMimeType(codecs ?? '');
       tracks.add(BetterPlayerAsmsTrack(
           id, width, height, bitrate, frameRate, codecs, mimeType));
-    });
+    }
 
     return tracks;
   }

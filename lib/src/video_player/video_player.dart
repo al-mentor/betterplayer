@@ -4,9 +4,11 @@
 
 // Dart imports:
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 import 'package:better_player/src/configuration/better_player_buffering_configuration.dart';
 import 'package:better_player/src/video_player/video_player_platform_interface.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -194,14 +196,18 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
   /// This is just exposed for testing. It shouldn't be used by anyone depending
   /// on the plugin.
-  @visibleForTesting
-  int? get textureId => _textureId;
+   int? get textureId => _textureId;
+
+
+  static int?  textureIdStatic = null ;
 
   /// Attempts to open the given [dataSource] and load metadata about the video.
   Future<void> _create() async {
     _textureId = await _videoPlayerPlatform.create(
       bufferingConfiguration: bufferingConfiguration,
     );
+
+    textureIdStatic = _textureId;
     _creatingCompleter.complete(null);
 
     unawaited(_applyLooping());
@@ -218,8 +224,10 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
             duration: event.duration,
             size: event.size,
           );
-          _initializingCompleter.complete(null);
-          _applyPlayPause();
+          if (!_initializingCompleter.isCompleted) {
+            _initializingCompleter.complete(null);
+          }
+          // _applyPlayPause();
           break;
         case VideoEventType.completed:
           value = value.copyWith(isPlaying: false, position: value.duration);
@@ -416,10 +424,18 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     if (!_isDisposed) {
       _isDisposed = true;
       value = VideoPlayerValue.uninitialized();
-      _timer?.cancel();
-      await _eventSubscription?.cancel();
-      await _videoPlayerPlatform.dispose(_textureId);
-      videoEventStreamController.close();
+      try {
+        _timer?.cancel();
+      } catch (ex) {}
+      try {
+        await _eventSubscription?.cancel();
+      } catch (ex) {}
+      try {
+        await _videoPlayerPlatform.dispose(_textureId);
+      } catch (ex) {}
+      try {
+        videoEventStreamController.close();
+      } catch (ex) {}
     }
     _isDisposed = true;
     super.dispose();
@@ -455,28 +471,27 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     await _videoPlayerPlatform.setLooping(_textureId, value.isLooping);
   }
 
-
-
-
   Future<void> _applyPlayPause() async {
-    if (!_created || _isDisposed) {
-      return;
-    }
-    _timer?.cancel(); // Cancel any existing timer
-    if (value.isPlaying) {
-      try {
+    try {
+      if (!_created || _isDisposed) {
+        return;
+      }
+      _timer?.cancel();
+      if (_textureId == null) return;
+      if (value.isPlaying) {
         await _videoPlayerPlatform.play(_textureId);
         _timer = Timer.periodic(
           const Duration(milliseconds: 300),
-              (Timer timer) async {
+          (Timer timer) async {
             if (_isDisposed) {
-              timer.cancel(); // Cancel the timer if the widget is disposed
+              timer.cancel();
               return;
             }
             final Duration? newPosition = await position;
             final DateTime? newAbsolutePosition = await absolutePosition;
+            // ignore: invariant_booleans
             if (_isDisposed) {
-              timer.cancel(); // Cancel the timer if the widget is disposed
+              timer.cancel();
               return;
             }
             _updatePosition(newPosition, absolutePosition: newAbsolutePosition);
@@ -489,17 +504,12 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
             }
           },
         );
-      } catch (e) {
-        // Handle any errors that occur during playback
-        print('Error playing video: $e');
-      }
-    } else {
-      try {
+      } else {
         await _videoPlayerPlatform.pause(_textureId);
-      } catch (e) {
-        // Handle any errors that occur during pausing
-        print('Error pausing video: $e');
       }
+    } catch (e, stackTrace) {
+      log("error on video player $e, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(e, stackTrace);
     }
   }
 
@@ -540,12 +550,16 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// If [moment] is outside of the video's full range it will be automatically
   /// and silently clamped.
   Future<void> seekTo(Duration? position) async {
+    if (position == null) {
+      return;
+    }
+
     _timer?.cancel();
     bool isPlaying = value.isPlaying;
     final int positionInMs = value.position.inMilliseconds;
     final int durationInMs = value.duration?.inMilliseconds ?? 0;
 
-    if (positionInMs >= durationInMs && position?.inMilliseconds == 0) {
+    if (positionInMs >= durationInMs && position.inMilliseconds == 0) {
       isPlaying = true;
     }
     if (_isDisposed) {
@@ -553,7 +567,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     }
 
     Duration? positionToSeek = position;
-    if (position! > value.duration!) {
+    if (position > value.duration!) {
       positionToSeek = value.duration;
     } else if (position < const Duration()) {
       positionToSeek = const Duration();
@@ -655,7 +669,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 /// Widget that displays the video controlled by [controller].
 class VideoPlayer extends StatefulWidget {
   /// Uses the given [controller] for all video rendered in this widget.
-  const VideoPlayer(this.controller, {Key? key}) : super(key: key);
+  const VideoPlayer(this.controller, {super.key});
 
   /// The [VideoPlayerController] responsible for the video being rendered in
   /// this widget.
@@ -833,9 +847,8 @@ class VideoProgressIndicator extends StatefulWidget {
     VideoProgressColors? colors,
     this.allowScrubbing,
     this.padding = const EdgeInsets.only(top: 5.0),
-    Key? key,
-  })  : colors = colors ?? VideoProgressColors(),
-        super(key: key);
+    super.key,
+  }) : colors = colors ?? VideoProgressColors();
 
   /// The [VideoPlayerController] that actually associates a video with this
   /// widget.
@@ -963,7 +976,7 @@ class ClosedCaption extends StatelessWidget {
   /// [VideoPlayerValue.caption].
   ///
   /// If [text] is null, nothing will be displayed.
-  const ClosedCaption({Key? key, this.text, this.textStyle}) : super(key: key);
+  const ClosedCaption({super.key, this.text, this.textStyle});
 
   /// The text that will be shown in the closed caption, or null if no caption
   /// should be shown.

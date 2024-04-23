@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'package:better_player/better_player.dart';
 import 'package:better_player/src/core/better_player_utils.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'better_player_subtitle.dart';
 
 class BetterPlayerSubtitlesFactory {
@@ -34,8 +36,10 @@ class BetterPlayerSubtitlesFactory {
         }
       }
       return subtitles;
-    } catch (exception) {
-      BetterPlayerUtils.log("Failed to read subtitles from file: $exception");
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
+      BetterPlayerUtils.log(exception.toString());
     }
     return [];
   }
@@ -62,9 +66,10 @@ class BetterPlayerSubtitlesFactory {
 
       BetterPlayerUtils.log("Parsed total subtitles: ${subtitles.length}");
       return subtitles;
-    } catch (exception) {
-      BetterPlayerUtils.log(
-          "Failed to read subtitles from network: $exception");
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
+      BetterPlayerUtils.log(exception.toString());
     }
     return [];
   }
@@ -73,8 +78,10 @@ class BetterPlayerSubtitlesFactory {
       BetterPlayerSubtitlesSource source) {
     try {
       return _parseString(source.content!);
-    } catch (exception) {
-      BetterPlayerUtils.log("Failed to read subtitles from memory: $exception");
+    } catch (exception, stackTrace) {
+      log("non-fetal, error $exception, trace $stackTrace");
+      FirebaseCrashlytics.instance.recordError(exception, stackTrace);
+      BetterPlayerUtils.log(exception.toString());
     }
     return [];
   }
