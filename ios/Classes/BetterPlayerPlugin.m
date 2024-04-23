@@ -404,7 +404,15 @@ bool _remoteCommandsInitialized = false;
             [[ContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
             [downloader cancelDownloadOfAssetWithAsset:assetCustom];
             [downloader deleteDownloadedAssetWithAsset:assetCustom];
+            result(nil);
+
             
+        }else if ([@"delete_all_downloaded_video" isEqualToString:call.method]) {
+            AssetDownloader *downloader = [AssetDownloader sharedDownloader];
+            [downloader deleteAllDownloadedAssets];
+            result(nil);
+
+ 
         }else if ([@"download_data" isEqualToString:call.method]) {
             
             

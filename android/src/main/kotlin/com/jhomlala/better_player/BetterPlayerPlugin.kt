@@ -203,7 +203,9 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 deleteDownloadedVideo(call, result)
             }
 
-
+            DeleteAllDownloadedVideo -> {
+                deleteAllDownloadedAssets(call, result)
+            }
             SET_LOOPING_METHOD -> {
                 player.setLooping(call.argument(LOOPING_PARAMETER)!!)
                 result.success(null)
@@ -295,6 +297,13 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
             else -> result.notImplemented()
         }
+    }
+
+    private fun deleteAllDownloadedAssets(call: MethodCall, result: MethodChannel.Result) {
+        DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity())
+            .deleteAllDownloadedAssets();
+        result.success(null);
+
     }
 
     private fun deleteDownloadedVideo(call: MethodCall, result: MethodChannel.Result) {
@@ -716,6 +725,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val DOWNLOAD_METHOD = "download"
         private const val DOWNLOAD_DATA = "download_data"
         private const val DELETE_DOWNLOADED_VIDEO = "delete_downloaded_video"
+        private const val DeleteAllDownloadedVideo = "delete_all_downloaded_video"
         private const val SET_LOOPING_METHOD = "setLooping"
         private const val SET_VOLUME_METHOD = "setVolume"
         private const val PLAY_METHOD = "play"

@@ -52,6 +52,46 @@ import Flutter
         }
     }
     
+    @objc public func deleteAllDownloadedAssets() {
+        let userDefaults = UserDefaults.standard
+
+        // Get all keys stored in UserDefaults
+        let allKeys = userDefaults.dictionaryRepresentation().keys
+
+        for key in allKeys {
+            guard let localFileLocationData = userDefaults.value(forKey: key) as? Data else {
+                continue // Skip if data is not of expected type
+            }
+
+            do {
+                // Resolve bookmark data to obtain the file URL
+                var bookmarkDataIsStale = false
+                let url = try URL(resolvingBookmarkData: localFileLocationData, bookmarkDataIsStale: &bookmarkDataIsStale)
+
+                if bookmarkDataIsStale {
+                    print("Bookmark data is stale for key: \(key)")
+                    continue
+                }
+
+                // Check if the file exists at the resolved URL
+                if FileManager.default.fileExists(atPath: url.path) {
+                    // Attempt to delete the file
+                    try FileManager.default.removeItem(at: url)
+
+                    // Remove the corresponding entry from UserDefaults
+                    userDefaults.removeObject(forKey: key)
+
+                    print("Deleted downloaded asset: \(key)")
+                } else {
+                    print("File not found for key: \(key)")
+                }
+            } catch {
+                print("Failed to delete downloaded asset for key \(key) with error: \(error)")
+            }
+        }
+    }
+
+    
     @objc public func allDownloadedAssets() -> String? {
         let userDefaults = UserDefaults.standard
         var downloadData = [[String: Any]]()

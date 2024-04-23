@@ -202,6 +202,22 @@ class DownloadTracker(
             )
         }
     }
+    fun deleteAllDownloadedAssets() {
+        val downloadUris = downloads.keys.toList()
+        for (uri in downloadUris) {
+            val download = downloads[uri]
+            download?.let {
+                DownloadService.sendRemoveDownload(
+                    applicationContext,
+                    MyDownloadService::class.java,
+                    download.request.id,
+                    false
+                )
+                downloads.remove(uri)
+            }
+        }
+    }
+
 
     private fun loadDownloads() {
         try {
