@@ -372,7 +372,7 @@ bool _remoteCommandsInitialized = false;
                 [assetCustom createUrlAsset];
 
                 
-                AzureContentKeyManager *contentKeyManager = [AzureContentKeyManager sharedManager];
+                BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
                 contentKeyManager.licensingServiceUrl = licenseUrl;
                 contentKeyManager.fpsCertificateUrl = certificateUrl;
                 [contentKeyManager createContentKeySession];
