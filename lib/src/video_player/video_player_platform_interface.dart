@@ -256,6 +256,7 @@ class DataSource {
     this.activityName,
     this.clearKey,
     this.videoExtension,
+    this.quality,
   }) : assert(uri == null || asset == null);
 
   /// Describes the type of data source this [VideoPlayerController]
@@ -299,7 +300,7 @@ class DataSource {
   /// The package that the asset was loaded from. Only set for
   /// [DataSourceType.asset] videos.
   final String? package;
-  final int? quality;
+    int? quality = 0;
 
   final Map<String, String?>? headers;
 
