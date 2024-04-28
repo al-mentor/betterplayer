@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 package com.jhomlala.better_player
 
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
@@ -21,6 +19,7 @@ import com.google.android.exoplayer2.MediaMetadata
 import com.google.android.exoplayer2.offline.Download
 import com.google.android.exoplayer2.util.MimeTypes
 import com.jhomlala.better_player.BetterPlayerCache.releaseCache
+import com.jhomlala.better_player.common.DownloadTracker
 import com.jhomlala.better_player.common.DownloadUtil
 import com.jhomlala.better_player.common.MediaItemTag
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -34,6 +33,10 @@ import io.flutter.plugin.common.EventChannel
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.view.TextureRegistry
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.lang.Exception
 
 /**
@@ -419,19 +422,22 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     ) {
         val dataSource = call.argument<Map<String, Any?>>(DATA_SOURCE_PARAMETER)!!
         val key = getParameter(dataSource, KEY_PARAMETER, "")
+        val quality = getParameter(dataSource, QUALITY, 0)
         val overriddenDuration: Number =
             getParameter(dataSource, OVERRIDDEN_DURATION_PARAMETER, 0).toLong();
         val uri = getParameter(dataSource, URI_PARAMETER, "")
         val licenseUrl = getParameter<String?>(dataSource, LICENSE_URL_PARAMETER, null)
-        preparePlayerOrDownload(key, uri, licenseUrl, result, overriddenDuration.toLong())
+        preparePlayerOrDownload(key, uri, licenseUrl, result, overriddenDuration.toLong(),quality)
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     private fun preparePlayerOrDownload(
         key: String?,
         dataSource: String?,
         licenseUrl: String?,
         result: MethodChannel.Result,
         overriddenDuration: Long,
+        quality: Int,
     ): Boolean {
         var top = ActivityUtils.getTopActivity()
         val topView = top.window.decorView.rootView
@@ -455,11 +461,11 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 if (!DownloadUtil.getDownloadTracker(top)
                         .hasDownload(item.localConfiguration?.uri)
                 ) {
-//                    DownloadTracker.globalQualitySelected = 3
-//                    GlobalScope.launch(Dispatchers.IO) {
+                   DownloadTracker.globalQualitySelected = quality
+                    GlobalScope.launch(Dispatchers.IO) {
                     DownloadUtil.getDownloadTracker(top)
                         .toggleDownloadDialogHelper(top, item, result = result)
-//                    }
+                    }
                 } else {
 
                     DownloadUtil.getDownloadTracker(top).toggleDownloadPopupMenu(
@@ -681,6 +687,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val DOWNLOAD_EVENTS_CHANNEL = "better_player_channel/downloadStream"
         private const val DATA_SOURCE_PARAMETER = "dataSource"
         private const val KEY_PARAMETER = "key"
+        private const val QUALITY = "quality"
         private const val HEADERS_PARAMETER = "headers"
         private const val USE_CACHE_PARAMETER = "useCache"
         private const val ASSET_PARAMETER = "asset"
