@@ -65,6 +65,7 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
         'headers': dataSource.headers,
         'title': dataSource.title,
         'author': dataSource.author,
+        'quality': dataSource.quality ?? 0,
         'imageUrl': dataSource.imageUrl,
         'overriddenDuration': dataSource.overriddenDuration?.inMilliseconds,
         'licenseUrl': dataSource.licenseUrl,

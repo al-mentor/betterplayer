@@ -299,6 +299,7 @@ class DataSource {
   /// The package that the asset was loaded from. Only set for
   /// [DataSourceType.asset] videos.
   final String? package;
+  final int? quality;
 
   final Map<String, String?>? headers;
 
