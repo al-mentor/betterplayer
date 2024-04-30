@@ -18,12 +18,31 @@ import AVFoundation
     @objc public   var urlAsset: AVURLAsset!
     
     @objc public  init(name: String, url: URL) {
-        self.name = name
+        var updatedName = name // Create a variable to hold the potentially updated name
+
+        // Check if the name represents a URL
+        // Check if the name represents a valid URL
+         if let url = URL(string: name) {
+             // Get the path components of the URL
+             let pathComponents = url.pathComponents
+             
+             // Iterate through the path components to find the UUID
+             for component in pathComponents {
+                 // Check if the component matches the UUID pattern
+                 if component.contains("-") {
+                     // Update the name to be the matched UUID
+                     updatedName = component
+                     break // Exit the loop once UUID is found
+                 }
+             }
+         }
+                
+        self.name = updatedName
         self.url = url
         self.contentKeyIdList = [String]()
         super.init()
 
-        print("Creating Asset with url: \(url)) name: \(name)")
+        print("Creating Asset with url: \(url)) name: \(updatedName)")
         
         self.createUrlAsset()
        

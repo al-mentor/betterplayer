@@ -255,23 +255,33 @@ import Flutter
     // Returns an Asset pointing to a file on disk if it exists
     @objc public func downloadedAsset(withName name: String) ->CustomAsset? {
         let userDefaults = UserDefaults.standard
+        print("Search: In downloaded asset: \(name)");
+
+        let localFileLocation = userDefaults.value(forKey: name);
         
-        guard let localFileLocation = userDefaults.value(forKey: name) as? Data else { return nil }
+        if localFileLocation == nil {
+            print("DOWNLOADER: No downloaded asset found with name: \(name)")
+            return nil
+        }
 
         var bookmarkDataIsStale = false
         do {
-            let url = try URL(resolvingBookmarkData: localFileLocation,
+            let url = try URL(resolvingBookmarkData: localFileLocation as! Data,
                                     bookmarkDataIsStale: &bookmarkDataIsStale)
 
             if bookmarkDataIsStale {
-                fatalError("Bookmark data is stale!")
+                print("DOWNLOADER: Bookmark data is stale! named : \(name)")
+                fatalError("Bookmark data is stale! named : " + name)
             }
             
             // Create an asset that will be used during the playback
             let asset = CustomAsset(name: name, url: url)
             
+            
+            print("DOWNLOADER: Found downloaded asset: \(asset.name)");
             return asset
         } catch {
+            print("DOWNLOADER: Failed to create URL from bookmark with error: \(error)")
             fatalError("Failed to create URL from bookmark with error: \(error)")
         }
     }
@@ -374,7 +384,6 @@ import Flutter
     @objc public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         let userDefaults = UserDefaults.standard
     
-        print("DOWNLOADER: Downloading did complete")
         
         /*
          This is the ideal place to begin downloading additional media selections
@@ -388,6 +397,10 @@ import Flutter
         // Prepare the basic userInfo dictionary that will be posted as part of our notification
         var userInfo = [String: Any]()
         userInfo[CustomAsset.Keys.name] = asset.name
+        
+        
+        print("DOWNLOADER: Downloading did complete named : " + asset.name)
+
         
         if let error = error as NSError? {
             switch (error.domain, error.code) {
@@ -425,11 +438,13 @@ import Flutter
                 let bookmark = try downloadURL.bookmarkData()
                 
                 userDefaults.set(bookmark, forKey: asset.name)
+                // print bookmark and asset.name
+                print("DOWNLOADER: Bookmark data: \(bookmark) for asset: \(asset.name)")
             } catch {
                 print("DOWNLOADER: Failed to create bookmarkData for download URL.")
             }
             
-            print("DOWNLOADER: Downloading completed with success")
+            print("DOWNLOADER: Downloading completed with success named : " + asset.name)
         
             userInfo[CustomAsset.Keys.downloadState] = CustomAsset.DownloadState.downloadedAndSavedToDevice.rawValue
             userInfo[CustomAsset.Keys.downloadSelectionDisplayName] = ""

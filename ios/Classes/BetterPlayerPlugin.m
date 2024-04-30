@@ -377,9 +377,9 @@ bool _remoteCommandsInitialized = false;
                 contentKeyManager.fpsCertificateUrl = certificateUrl;
                 [contentKeyManager createContentKeySession];
 //
- //               [assetCustom addAsContentKeyRecipient];
-//                contentKeyManager.downloadRequestedByUser = true;
-//              [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
+                [assetCustom addAsContentKeyRecipient];
+                contentKeyManager.downloadRequestedByUser = true;
+              [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
 //
                 AssetDownloader.avalibelAsset = assetCustom;
                [downloader downloadWithAsset:assetCustom];
