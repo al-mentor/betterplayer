@@ -60,9 +60,11 @@ import com.google.android.exoplayer2.util.Util
 import com.jhomlala.better_player.DataSourceUtils.getDataSourceFactory
 import com.jhomlala.better_player.DataSourceUtils.getUserAgent
 import com.jhomlala.better_player.DataSourceUtils.isHTTP
+import com.jhomlala.better_player.common.DownloadItem
 import com.jhomlala.better_player.common.DownloadTracker
 import com.jhomlala.better_player.common.DownloadUtil
 import com.jhomlala.better_player.common.MediaItemTag
+import com.jhomlala.better_player.common.createDownloadItem
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.EventSink
 import io.flutter.plugin.common.MethodChannel
@@ -125,14 +127,11 @@ internal class BetterPlayer(
 
 
     private fun preparePlayerOrDownload(
-        key: String?,
-        dataSource: String?,
+         dataSource: String?,
         licenseUrl: String?,
         result: MethodChannel.Result,
-        overriddenDuration: Long,
-    ): Boolean {
-        var top = ActivityUtils.getTopActivity()
-        val topView = top.window.decorView.rootView
+     ): Boolean {
+        val top = ActivityUtils.getTopActivity()
 
         val mediaItem =
             MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_MPD)
@@ -142,9 +141,13 @@ internal class BetterPlayer(
                 ).setMediaMetadata(
                     MediaMetadata.Builder().setTitle("Licensed - HD H265 (cenc)").build()
                 ).build();
-        if (DownloadUtil.getDownloadTracker(top).isDownloaded(mediaItem)) {
+
+        val downloadItem = createDownloadItem(null, Uri.parse(dataSource),
+            null,null,mediaItem);
+
+        if (DownloadUtil.getDownloadTracker(top).isDownloaded(downloadItem)) {
             if (runDownloadVideoFromLocal(
-                    mediaItem,
+                    downloadItem,
                     licenseUrl,
                     result
                 )
@@ -152,34 +155,6 @@ internal class BetterPlayer(
 
         }
 
-//        else {
-//            val duration: Long = if (overriddenDuration != 0L) {
-//                (overriddenDuration / 10);
-//            } else {
-//                (exoPlayer?.duration ?: 0);
-//            }
-//            if (duration > 0L) {
-//                val item = mediaItem.buildUpon().setTag(MediaItemTag(duration, key!!))
-//
-//                    .build()
-//                if (!DownloadUtil.getDownloadTracker(top)
-//                        .hasDownload(item.localConfiguration?.uri)
-//                ) {
-////                    DownloadTracker.globalQualitySelected = 3
-////                    GlobalScope.launch(Dispatchers.IO) {
-//                        DownloadUtil.getDownloadTracker(top).toggleDownloadDialogHelper(top, item)
-////                    }
-//
-//                } else {
-//
-//                    DownloadUtil.getDownloadTracker(top).toggleDownloadPopupMenu(
-//                        top, topView, item.localConfiguration?.uri
-//                    )
-//                }
-//
-//            }
-//
-//        }
 
         return false;
 
@@ -187,13 +162,14 @@ internal class BetterPlayer(
 
 
     private fun runDownloadVideoFromLocal(
-        mediaItem: MediaItem,
+        downloadItem: DownloadItem,
         licenseUrl: String?,
         result: MethodChannel.Result
     ): Boolean {
         val top = ActivityUtils.getTopActivity()
         val download = DownloadUtil.getDownloadTracker(top)
-            .getDownload(mediaItem.localConfiguration!!.uri)!!;
+            .getDownload(downloadItem)!!.download!!;
+
 
         if (download.state == Download.STATE_COMPLETED && download.percentDownloaded > 99f) {
             val media = MediaItem.Builder().setUri(download.request.uri.toString())
@@ -205,7 +181,7 @@ internal class BetterPlayer(
                 ).setTag(MediaItemTag(-1, download.request.id)).build()
 
             val downloadRequest: DownloadRequest? = DownloadUtil.getDownloadTracker(top)
-                .getDownloadRequest(mediaItem.localConfiguration?.uri)
+                .getDownloadRequest(downloadItem)
 
             exoPlayer?.setMediaItem(maybeSetDownloadProperties(media, downloadRequest), false)
             exoPlayer?.prepare()
@@ -314,8 +290,8 @@ internal class BetterPlayer(
         val mediaSource = buildMediaSource(uri, dataSourceFactory, formatHint, cacheKey, context)
 
 
-        var foundBefore = preparePlayerOrDownload(
-            key, dataSource, licenseUrl, result, overriddenDuration,
+        val foundBefore = preparePlayerOrDownload(
+           dataSource, licenseUrl, result,
         )
         if (foundBefore) {
             return

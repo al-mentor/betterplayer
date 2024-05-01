@@ -41,6 +41,23 @@ object DownloadUtil {
 
 
 
+    fun buildDownloadItemObject(
+        downloads: List<DownloadItem>
+    ): String? {
+        val downloadData = ArrayList<Map<String, String?>>()
+        for (download in downloads) {
+            val downloadMap = HashMap<String, String?>()
+            downloadMap["uri"] = download.uniqueId;
+            downloadMap["downloadState"] = download.download?.state.toString();
+            downloadMap["downloadId"] = download.download?.request?.id;
+            downloadMap["downloadPercentage"] = download.download?.percentDownloaded.toString();
+            downloadData.add(downloadMap)
+        }
+        val gson = Gson()
+        val json = gson.toJson(downloadData)
+        return json;
+    }
+
     fun buildDownloadObject(
         downloads: List<Download>
     ): String? {
@@ -49,8 +66,8 @@ object DownloadUtil {
             val downloadMap = HashMap<String, String?>()
             downloadMap["uri"] = download.request.uri.toString();
             downloadMap["downloadState"] = download.state.toString();
-            downloadMap["downloadId"] = download.request.id;
-            downloadMap["downloadPercentage"] = download.percentDownloaded.toString();
+            downloadMap["downloadId"] =  download.request.id;
+            downloadMap["downloadPercentage"] =  download.percentDownloaded.toString();
             downloadData.add(downloadMap)
         }
         val gson = Gson()

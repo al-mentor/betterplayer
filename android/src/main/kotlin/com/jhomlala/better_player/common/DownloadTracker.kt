@@ -11,7 +11,6 @@ import android.widget.Toast
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.DefaultRenderersFactory
 import com.google.android.exoplayer2.Format
-import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.drm.DrmSessionEventListener
 import com.google.android.exoplayer2.drm.OfflineLicenseHelper
 import com.google.android.exoplayer2.offline.Download
@@ -27,10 +26,7 @@ import com.google.android.exoplayer2.upstream.HttpDataSource
 import com.google.android.exoplayer2.util.Assertions
 import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.exoplayer2.util.Util
-import com.google.gson.Gson
-import com.google.gson.JsonObject
 import com.jhomlala.better_player.R
-import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -71,7 +67,7 @@ class DownloadTracker(
     private var availableBytesLeft: Long =
         StatFs(DownloadUtil.getDownloadDirectory(context).path).availableBytes
 
-    val downloads: HashMap<Uri, Download> = HashMap()
+    val downloads: MutableList<DownloadItem> = mutableListOf()
 
     init {
         downloadManager.addListener(DownloadManagerListener())
@@ -87,39 +83,34 @@ class DownloadTracker(
         listeners.remove(listener)
     }
 
-    fun isDownloaded(mediaItem: MediaItem): Boolean {
-        val download = downloads[mediaItem.localConfiguration?.uri]
-        return download != null && download.state == Download.STATE_COMPLETED
+    fun isDownloaded(downloadItem: DownloadItem): Boolean {
+         return downloads.any { it.uniqueId == downloadItem.uniqueId && it.download?.state == Download.STATE_COMPLETED }
     }
 
 
-    fun hasDownload(uri: Uri?): Boolean = downloads.keys.contains(uri)
+    fun hasDownload(downloadItem: DownloadItem): Boolean = downloads.any { it.uniqueId == downloadItem.uniqueId }
 
-    fun getDownloadRequest(uri: Uri?): DownloadRequest? {
-        uri ?: return null
-        val download = downloads[uri]
-        return if (download != null && download.state != Download.STATE_FAILED) download.request else null
+    fun getDownloadRequest(downloadItem: DownloadItem): DownloadRequest? {
+        return downloads.find { it.uniqueId == downloadItem.uniqueId }?.let { it.download?.request ?: it.download?.request }
     }
 
 
-    fun getDownload(uri: Uri?): Download? {
-        uri ?: return null
-        val download = downloads[uri]
-        return if (download != null && download.state != Download.STATE_FAILED) download else null
+    fun getDownload(downloadItem: DownloadItem): DownloadItem? {
+        return downloads.find { it.uniqueId == downloadItem.uniqueId }
     }
 
     fun toggleDownloadDialogHelper(
-        context: Context, mediaItem: MediaItem,
-        mediaItems: List<MediaItem>? = null,
+        context: Context, downloadItem: DownloadItem,
+        downloadItems: List<DownloadItem>? = null,
         positiveCallback: (() -> Unit)? = null, dismissCallback: (() -> Unit)? = null,
         result: MethodChannel.Result? = null,
     ) {
         startDownloadDialogHelper?.release()
 
 
-        if (mediaItems != null) {
+        if (downloadItems != null) {
             globalQualitySelected = 3;
-            mediaItems.forEach {
+            downloadItems.forEach {
                 if (!isDownloaded(it)) {
                     startDownloadDialogHelper =
                         StartDownloadDialogHelper(
@@ -137,16 +128,16 @@ class DownloadTracker(
         startDownloadDialogHelper =
             StartDownloadDialogHelper(
                 context,
-                getDownloadHelper(mediaItem),
-                mediaItem,
+                getDownloadHelper(downloadItem),
+                downloadItem,
                 positiveCallback,
                 dismissCallback, result
             )
     }
 
-    fun toggleDownloadPopupMenu(context: Context, anchor: View, uri: Uri?) {
+    fun toggleDownloadPopupMenu(context: Context, anchor: View, downloadItem: DownloadItem) {
         val popupMenu = PopupMenu(context, anchor).apply { inflate(R.menu.popup_menu) }
-        val download = downloads[uri]
+        val download = getDownload(downloadItem)?.download
         download ?: return
 
         popupMenu.menu.apply {
@@ -165,7 +156,7 @@ class DownloadTracker(
 
         popupMenu.setOnMenuItemClickListener {
             when (it.itemId) {
-                R.id.cancel_download, R.id.delete_download -> removeDownload(download.request.uri)
+                R.id.cancel_download, R.id.delete_download -> removeDownload(downloadItem)
                 R.id.resume_download -> {
                     DownloadService.sendSetStopReason(
                         context,
@@ -191,32 +182,34 @@ class DownloadTracker(
         popupMenu.show()
     }
 
-    fun removeDownload(uri: Uri?) {
-        val download = downloads[uri]
+    fun removeDownload(downloadItem: DownloadItem) {
+        val download = getDownload(downloadItem)
         download?.let {
-            DownloadService.sendRemoveDownload(
-                applicationContext,
-                MyDownloadService::class.java,
-                download.request.id,
-                false
-            )
-        }
-    }
-    fun deleteAllDownloadedAssets() {
-        val downloadUris = downloads.keys.toList()
-        for (uri in downloadUris) {
-            val download = downloads[uri]
-            download?.let {
+            download.download?.request?.id?.let { id ->
                 DownloadService.sendRemoveDownload(
                     applicationContext,
                     MyDownloadService::class.java,
-                    download.request.id,
+                    id,
                     false
                 )
-                downloads.remove(uri)
             }
         }
     }
+    fun deleteAllDownloadedAssets() {
+        val downloadsToRemove = downloads.toList()
+        for (downloadItem in downloadsToRemove) {
+            downloadItem.download?.request?.let {
+                DownloadService.sendRemoveDownload(
+                    applicationContext,
+                    MyDownloadService::class.java,
+                    it.id,
+                    false
+                )
+            }
+            downloads.remove(downloadItem)
+        }
+    }
+
 
 
     private fun loadDownloads() {
@@ -224,7 +217,9 @@ class DownloadTracker(
             downloadIndex.getDownloads().use { loadedDownloads ->
                 while (loadedDownloads.moveToNext()) {
                     val download = loadedDownloads.download
-                    downloads[download.request.uri] = download
+                    val uri = download.request.uri
+                    val downloadItem = createDownloadItem("Name", uri, download)
+                    downloads.add(downloadItem)
                 }
             }
         } catch (e: IOException) {
@@ -232,13 +227,17 @@ class DownloadTracker(
         }
     }
 
+
+
+
     @ExperimentalCoroutinesApi
-    suspend fun getAllDownloadProgressFlow(): Flow<List<Download>> = callbackFlow {
+    suspend fun getAllDownloadProgressFlow(): Flow<List<DownloadItem>> = callbackFlow {
         while (coroutineContext.isActive) {
-            trySend(downloads.values.toList()).isSuccess
+            trySend(downloads.toList()).isSuccess
             delay(1000)
         }
     }
+
 
 
 
@@ -262,18 +261,18 @@ class DownloadTracker(
     }
 
 
-    private fun getDownloadHelper(mediaItem: MediaItem): DownloadHelper {
-        return when (mediaItem.localConfiguration?.mimeType) {
+    private fun getDownloadHelper(downloadItem: DownloadItem): DownloadHelper {
+        return when (downloadItem.mediaItem?.localConfiguration?.mimeType) {
             MimeTypes.APPLICATION_MPD, MimeTypes.APPLICATION_M3U8, MimeTypes.APPLICATION_SS -> {
                 DownloadHelper.forMediaItem(
                     applicationContext,
-                    mediaItem,
+                    downloadItem.mediaItem!!,
                     DefaultRenderersFactory(applicationContext),
                     httpDataSourceFactory
                 )
             }
 
-            else -> DownloadHelper.forMediaItem(applicationContext, mediaItem)
+            else -> DownloadHelper.forMediaItem(applicationContext,  downloadItem.mediaItem!!)
         }
     }
 
@@ -283,7 +282,10 @@ class DownloadTracker(
             download: Download,
             finalException: Exception?
         ) {
-            downloads[download.request.uri] = download
+            val uri = download.request.uri
+            val downloadItem = createDownloadItem( "Name", uri, download)
+            downloads.removeAll { it.uri == uri } // Remove existing download item with the same URI
+            downloads.add(downloadItem)
             for (listener in listeners) {
                 listener.onDownloadsChanged(download)
             }
@@ -295,7 +297,8 @@ class DownloadTracker(
         }
 
         override fun onDownloadRemoved(downloadManager: DownloadManager, download: Download) {
-            downloads.remove(download.request.uri)
+            val uri = download.request.uri
+            downloads.removeAll { it.uri == uri }
             for (listener in listeners) {
                 listener.onDownloadsChanged(download)
             }
@@ -314,7 +317,7 @@ class DownloadTracker(
     private inner class StartDownloadDialogHelper(
         private val context: Context,
         private val downloadHelper: DownloadHelper,
-        private val mediaItem: MediaItem,
+        private val downloadItem: DownloadItem,
         private val positiveCallback: (() -> Unit)? = null,
         private val dismissCallback: (() -> Unit)? = null,
         private val result: MethodChannel.Result? = null,
@@ -335,11 +338,10 @@ class DownloadTracker(
         override fun onPrepared(helper: DownloadHelper) {
             if (helper.periodCount == 0) {
                 Log.d(TAG, "No periods found. Downloading entire stream.")
-                val mediaItemTag: MediaItemTag = mediaItem.localConfiguration?.tag as MediaItemTag
-                val estimatedContentLength: Long = (DEFAULT_BITRATE * mediaItemTag.duration)
+                 val estimatedContentLength: Long = (DEFAULT_BITRATE * (downloadItem.duration!! ))
                     .div(C.MILLIS_PER_SECOND).div(C.BITS_PER_BYTE)
                 val downloadRequest: DownloadRequest = downloadHelper.getDownloadRequest(
-                    mediaItemTag.title,
+                    downloadItem.uri.toString(),
                     Util.getUtf8Bytes(estimatedContentLength.toString())
                 )
                 startDownload(downloadRequest)
@@ -374,11 +376,10 @@ class DownloadTracker(
 
             // We sort here because later we use formatDownloadable to select track
             formatDownloadable.sortBy { it.height }
-            val mediaItemTag: MediaItemTag = mediaItem.localConfiguration?.tag as MediaItemTag
-            val optionsDownload: List<String> = formatDownloadable.map {
+             val optionsDownload: List<String> = formatDownloadable.map {
                 context.getString(
                     R.string.dialog_option, it.height,
-                    (it.bitrate * mediaItemTag.duration).div(8000).formatFileSize()
+                    (it.bitrate * downloadItem.duration!!).div(8000).formatFileSize()
                 )
             }
 
@@ -401,7 +402,7 @@ class DownloadTracker(
                     .setMaxVideoSize(formatSelected.width, formatSelected.height)
                     .setMaxVideoBitrate(formatSelected.bitrate)
                     .build()
-                fireDownloadWithSelectQuality(helper, qualitySelected, formatSelected, mediaItemTag)
+                fireDownloadWithSelectQuality(helper, qualitySelected, formatSelected, downloadItem)
                 trackSelectionDialog = null
                 result?.success(true)
                 return;
@@ -425,7 +426,7 @@ class DownloadTracker(
                         helper,
                         qualitySelected,
                         formatSelected,
-                        mediaItemTag
+                        downloadItem
                     )
                     result?.success(true)
 
@@ -441,11 +442,11 @@ class DownloadTracker(
             helper: DownloadHelper,
             qualitySelected: DefaultTrackSelector.Parameters,
             formatSelected: Format,
-            mediaItemTag: MediaItemTag
+            downloadItem: DownloadItem
         ) {
             helper.clearTrackSelections(0)
             helper.addTrackSelection(0, qualitySelected)
-            val drmConfiguration = mediaItem.localConfiguration?.drmConfiguration
+            val drmConfiguration = downloadItem.mediaItem?.localConfiguration?.drmConfiguration
             val offlineHelper = OfflineLicenseHelper.newWidevineInstance(
                 drmConfiguration?.licenseUri.toString(),
                 drmConfiguration?.forceDefaultLicenseUri ?: false,
@@ -456,13 +457,14 @@ class DownloadTracker(
             val keySetId = offlineHelper.downloadLicense(formatSelected)
             Log.e("DownloadTracker", "keySetId: $keySetId")
             val estimatedContentLength: Long =
-                (qualitySelected.maxVideoBitrate * mediaItemTag.duration)
+                (qualitySelected.maxVideoBitrate * downloadItem.duration!!)
                     .div(C.MILLIS_PER_SECOND).div(C.BITS_PER_BYTE)
             if (availableBytesLeft > estimatedContentLength) {
                 val downloadRequest: DownloadRequest = downloadHelper.getDownloadRequest(
-                    (mediaItem.localConfiguration?.tag as MediaItemTag).title,
+                    downloadItem.uri.toString(),
                     Util.getUtf8Bytes(estimatedContentLength.toString())
                 ).copyWithKeySetId(keySetId)
+
                 startDownload(downloadRequest)
                 availableBytesLeft -= estimatedContentLength
                 Log.e(TAG, "availableBytesLeft after calculation: $availableBytesLeft")
@@ -498,8 +500,8 @@ class DownloadTracker(
 
         private fun buildDownloadRequest(): DownloadRequest {
             return downloadHelper.getDownloadRequest(
-                (mediaItem.localConfiguration?.tag as MediaItemTag).title,
-                Util.getUtf8Bytes(mediaItem.localConfiguration?.uri.toString())
+                downloadItem.uri.toString() ,
+                Util.getUtf8Bytes(downloadItem.uri.toString())
             )
         }
     }

@@ -16,12 +16,12 @@ import com.blankj.utilcode.util.ActivityUtils
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.MediaMetadata
-import com.google.android.exoplayer2.offline.Download
 import com.google.android.exoplayer2.util.MimeTypes
 import com.jhomlala.better_player.BetterPlayerCache.releaseCache
+import com.jhomlala.better_player.common.DownloadItem
 import com.jhomlala.better_player.common.DownloadTracker
 import com.jhomlala.better_player.common.DownloadUtil
-import com.jhomlala.better_player.common.MediaItemTag
+import com.jhomlala.better_player.common.createDownloadItem
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -167,6 +167,18 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             PRE_CACHE_METHOD -> preCache(call, result)
             STOP_PRE_CACHE_METHOD -> stopPreCache(call, result)
             CLEAR_CACHE_METHOD -> clearCache(result)
+            DOWNLOAD_METHOD -> {
+                download(call, result)
+            }
+
+            DOWNLOAD_DATA -> {
+                downloadData(call, result)
+            }
+
+            DELETE_DOWNLOADED_VIDEO -> {
+                deleteDownloadedVideo(call, result)
+            }
+
             else -> {
                 val textureId = (call.argument<Any>(TEXTURE_ID_PARAMETER) as Number?)!!.toLong()
                 val player = videoPlayers[textureId]
@@ -193,22 +205,11 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 setDataSource(call, result, player)
             }
 
-            DOWNLOAD_METHOD -> {
-                download(call, result)
-            }
-
-            DOWNLOAD_DATA -> {
-                downloadData(call, result)
-            }
-
-
-            DELETE_DOWNLOADED_VIDEO -> {
-                deleteDownloadedVideo(call, result)
-            }
 
             DeleteAllDownloadedVideo -> {
                 deleteAllDownloadedAssets(call, result)
             }
+
             SET_LOOPING_METHOD -> {
                 player.setLooping(call.argument(LOOPING_PARAMETER)!!)
                 result.success(null)
@@ -314,12 +315,12 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             URI_PARAMETER
         )
         DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity())
-            .removeDownload(Uri.parse(uri));
+            .removeDownload(createDownloadItem("", Uri.parse(uri) ))
         result.success(null);
     }
 
     private fun downloadData(call: MethodCall, result: MethodChannel.Result) {
-        var data = DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity()).downloads;
+        val data = DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity()).downloads;
         // array of maps have uri and download state and download id and download percentage and put it in result
         buildDownloadObject(data, result)
 
@@ -340,11 +341,11 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun buildDownloadObject(
-        data: HashMap<Uri, Download>,
+        data: MutableList<DownloadItem>,
         result: MethodChannel.Result
     ) {
 
-        val json = DownloadUtil.buildDownloadObject(data.values.toList())
+        val json = DownloadUtil.buildDownloadItemObject(data.toList())
         result.success(json)
     }
 
@@ -421,25 +422,32 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         result: MethodChannel.Result,
     ) {
         val dataSource = call.argument<Map<String, Any?>>(DATA_SOURCE_PARAMETER)!!
-        val key = getParameter(dataSource, KEY_PARAMETER, "")
+        val title = getParameter(dataSource, TITTLE, "")
         val quality = getParameter(dataSource, QUALITY, 0)
         val overriddenDuration: Number =
             getParameter(dataSource, OVERRIDDEN_DURATION_PARAMETER, 0).toLong();
         val uri = getParameter(dataSource, URI_PARAMETER, "")
         val licenseUrl = getParameter<String?>(dataSource, LICENSE_URL_PARAMETER, null)
-        preparePlayerOrDownload(key, uri, licenseUrl, result, overriddenDuration.toLong(),quality)
+        fireDownload(
+            title,
+            uri,
+            licenseUrl,
+            result,
+            overriddenDuration.toLong(),
+            quality
+        )
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    private fun preparePlayerOrDownload(
-        key: String?,
+    private fun fireDownload(
+        title: String?,
         dataSource: String?,
         licenseUrl: String?,
         result: MethodChannel.Result,
         overriddenDuration: Long,
         quality: Int,
     ): Boolean {
-        var top = ActivityUtils.getTopActivity()
+        val top = ActivityUtils.getTopActivity()
         val topView = top.window.decorView.rootView
 
         val mediaItem =
@@ -448,28 +456,28 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
                         .build()
                 ).setMediaMetadata(
-                    MediaMetadata.Builder().setTitle("Licensed - HD H265 (cenc)").build()
+                    MediaMetadata.Builder().setTitle(title).build()
                 ).build();
-        if (DownloadUtil.getDownloadTracker(top).isDownloaded(mediaItem)) {
+        val downlaod = createDownloadItem(title, Uri.parse(dataSource), null,(overriddenDuration / 10),mediaItem);
+        if (DownloadUtil.getDownloadTracker(top).isDownloaded(downlaod)) {
             result.error("already Downloaded", "This video is already downloaded", null);
         } else {
             val duration: Long = (overriddenDuration / 10);
             if (duration > 0L) {
-                val item = mediaItem.buildUpon().setTag(MediaItemTag(duration, key!!))
 
-                    .build()
+
                 if (!DownloadUtil.getDownloadTracker(top)
-                        .hasDownload(item.localConfiguration?.uri)
+                        .hasDownload(downlaod)
                 ) {
-                   DownloadTracker.globalQualitySelected = quality
+                    DownloadTracker.globalQualitySelected = quality
                     GlobalScope.launch(Dispatchers.IO) {
-                    DownloadUtil.getDownloadTracker(top)
-                        .toggleDownloadDialogHelper(top, item, result = result)
+                        DownloadUtil.getDownloadTracker(top)
+                            .toggleDownloadDialogHelper(top, downlaod, result = result)
                     }
                 } else {
 
                     DownloadUtil.getDownloadTracker(top).toggleDownloadPopupMenu(
-                        top, topView, item.localConfiguration?.uri
+                        top, topView, downlaod
                     )
                 }
 
@@ -693,6 +701,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val ASSET_PARAMETER = "asset"
         private const val PACKAGE_PARAMETER = "package"
         private const val URI_PARAMETER = "uri"
+        private const val TITTLE = "title"
         private const val FORMAT_HINT_PARAMETER = "formatHint"
         private const val TEXTURE_ID_PARAMETER = "textureId"
         private const val LOOPING_PARAMETER = "looping"
