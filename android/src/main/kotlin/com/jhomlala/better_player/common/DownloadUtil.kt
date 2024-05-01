@@ -2,6 +2,7 @@ package com.jhomlala.better_player.common
 
 
 import android.content.Context
+import android.net.Uri
 import com.google.android.exoplayer2.database.DatabaseProvider
 import com.google.android.exoplayer2.database.StandaloneDatabaseProvider
 import com.google.android.exoplayer2.offline.Download
@@ -20,7 +21,9 @@ import com.jhomlala.better_player.R
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.EventSink
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.Executors
+import java.util.regex.Pattern
 
 
 object DownloadUtil {
@@ -40,6 +43,17 @@ object DownloadUtil {
      var eventChannel:  EventSink? = null
 
 
+    fun extractUUIDFromUri(uri: Uri): String? {
+        val regex = Pattern.compile("[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+")
+        val matcher = regex.matcher(uri.toString())
+
+        return if (matcher.find()) {
+            matcher.group(0)
+        } else {
+            null
+        }
+    }
+
 
     fun buildDownloadObject(
         downloads: List<Download>
@@ -47,7 +61,7 @@ object DownloadUtil {
         val downloadData = ArrayList<Map<String, String?>>()
         for (download in downloads) {
             val downloadMap = HashMap<String, String?>()
-            downloadMap["uri"] = download.request.uri.toString();
+            downloadMap["uri"] =  extractUUIDFromUri(download.request.uri);
             downloadMap["downloadState"] = download.state.toString();
             downloadMap["downloadId"] = download.request.id;
             downloadMap["downloadPercentage"] = download.percentDownloaded.toString();

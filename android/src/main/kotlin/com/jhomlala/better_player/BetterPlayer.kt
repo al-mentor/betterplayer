@@ -125,14 +125,11 @@ internal class BetterPlayer(
 
 
     private fun preparePlayerOrDownload(
-        key: String?,
         dataSource: String?,
         licenseUrl: String?,
         result: MethodChannel.Result,
-        overriddenDuration: Long,
     ): Boolean {
-        var top = ActivityUtils.getTopActivity()
-        val topView = top.window.decorView.rootView
+        val top = ActivityUtils.getTopActivity()
 
         val mediaItem =
             MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_MPD)
@@ -152,34 +149,6 @@ internal class BetterPlayer(
 
         }
 
-//        else {
-//            val duration: Long = if (overriddenDuration != 0L) {
-//                (overriddenDuration / 10);
-//            } else {
-//                (exoPlayer?.duration ?: 0);
-//            }
-//            if (duration > 0L) {
-//                val item = mediaItem.buildUpon().setTag(MediaItemTag(duration, key!!))
-//
-//                    .build()
-//                if (!DownloadUtil.getDownloadTracker(top)
-//                        .hasDownload(item.localConfiguration?.uri)
-//                ) {
-////                    DownloadTracker.globalQualitySelected = 3
-////                    GlobalScope.launch(Dispatchers.IO) {
-//                        DownloadUtil.getDownloadTracker(top).toggleDownloadDialogHelper(top, item)
-////                    }
-//
-//                } else {
-//
-//                    DownloadUtil.getDownloadTracker(top).toggleDownloadPopupMenu(
-//                        top, topView, item.localConfiguration?.uri
-//                    )
-//                }
-//
-//            }
-//
-//        }
 
         return false;
 
@@ -314,8 +283,8 @@ internal class BetterPlayer(
         val mediaSource = buildMediaSource(uri, dataSourceFactory, formatHint, cacheKey, context)
 
 
-        var foundBefore = preparePlayerOrDownload(
-            key, dataSource, licenseUrl, result, overriddenDuration,
+        val foundBefore = preparePlayerOrDownload(
+            dataSource, licenseUrl, result,
         )
         if (foundBefore) {
             return

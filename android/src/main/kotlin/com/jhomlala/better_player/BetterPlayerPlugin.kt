@@ -167,6 +167,18 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             PRE_CACHE_METHOD -> preCache(call, result)
             STOP_PRE_CACHE_METHOD -> stopPreCache(call, result)
             CLEAR_CACHE_METHOD -> clearCache(result)
+            DOWNLOAD_METHOD -> {
+                download(call, result)
+            }
+
+            DOWNLOAD_DATA -> {
+                downloadData(call, result)
+            }
+
+            DELETE_DOWNLOADED_VIDEO -> {
+                deleteDownloadedVideo(call, result)
+            }
+
             else -> {
                 val textureId = (call.argument<Any>(TEXTURE_ID_PARAMETER) as Number?)!!.toLong()
                 val player = videoPlayers[textureId]
@@ -193,22 +205,11 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 setDataSource(call, result, player)
             }
 
-            DOWNLOAD_METHOD -> {
-                download(call, result)
-            }
-
-            DOWNLOAD_DATA -> {
-                downloadData(call, result)
-            }
-
-
-            DELETE_DOWNLOADED_VIDEO -> {
-                deleteDownloadedVideo(call, result)
-            }
 
             DeleteAllDownloadedVideo -> {
                 deleteAllDownloadedAssets(call, result)
             }
+
             SET_LOOPING_METHOD -> {
                 player.setLooping(call.argument(LOOPING_PARAMETER)!!)
                 result.success(null)
@@ -319,7 +320,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun downloadData(call: MethodCall, result: MethodChannel.Result) {
-        var data = DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity()).downloads;
+        val data = DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity()).downloads;
         // array of maps have uri and download state and download id and download percentage and put it in result
         buildDownloadObject(data, result)
 
@@ -421,17 +422,25 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         result: MethodChannel.Result,
     ) {
         val dataSource = call.argument<Map<String, Any?>>(DATA_SOURCE_PARAMETER)!!
+        val title = getParameter(dataSource, TITTLE, "")
         val key = getParameter(dataSource, KEY_PARAMETER, "")
         val quality = getParameter(dataSource, QUALITY, 0)
         val overriddenDuration: Number =
             getParameter(dataSource, OVERRIDDEN_DURATION_PARAMETER, 0).toLong();
         val uri = getParameter(dataSource, URI_PARAMETER, "")
         val licenseUrl = getParameter<String?>(dataSource, LICENSE_URL_PARAMETER, null)
-        preparePlayerOrDownload(key, uri, licenseUrl, result, overriddenDuration.toLong(),quality)
+        fireDownload(
+            key,
+            uri,
+            licenseUrl,
+            result,
+            overriddenDuration.toLong(),
+            quality
+        )
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    private fun preparePlayerOrDownload(
+    private fun fireDownload(
         key: String?,
         dataSource: String?,
         licenseUrl: String?,
@@ -439,7 +448,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         overriddenDuration: Long,
         quality: Int,
     ): Boolean {
-        var top = ActivityUtils.getTopActivity()
+        val top = ActivityUtils.getTopActivity()
         val topView = top.window.decorView.rootView
 
         val mediaItem =
@@ -448,7 +457,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
                         .build()
                 ).setMediaMetadata(
-                    MediaMetadata.Builder().setTitle("Licensed - HD H265 (cenc)").build()
+                    MediaMetadata.Builder().setTitle(key).build()
                 ).build();
         if (DownloadUtil.getDownloadTracker(top).isDownloaded(mediaItem)) {
             result.error("already Downloaded", "This video is already downloaded", null);
@@ -461,9 +470,9 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 if (!DownloadUtil.getDownloadTracker(top)
                         .hasDownload(item.localConfiguration?.uri)
                 ) {
-                   DownloadTracker.globalQualitySelected = quality
+                    DownloadTracker.globalQualitySelected = quality
                     GlobalScope.launch(Dispatchers.IO) {
-                    DownloadUtil.getDownloadTracker(top)
+                        DownloadUtil.getDownloadTracker(top)
                         .toggleDownloadDialogHelper(top, item, result = result)
                     }
                 } else {
@@ -693,6 +702,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val ASSET_PARAMETER = "asset"
         private const val PACKAGE_PARAMETER = "package"
         private const val URI_PARAMETER = "uri"
+        private const val TITTLE = "title"
         private const val FORMAT_HINT_PARAMETER = "formatHint"
         private const val TEXTURE_ID_PARAMETER = "textureId"
         private const val LOOPING_PARAMETER = "looping"

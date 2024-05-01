@@ -87,10 +87,21 @@ class DownloadTracker(
         listeners.remove(listener)
     }
 
-    fun isDownloaded(mediaItem: MediaItem): Boolean {
-        val download = downloads[mediaItem.localConfiguration?.uri]
-        return download != null && download.state == Download.STATE_COMPLETED
+
+
+
+     fun isDownloaded(mediaItem: MediaItem): Boolean {
+        val uuid = mediaItem.localConfiguration?.uri?.let { DownloadUtil.extractUUIDFromUri(it) }
+        if (uuid != null) {
+            for ((key, value) in downloads) {
+                if (key.toString().contains(uuid) && value.state == Download.STATE_COMPLETED) {
+                    return true
+                }
+            }
+        }
+        return false
     }
+
 
 
     fun hasDownload(uri: Uri?): Boolean = downloads.keys.contains(uri)
@@ -104,9 +115,15 @@ class DownloadTracker(
 
     fun getDownload(uri: Uri?): Download? {
         uri ?: return null
-        val download = downloads[uri]
-        return if (download != null && download.state != Download.STATE_FAILED) download else null
+        val uuid = DownloadUtil.extractUUIDFromUri(uri)
+        for ((key, value) in downloads) {
+            if (key.toString().contains(uuid!!) && value.state != Download.STATE_FAILED) {
+                return value
+            }
+        }
+        return null
     }
+
 
     fun toggleDownloadDialogHelper(
         context: Context, mediaItem: MediaItem,
