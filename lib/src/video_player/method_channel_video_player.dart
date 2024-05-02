@@ -72,6 +72,7 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
         'certificateUrl': dataSource.certificateUrl,
         'drmHeaders': dataSource.drmHeaders,
         'videoExtension': dataSource.videoExtension,
+        'videoFormat': dataSource.rawFormalHint,
       };
     }
     await _channel.invokeMethod<void>(
@@ -312,6 +313,7 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
       },
     );
   }
+
   @override
   Future<void> deleteAllDownloadedVideo(int? textureId) {
     return _channel.invokeMethod<bool>(
@@ -374,8 +376,6 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
     );
   }
 
-
-
   @override
   Future<void> stopPreCache(String url, String? cacheKey) {
     return _channel.invokeMethod<void>(
@@ -389,12 +389,9 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
     return eventChannelForDownload(textureId)
         .receiveBroadcastStream()
         .map((dynamic event) {
-
-      var listOfDownload = DownloadVideoList.fromJson(event.toString() );
-
+      var listOfDownload = DownloadVideoList.fromJson(event.toString());
 
       return listOfDownload;
-
     });
   }
 

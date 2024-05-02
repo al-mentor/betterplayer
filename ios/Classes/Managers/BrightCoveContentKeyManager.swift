@@ -174,7 +174,11 @@ import AVFoundation
             */
             do {
                 self.postToConsole("User requested offline capabilities for the asset. AVPersistableContentKeyRequest object will be delivered by another delegate callback")
-                try keyRequest.respondByRequestingPersistableContentKeyRequestAndReturnError()
+                if #available(iOS 11.2, *) {
+                    try keyRequest.respondByRequestingPersistableContentKeyRequestAndReturnError()
+                } else {
+                    // Fallback on earlier versions
+                }
             } catch {
 
                 self.postToConsole("WARNING: User requested offline capabilities for the asset. But key loading request from an AirPlay Session requires online key")

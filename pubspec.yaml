@@ -23,7 +23,7 @@ dependencies:
   collection: ^1.16.0
   xml: ^6.1.0
   flutter_screenutil: ^5.9.0
-  firebase_crashlytics: ^3.4.19
+  firebase_crashlytics: ^3.4.18
   get: ^4.6.6
   flutter_svg: ^2.0.9
   wakelock_plus: ^1.1.4
