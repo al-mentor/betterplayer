@@ -131,21 +131,27 @@ internal class BetterPlayer(
     ): Boolean {
         val top = ActivityUtils.getTopActivity()
 
-        var mediaItem: MediaItem? = null;
-        val mediaItemBuilder =
-            MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_M3U8)
-                .setMediaMetadata(
-                    MediaMetadata.Builder().setTitle("Licensed - HD H265 (cenc)").build()
-                );
+        val mediaItem: MediaItem?;
 
 
-        mediaItem = if (licenseUrl != null) {
-            mediaItemBuilder.setMimeType(MimeTypes.APPLICATION_MPD).setDrmConfiguration(
-                MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
-                    .build()
-            ).build();
+        if (licenseUrl != null) {
+            mediaItem =
+                MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_MPD)
+                    .setDrmConfiguration(
+                        MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
+                            .setLicenseUri(licenseUrl)
+                            .build()
+                    )
+                    .setMediaMetadata(
+                        MediaMetadata.Builder().setTitle(key).build()
+                    ).build();
         } else {
-            mediaItemBuilder.build();
+            mediaItem =
+                MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_M3U8)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder().setTitle(key).build()
+                    ).build();
+
         }
 
 

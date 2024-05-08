@@ -447,24 +447,35 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         result: MethodChannel.Result,
         overriddenDuration: Long,
         quality: Int,
-        ): Boolean {
+    ): Boolean {
         val top = ActivityUtils.getTopActivity()
         val topView = top.window.decorView.rootView
 
-        val mediaItem =
-            MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_M3U8)
-            .setMediaMetadata(
-                    MediaMetadata.Builder().setTitle(key).build()
-                ).build();
+
+        val mediaItem: MediaItem?;
+
 
         if (licenseUrl != null) {
-            mediaItem.buildUpon().setMimeType(MimeTypes.APPLICATION_MPD).setDrmConfiguration(
-                MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
-                    .build()
-            )
+            mediaItem =
+                MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_MPD)
+                    .setDrmConfiguration(
+                        MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
+                            .setLicenseUri(licenseUrl)
+                            .build()
+                    )
+                    .setMediaMetadata(
+                        MediaMetadata.Builder().setTitle(key).build()
+                    ).build();
+        } else {
+            mediaItem =
+                MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_M3U8)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder().setTitle(key).build()
+                    ).build();
+
         }
 
-            if (DownloadUtil.getDownloadTracker(top).isDownloaded(mediaItem)) {
+        if (DownloadUtil.getDownloadTracker(top).isDownloaded(mediaItem)) {
             result.error("already Downloaded", "This video is already downloaded", null);
         } else {
             val duration: Long = (overriddenDuration / 10);
@@ -478,7 +489,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                     DownloadTracker.globalQualitySelected = quality
                     GlobalScope.launch(Dispatchers.IO) {
                         DownloadUtil.getDownloadTracker(top)
-                        .toggleDownloadDialogHelper(top, item, result = result)
+                            .toggleDownloadDialogHelper(top, item, result = result)
                     }
                 } else {
 
