@@ -447,19 +447,24 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         result: MethodChannel.Result,
         overriddenDuration: Long,
         quality: Int,
-    ): Boolean {
+        ): Boolean {
         val top = ActivityUtils.getTopActivity()
         val topView = top.window.decorView.rootView
 
         val mediaItem =
-            MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_MPD)
-                .setDrmConfiguration(
-                    MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
-                        .build()
-                ).setMediaMetadata(
+            MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_M3U8)
+            .setMediaMetadata(
                     MediaMetadata.Builder().setTitle(key).build()
                 ).build();
-        if (DownloadUtil.getDownloadTracker(top).isDownloaded(mediaItem)) {
+
+        if (licenseUrl != null) {
+            mediaItem.buildUpon().setMimeType(MimeTypes.APPLICATION_MPD).setDrmConfiguration(
+                MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
+                    .build()
+            )
+        }
+
+            if (DownloadUtil.getDownloadTracker(top).isDownloaded(mediaItem)) {
             result.error("already Downloaded", "This video is already downloaded", null);
         } else {
             val duration: Long = (overriddenDuration / 10);
@@ -703,6 +708,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val PACKAGE_PARAMETER = "package"
         private const val URI_PARAMETER = "uri"
         private const val TITTLE = "title"
+        private const val VIDEOFORMAT = "videoFormat"
         private const val FORMAT_HINT_PARAMETER = "formatHint"
         private const val TEXTURE_ID_PARAMETER = "textureId"
         private const val LOOPING_PARAMETER = "looping"

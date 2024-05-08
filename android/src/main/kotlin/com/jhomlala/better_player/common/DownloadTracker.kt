@@ -138,27 +138,28 @@ class DownloadTracker(
             globalQualitySelected = 3;
             mediaItems.forEach {
                 if (!isDownloaded(it)) {
-                    startDownloadDialogHelper =
-                        StartDownloadDialogHelper(
-                            context,
-                            getDownloadHelper(it),
-                            it,
-                            positiveCallback, dismissCallback, result
-                        )
+                    startDownloadDialogHelper = StartDownloadDialogHelper(
+                        context,
+                        getDownloadHelper(it),
+                        it,
+                        positiveCallback,
+                        dismissCallback,
+                        result
+                    )
                 }
             }
 
             return;
         }
 
-        startDownloadDialogHelper =
-            StartDownloadDialogHelper(
-                context,
-                getDownloadHelper(mediaItem),
-                mediaItem,
-                positiveCallback,
-                dismissCallback, result
-            )
+        startDownloadDialogHelper = StartDownloadDialogHelper(
+            context,
+            getDownloadHelper(mediaItem),
+            mediaItem,
+            positiveCallback,
+            dismissCallback,
+            result
+        )
     }
 
     fun toggleDownloadPopupMenu(context: Context, anchor: View, uri: Uri?) {
@@ -167,13 +168,12 @@ class DownloadTracker(
         download ?: return
 
         popupMenu.menu.apply {
-            findItem(R.id.cancel_download).isVisible =
-                listOf(
-                    Download.STATE_DOWNLOADING,
-                    Download.STATE_STOPPED,
-                    Download.STATE_QUEUED,
-                    Download.STATE_FAILED
-                ).contains(download.state)
+            findItem(R.id.cancel_download).isVisible = listOf(
+                Download.STATE_DOWNLOADING,
+                Download.STATE_STOPPED,
+                Download.STATE_QUEUED,
+                Download.STATE_FAILED
+            ).contains(download.state)
             findItem(R.id.delete_download).isVisible = download.state == Download.STATE_COMPLETED
             findItem(R.id.resume_download).isVisible =
                 listOf(Download.STATE_STOPPED, Download.STATE_FAILED).contains(download.state)
@@ -212,23 +212,18 @@ class DownloadTracker(
         val download = downloads[uri]
         download?.let {
             DownloadService.sendRemoveDownload(
-                applicationContext,
-                MyDownloadService::class.java,
-                download.request.id,
-                false
+                applicationContext, MyDownloadService::class.java, download.request.id, false
             )
         }
     }
+
     fun deleteAllDownloadedAssets() {
         val downloadUris = downloads.keys.toList()
         for (uri in downloadUris) {
             val download = downloads[uri]
             download?.let {
                 DownloadService.sendRemoveDownload(
-                    applicationContext,
-                    MyDownloadService::class.java,
-                    download.request.id,
-                    false
+                    applicationContext, MyDownloadService::class.java, download.request.id, false
                 )
                 downloads.remove(uri)
             }
@@ -256,9 +251,6 @@ class DownloadTracker(
             delay(1000)
         }
     }
-
-
-
 
 
     @ExperimentalCoroutinesApi
@@ -296,9 +288,7 @@ class DownloadTracker(
 
     private inner class DownloadManagerListener : DownloadManager.Listener {
         override fun onDownloadChanged(
-            downloadManager: DownloadManager,
-            download: Download,
-            finalException: Exception?
+            downloadManager: DownloadManager, download: Download, finalException: Exception?
         ) {
             downloads[download.request.uri] = download
             for (listener in listeners) {
@@ -306,8 +296,8 @@ class DownloadTracker(
             }
             if (download.state == Download.STATE_COMPLETED) {
                 // Add delta between estimation and reality to have a better availableBytesLeft
-                availableBytesLeft +=
-                    Util.fromUtf8Bytes(download.request.data).toLong() - download.bytesDownloaded
+                availableBytesLeft += Util.fromUtf8Bytes(download.request.data)
+                    .toLong() - download.bytesDownloaded
             }
         }
 
@@ -353,11 +343,11 @@ class DownloadTracker(
             if (helper.periodCount == 0) {
                 Log.d(TAG, "No periods found. Downloading entire stream.")
                 val mediaItemTag: MediaItemTag = mediaItem.localConfiguration?.tag as MediaItemTag
-                val estimatedContentLength: Long = (DEFAULT_BITRATE * mediaItemTag.duration)
-                    .div(C.MILLIS_PER_SECOND).div(C.BITS_PER_BYTE)
+                val estimatedContentLength: Long =
+                    (DEFAULT_BITRATE * mediaItemTag.duration).div(C.MILLIS_PER_SECOND)
+                        .div(C.BITS_PER_BYTE)
                 val downloadRequest: DownloadRequest = downloadHelper.getDownloadRequest(
-                    mediaItemTag.title,
-                    Util.getUtf8Bytes(estimatedContentLength.toString())
+                    mediaItemTag.title, Util.getUtf8Bytes(estimatedContentLength.toString())
                 )
                 startDownload(downloadRequest)
                 release()
@@ -383,9 +373,7 @@ class DownloadTracker(
             }
 
             if (formatDownloadable.isEmpty()) {
-                dialogBuilder.setTitle("An error occurred")
-                    .setPositiveButton("OK", null)
-                    .show()
+                dialogBuilder.setTitle("An error occurred").setPositiveButton("OK", null).show()
                 return
             }
 
@@ -394,7 +382,8 @@ class DownloadTracker(
             val mediaItemTag: MediaItemTag = mediaItem.localConfiguration?.tag as MediaItemTag
             val optionsDownload: List<String> = formatDownloadable.map {
                 context.getString(
-                    R.string.dialog_option, it.height,
+                    R.string.dialog_option,
+                    it.height,
                     (it.bitrate * mediaItemTag.duration).div(8000).formatFileSize()
                 )
             }
@@ -405,8 +394,7 @@ class DownloadTracker(
                 .setMinVideoSize(formatDownloadable[0].width, formatDownloadable[0].height)
                 .setMinVideoBitrate(formatDownloadable[0].bitrate)
                 .setMaxVideoSize(formatDownloadable[0].width, formatDownloadable[0].height)
-                .setMaxVideoBitrate(formatDownloadable[0].bitrate)
-                .build()
+                .setMaxVideoBitrate(formatDownloadable[0].bitrate).build()
             if (globalQualitySelected != null) {
                 if (globalQualitySelected!! > optionsDownload.toTypedArray().size - 1) {
                     globalQualitySelected = optionsDownload.toTypedArray().size - 1
@@ -416,8 +404,7 @@ class DownloadTracker(
                     .setMinVideoSize(formatSelected.width, formatSelected.height)
                     .setMinVideoBitrate(formatSelected.bitrate)
                     .setMaxVideoSize(formatSelected.width, formatSelected.height)
-                    .setMaxVideoBitrate(formatSelected.bitrate)
-                    .build()
+                    .setMaxVideoBitrate(formatSelected.bitrate).build()
                 fireDownloadWithSelectQuality(helper, qualitySelected, formatSelected, mediaItemTag)
                 trackSelectionDialog = null
                 result?.success(true)
@@ -431,18 +418,14 @@ class DownloadTracker(
                         .setMinVideoSize(formatSelected.width, formatSelected.height)
                         .setMinVideoBitrate(formatSelected.bitrate)
                         .setMaxVideoSize(formatSelected.width, formatSelected.height)
-                        .setMaxVideoBitrate(formatSelected.bitrate)
-                        .build()
+                        .setMaxVideoBitrate(formatSelected.bitrate).build()
                     Log.e(
                         TAG,
                         "format Selected= width: ${formatSelected.width}, height: ${formatSelected.height}"
                     )
                 }.setPositiveButton("Download") { _, _ ->
                     fireDownloadWithSelectQuality(
-                        helper,
-                        qualitySelected,
-                        formatSelected,
-                        mediaItemTag
+                        helper, qualitySelected, formatSelected, mediaItemTag
                     )
                     result?.success(true)
 
@@ -463,31 +446,35 @@ class DownloadTracker(
             helper.clearTrackSelections(0)
             helper.addTrackSelection(0, qualitySelected)
             val drmConfiguration = mediaItem.localConfiguration?.drmConfiguration
-            val offlineHelper = OfflineLicenseHelper.newWidevineInstance(
-                drmConfiguration?.licenseUri.toString(),
-                drmConfiguration?.forceDefaultLicenseUri ?: false,
-                DownloadUtil.getHttpDataSourceFactory(context),
-                drmConfiguration?.licenseRequestHeaders,
-                DrmSessionEventListener.EventDispatcher()
-            )
-            val keySetId = offlineHelper.downloadLicense(formatSelected)
-            Log.e("DownloadTracker", "keySetId: $keySetId")
             val estimatedContentLength: Long =
-                (qualitySelected.maxVideoBitrate * mediaItemTag.duration)
-                    .div(C.MILLIS_PER_SECOND).div(C.BITS_PER_BYTE)
+                (qualitySelected.maxVideoBitrate * mediaItemTag.duration).div(C.MILLIS_PER_SECOND)
+                    .div(C.BITS_PER_BYTE)
+            var keySetId: ByteArray? = null
+            if (drmConfiguration != null) {
+                val offlineHelper = OfflineLicenseHelper.newWidevineInstance(
+                    drmConfiguration?.licenseUri.toString(),
+                    drmConfiguration?.forceDefaultLicenseUri ?: false,
+                    DownloadUtil.getHttpDataSourceFactory(context),
+                    drmConfiguration?.licenseRequestHeaders,
+                    DrmSessionEventListener.EventDispatcher()
+                )
+                keySetId = offlineHelper.downloadLicense(formatSelected)
+                Log.e("DownloadTracker", "keySetId: $keySetId")
+            }
             if (availableBytesLeft > estimatedContentLength) {
                 val downloadRequest: DownloadRequest = downloadHelper.getDownloadRequest(
                     (mediaItem.localConfiguration?.tag as MediaItemTag).title,
                     Util.getUtf8Bytes(estimatedContentLength.toString())
-                ).copyWithKeySetId(keySetId)
+                )
+                if (keySetId != null) {
+                    downloadRequest.copyWithKeySetId(keySetId)
+                }
                 startDownload(downloadRequest)
                 availableBytesLeft -= estimatedContentLength
                 Log.e(TAG, "availableBytesLeft after calculation: $availableBytesLeft")
             } else {
                 Toast.makeText(
-                    context,
-                    "Not enough space to download this file",
-                    Toast.LENGTH_LONG
+                    context, "Not enough space to download this file", Toast.LENGTH_LONG
                 ).show()
             }
             positiveCallback?.invoke()
@@ -506,10 +493,7 @@ class DownloadTracker(
         // Internal methods.
         private fun startDownload(downloadRequest: DownloadRequest = buildDownloadRequest()) {
             DownloadService.sendAddDownload(
-                applicationContext,
-                MyDownloadService::class.java,
-                downloadRequest,
-                true
+                applicationContext, MyDownloadService::class.java, downloadRequest, true
             )
         }
 

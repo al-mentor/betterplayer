@@ -131,14 +131,26 @@ internal class BetterPlayer(
     ): Boolean {
         val top = ActivityUtils.getTopActivity()
 
-        val mediaItem =
-            MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_MPD)
-                .setDrmConfiguration(
-                    MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
-                        .build()
-                ).setMediaMetadata(
+        var mediaItem: MediaItem? = null;
+        val mediaItemBuilder =
+            MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_M3U8)
+                .setMediaMetadata(
                     MediaMetadata.Builder().setTitle("Licensed - HD H265 (cenc)").build()
-                ).build();
+                );
+
+
+        mediaItem = if (licenseUrl != null) {
+            mediaItemBuilder.setMimeType(MimeTypes.APPLICATION_MPD).setDrmConfiguration(
+                MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
+                    .build()
+            ).build();
+        } else {
+            mediaItemBuilder.build();
+        }
+
+
+
+
         if (DownloadUtil.getDownloadTracker(top).isDownloaded(mediaItem)) {
             if (runDownloadVideoFromLocal(
                     mediaItem,
@@ -165,13 +177,18 @@ internal class BetterPlayer(
             .getDownload(mediaItem.localConfiguration!!.uri)!!;
 
         if (download.state == Download.STATE_COMPLETED && download.percentDownloaded > 99f) {
-            val media = MediaItem.Builder().setUri(download.request.uri.toString())
+            var mediaBuilder = MediaItem.Builder().setUri(download.request.uri.toString())
                 .setMimeType(download.request.mimeType).setMediaMetadata(
                     MediaMetadata.Builder().setTitle(download.request.id).build()
-                ).setDrmConfiguration(
-                    MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
-                        .setLicenseUri(licenseUrl).build()
-                ).setTag(MediaItemTag(-1, download.request.id)).build()
+                ).setTag(MediaItemTag(-1, download.request.id));
+
+            if (licenseUrl != null)
+                mediaBuilder.setDrmConfiguration(
+                    MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
+                        .build()
+                )
+            var media = mediaBuilder.build();
+
 
             val downloadRequest: DownloadRequest? = DownloadUtil.getDownloadTracker(top)
                 .getDownloadRequest(mediaItem.localConfiguration?.uri)
