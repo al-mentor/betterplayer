@@ -357,9 +357,13 @@ bool _remoteCommandsInitialized = false;
         }else if ([@"download" isEqualToString:call.method]) {
             NSDictionary* dataSource = argsMap[@"dataSource"];
             NSString* uriArg = dataSource[@"uri"];
-            NSString* key = dataSource[@"key"];
             NSString* certificateUrl = dataSource[@"certificateUrl"];
             NSString* licenseUrl = dataSource[@"licenseUrl"];
+            
+            // print licenseUrl and certificateUrl
+            NSLog(@"licenseUrl: %@", licenseUrl);
+            NSLog(@"certificateUrl: %@", certificateUrl);
+
             
             dispatch_queue_t backgroundQueue = dispatch_queue_create("net.almentor.assetDownloader", NULL);
 
@@ -371,20 +375,22 @@ bool _remoteCommandsInitialized = false;
                  CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:uriArg url:url];
                 [assetCustom createUrlAsset];
 
-                
                 BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
-                contentKeyManager.licensingServiceUrl = licenseUrl;
-                contentKeyManager.fpsCertificateUrl = certificateUrl;
-                [contentKeyManager createContentKeySession];
-//
-                [assetCustom addAsContentKeyRecipient];
-                contentKeyManager.downloadRequestedByUser = true;
-              [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
-//
+                if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
+
+                    contentKeyManager.licensingServiceUrl = licenseUrl;
+                    contentKeyManager.fpsCertificateUrl = certificateUrl;
+                    [contentKeyManager createContentKeySession];
+                    [assetCustom addAsContentKeyRecipient];
+                    contentKeyManager.downloadRequestedByUser = true;
+                    [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
+                    
+                   }
+               
+
+                
                 AssetDownloader.avalibelAsset = assetCustom;
                [downloader downloadWithAsset:assetCustom];
-                
-        
             });
 
      

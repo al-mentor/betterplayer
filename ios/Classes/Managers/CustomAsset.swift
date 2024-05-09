@@ -17,6 +17,21 @@ import AVFoundation
     @objc public  var contentKeyIdList: [String]?
     @objc public   var urlAsset: AVURLAsset!
     
+    func extractUUID(from uri: URL) -> String? {
+        let regexPattern = "[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+-[0-9a-fA-F]+"
+        let regex = try? NSRegularExpression(pattern: regexPattern)
+        guard let matches = regex?.matches(in: uri.absoluteString, range: NSRange(uri.absoluteString.startIndex..., in: uri.absoluteString)) else {
+            return nil
+        }
+        
+        if let match = matches.first {
+            return String(uri.absoluteString[Range(match.range, in: uri.absoluteString)!])
+        } else {
+            return nil
+        }
+    }
+
+    
     @objc public  init(name: String, url: URL) {
         var updatedName = name // Create a variable to hold the potentially updated name
 
