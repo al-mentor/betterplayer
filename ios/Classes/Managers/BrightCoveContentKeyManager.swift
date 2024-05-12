@@ -35,13 +35,13 @@ import AVFoundation
     @objc public var downloadRequestedByUser: Bool = false
     
     // Certificate data
-    fileprivate var fpsCertificate:Data!
+    @objc public var fpsCertificate:Data!
     
     // A set containing the currently pending content key identifiers associated with persistable content key requests that have not been completed.
     @objc public  var pendingPersistableContentKeyIdentifiers = Set<String>()
         
     // The directory that is used to save persistable content keys
-    lazy var contentKeyDirectory: URL = {
+    @objc lazy var contentKeyDirectory: URL = {
         guard let documentPath =
             NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first else {
                 fatalError("Unable to determine library URL")
@@ -64,7 +64,7 @@ import AVFoundation
         return contentKeyDirectory
     }()
     
-    override init() {
+    @objc override init() {
         super.init()
     }
     
@@ -107,7 +107,7 @@ import AVFoundation
         handleOnlineContentKeyRequest(keyRequest: keyRequest)
     }
     @objc public func handleOnlineContentKeyRequest(keyRequest: AVContentKeyRequest) {
-        guard self.fpsCertificate != nil || self.fpsCertificate.count > 0 else {
+        guard self.fpsCertificate != nil && self.fpsCertificate.count > 0  else {
             self.postToConsole("Application Certificate missing, will request")
             do {
                 try self.requestApplicationCertificate()
@@ -604,18 +604,25 @@ import AVFoundation
             self.postToConsole("ERROR: FPS Certificate request response empty")
             throw ProgramError.applicationCertificateRequestFailed
         }
-        guard data != nil else {
-            self.postToConsole("ERROR: FPS Certificate request response data is empty")
-            throw ProgramError.applicationCertificateRequestFailed
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+              self.postToConsole("ERROR: FPS Certificate request failed with unexpected response:")
+              throw ProgramError.applicationCertificateRequestFailed
+          }
+
+          guard let responseData = data else {
+              self.postToConsole("ERROR: FPS Certificate request response data is empty")
+              throw ProgramError.applicationCertificateRequestFailed
+          }
+
+          // Assign the certificate data to fpsCertificate
+        if(responseData.count > 0){
+            self.fpsCertificate = responseData
+
         }
-        
-        if(data?.count ?? 0 > 0){
-            self.fpsCertificate = data!
-        }
- 
+
         
         // Retrieve useful info for logging
-        guard let certificate = SecCertificateCreateWithData(nil, data! as CFData)  else {
+        guard let certificate = SecCertificateCreateWithData(nil, responseData as CFData)  else {
             self.postToConsole("ERROR: FPS Certificate data is not a valid DER-encoded")
             throw ProgramError.applicationCertificateRequestFailed
         }

@@ -282,7 +282,7 @@ import Flutter
             return asset
         } catch {
             print("DOWNLOADER: Failed to create URL from bookmark with error: \(error)")
-            fatalError("Failed to create URL from bookmark with error: \(error)")
+           return nil
         }
     }
     
