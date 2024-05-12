@@ -14,7 +14,7 @@ import AVFoundation
     
     @objc public  var name: String
     @objc public  var url: URL!
-    @objc public  var contentKeyIdList: [String]?
+    @objc public  var contentKeyIdList: [String] = []
     @objc public   var urlAsset: AVURLAsset!
     
     func extractUUID(from uri: URL) -> String? {

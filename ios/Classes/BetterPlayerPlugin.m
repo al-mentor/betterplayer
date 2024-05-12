@@ -301,10 +301,116 @@ bool _remoteCommandsInitialized = false;
                                                                                 binaryMessenger:_messenger];
         [downloadEventsChannel setStreamHandler:AssetDownloader.sharedDownloader];
         result(nil);
-    }  else {
+    } else if ([@"download" isEqualToString:call.method]) {
         NSDictionary* argsMap = call.arguments;
-        int64_t textureId = ((NSNumber*)argsMap[@"textureId"]).unsignedIntegerValue;
-        BetterPlayer* player = _players[@(textureId)];
+
+        NSDictionary* dataSource = argsMap[@"dataSource"];
+        NSString* uriArg = dataSource[@"uri"];
+        NSString* certificateUrl = dataSource[@"certificateUrl"];
+        NSString* licenseUrl = dataSource[@"licenseUrl"];
+        
+        // print licenseUrl and certificateUrl
+        NSLog(@"licenseUrl: %@", licenseUrl);
+        NSLog(@"certificateUrl: %@", certificateUrl);
+
+        
+        dispatch_queue_t backgroundQueue = dispatch_queue_create("net.almentor.assetDownloader", NULL);
+
+        // Execute the download operation asynchronously on the background queue
+        dispatch_async(backgroundQueue, ^{
+            // Your asset download code
+            AssetDownloader *downloader = [AssetDownloader sharedDownloader];
+            NSURL *url = [[NSURL alloc] initWithString:uriArg];
+             CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:uriArg url:url];
+            [assetCustom createUrlAsset];
+
+            BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
+            if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
+
+                contentKeyManager.licensingServiceUrl = licenseUrl;
+                contentKeyManager.fpsCertificateUrl = certificateUrl;
+                [contentKeyManager createContentKeySession];
+                [assetCustom addAsContentKeyRecipient];
+                contentKeyManager.downloadRequestedByUser = true;
+                [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
+                
+               }
+           
+
+            
+            AssetDownloader.avalibelAsset = assetCustom;
+           [downloader downloadWithAsset:assetCustom];
+        });
+
+ 
+        FlutterEventChannel* downloadEventsChannel = [FlutterEventChannel eventChannelWithName:@"better_player_channel/downloadStream"
+                                                                                binaryMessenger:_messenger];
+        [downloadEventsChannel setStreamHandler:AssetDownloader.sharedDownloader];
+        
+        result(nil);
+        
+    }else if ([@"delete_downloaded_video" isEqualToString:call.method]) {
+        NSDictionary* argsMap = call.arguments;
+        NSString* uriArg = argsMap[@"uri"];
+        AssetDownloader *downloader = [AssetDownloader sharedDownloader];
+        NSURL *url = [[NSURL alloc] initWithString:uriArg];
+         CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:uriArg url:url];
+        [[AzureContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
+        [downloader cancelDownloadOfAssetWithAsset:assetCustom];
+        [downloader deleteDownloadedAssetWithAsset:assetCustom];
+        result(nil);
+
+        
+    }else if ([@"delete_all_downloaded_video" isEqualToString:call.method]) {
+        AssetDownloader *downloader = [AssetDownloader sharedDownloader];
+        [downloader deleteAllDownloadedAssets];
+        result(nil);
+
+
+    }else if ([@"download_data" isEqualToString:call.method]) {
+        
+        
+        AssetDownloader *assetDownloader = [AssetDownloader sharedDownloader];
+        NSString *jsonString  =  [assetDownloader allDownloadedAssets];
+
+        if (jsonString == nil) {
+            result([FlutterError errorWithCode:@"json_error" message:@"Failed to serialize download data to JSON" details:nil]);
+        } else {
+            result(jsonString);
+        }
+
+        FlutterEventChannel* downloadEventsChannel = [FlutterEventChannel eventChannelWithName:@"better_player_channel/downloadStream"
+                                                                                binaryMessenger:_messenger];
+        [downloadEventsChannel setStreamHandler:AssetDownloader.sharedDownloader];
+        result(nil);
+    }
+     else {
+        NSDictionary* argsMap = call.arguments;
+
+        // Check if the argsMap dictionary contains the key "textureId"
+        if (![argsMap isKindOfClass:[NSDictionary class]]) {
+            NSLog(@"Error: argsMap is not a valid NSDictionary.");
+            return; // or handle the error appropriately
+        }
+
+        id textureIdObject = argsMap[@"textureId"];
+
+        // Check if textureIdObject is not nil and is an instance of NSNumber
+        if (![textureIdObject isKindOfClass:[NSNumber class]]) {
+            NSLog(@"Error: textureId is not a valid NSNumber.");
+            return; // or handle the error appropriately
+        }
+
+        // Convert textureIdObject to int64_t
+        int64_t textureId = [(NSNumber *)textureIdObject longLongValue];
+
+        // Check if the textureId exists in the _players dictionary
+        BetterPlayer *player = _players[@(textureId)];
+        if (player == nil) {
+            NSLog(@"Error: No player found for textureId: %lld", textureId);
+            return; // or handle the error appropriately
+        }
+
         if ([@"setDataSource" isEqualToString:call.method]) {
             [player clear];
             // This call will clear cached frame because we will return transparent frame
@@ -354,89 +460,7 @@ bool _remoteCommandsInitialized = false;
                 result(FlutterMethodNotImplemented);
             }
             result(nil);
-        }else if ([@"download" isEqualToString:call.method]) {
-            NSDictionary* dataSource = argsMap[@"dataSource"];
-            NSString* uriArg = dataSource[@"uri"];
-            NSString* certificateUrl = dataSource[@"certificateUrl"];
-            NSString* licenseUrl = dataSource[@"licenseUrl"];
-            
-            // print licenseUrl and certificateUrl
-            NSLog(@"licenseUrl: %@", licenseUrl);
-            NSLog(@"certificateUrl: %@", certificateUrl);
-
-            
-            dispatch_queue_t backgroundQueue = dispatch_queue_create("net.almentor.assetDownloader", NULL);
-
-            // Execute the download operation asynchronously on the background queue
-            dispatch_async(backgroundQueue, ^{
-                // Your asset download code
-                AssetDownloader *downloader = [AssetDownloader sharedDownloader];
-                NSURL *url = [[NSURL alloc] initWithString:uriArg];
-                 CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:uriArg url:url];
-                [assetCustom createUrlAsset];
-
-                BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
-                if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
-
-                    contentKeyManager.licensingServiceUrl = licenseUrl;
-                    contentKeyManager.fpsCertificateUrl = certificateUrl;
-                    [contentKeyManager createContentKeySession];
-                    [assetCustom addAsContentKeyRecipient];
-                    contentKeyManager.downloadRequestedByUser = true;
-                    [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
-                    
-                   }
-               
-
-                
-                AssetDownloader.avalibelAsset = assetCustom;
-               [downloader downloadWithAsset:assetCustom];
-            });
-
-     
-            FlutterEventChannel* downloadEventsChannel = [FlutterEventChannel eventChannelWithName:@"better_player_channel/downloadStream"
-                                                                                    binaryMessenger:_messenger];
-            [downloadEventsChannel setStreamHandler:AssetDownloader.sharedDownloader];
-            
-            result(nil);
-            
-        }else if ([@"delete_downloaded_video" isEqualToString:call.method]) {
-            NSDictionary* dataSource = argsMap[@"dataSource"];
-            NSString* uriArg = dataSource[@"uri"];
-            AssetDownloader *downloader = [AssetDownloader sharedDownloader];
-            NSURL *url = [[NSURL alloc] initWithString: uriArg];
-            NSArray *components = [uriArg componentsSeparatedByString:@"/"];
-             CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:components[0] url:url];
-            [[ContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
-            [downloader cancelDownloadOfAssetWithAsset:assetCustom];
-            [downloader deleteDownloadedAssetWithAsset:assetCustom];
-            result(nil);
-
-            
-        }else if ([@"delete_all_downloaded_video" isEqualToString:call.method]) {
-            AssetDownloader *downloader = [AssetDownloader sharedDownloader];
-            [downloader deleteAllDownloadedAssets];
-            result(nil);
-
- 
-        }else if ([@"download_data" isEqualToString:call.method]) {
-            
-            
-            AssetDownloader *assetDownloader = [AssetDownloader sharedDownloader];
-            NSString *jsonString  =  [assetDownloader allDownloadedAssets];
-
-            if (jsonString == nil) {
-                result([FlutterError errorWithCode:@"json_error" message:@"Failed to serialize download data to JSON" details:nil]);
-            } else {
-                result(jsonString);
-            }
-
-            FlutterEventChannel* downloadEventsChannel = [FlutterEventChannel eventChannelWithName:@"better_player_channel/downloadStream"
-                                                                                    binaryMessenger:_messenger];
-            [downloadEventsChannel setStreamHandler:AssetDownloader.sharedDownloader];
-            result(nil);
         }
-        
         
         
         

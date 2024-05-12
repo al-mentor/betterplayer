@@ -82,9 +82,11 @@ NSString *DEFAULT_LICENSE_SERVER_URL = @"https://fps.ezdrm.com/api/licenses/";
 
     // Step 5: Generate a JSON block with the following data
     NSDictionary *jsonBlock = @{
-        @"application_id": @"", // empty - legacy support
-        @"key_id": @"",         // empty - legacy support
-        @"publisher_id": @"",   // empty - legacy support
+        @"application_id": @"",
+        @"key_id": @"",
+        @"x-bolt-offline-license": @"true",
+        @"x-bc-crt-config": @"eyJwcm9maWxlIjp7InB1cmNoYXNlIjp7fX19",
+        @"publisher_id": @"",
         @"server_playback_context": [requestBytes base64EncodedStringWithOptions:0]
     };
 

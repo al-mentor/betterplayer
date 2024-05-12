@@ -185,8 +185,8 @@ import AVFoundation
          Save Content Key Identifier String to initiate persisting content key loading process associated with the asset if needed.
         */
         
-        if !(asset.contentKeyIdList?.contains(contentKeyIdentifierString) ?? false) {
-            asset.contentKeyIdList?.append(contentKeyIdentifierString)
+        if !(asset.contentKeyIdList.contains(contentKeyIdentifierString) ?? false) {
+            asset.contentKeyIdList.append(contentKeyIdentifierString)
         }
         
         /*
@@ -384,8 +384,8 @@ import AVFoundation
         /*
          Save Content Key Identifier String to initiate persisting content key loading process associated with the asset if needed.
         */
-        if !(asset.contentKeyIdList?.contains(contentKeyIdentifierString))! {
-            asset.contentKeyIdList?.append(contentKeyIdentifierString)
+        if !(asset.contentKeyIdList.contains(contentKeyIdentifierString)) {
+            asset.contentKeyIdList.append(contentKeyIdentifierString)
         }
 
         /*
