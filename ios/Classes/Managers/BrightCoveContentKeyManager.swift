@@ -154,11 +154,22 @@ import AVFoundation
             if downloadRequestedByUser || persistableContentKeyExistsOnDisk(withAssetName: asset.name, withContentKeyIV: "") || shouldRequestPersistableContentKey(withIdentifier: contentKeyIdentifierString) {
                 self.postToConsole("User requested offline capabilities for the asset. AVPersistableContentKeyRequest object will be delivered by another delegate callback")
                
-                    do {
+                do {
+                    self.postToConsole("User requested offline capabilities for the asset. AVPersistableContentKeyRequest object will be delivered by another delegate callback")
+                    if #available(iOS 11.2, *) {
                         try keyRequest.respondByRequestingPersistableContentKeyRequestAndReturnError()
-                    } catch {
-                        self.postToConsole("Failed to request a persistable content key request: \(error)")
+                    } else {
+                        // Fallback on earlier versions
                     }
+                } catch {
+
+                    self.postToConsole("WARNING: User requested offline capabilities for the asset. But key loading request from an AirPlay Session requires online key")
+                    /*
+                    This case will occur when the client gets a key loading request from an AirPlay Session.
+                    You should answer the key request using an online key from your key server.
+                    */
+                    provideOnlineKey(withKeyRequest: keyRequest, contentIdentifier: contentIdentifierData)
+                }
                 
                 return
             }
