@@ -64,7 +64,7 @@ import AVFoundation
         return contentKeyDirectory
     }()
     
-    @objc override init() {
+    @objc public override init() {
         super.init()
     }
     

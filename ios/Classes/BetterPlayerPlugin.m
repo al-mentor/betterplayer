@@ -325,6 +325,8 @@ bool _remoteCommandsInitialized = false;
             [assetCustom createUrlAsset];
 
             BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
+            //            BrightCoveContentKeyManager *contentKeyManager = [[BrightCoveContentKeyManager alloc] init];
+
             if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
 
                 contentKeyManager.licensingServiceUrl = licenseUrl;
