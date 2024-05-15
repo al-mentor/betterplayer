@@ -330,7 +330,7 @@ bool _remoteCommandsInitialized = false;
                 contentKeyManager.licensingServiceUrl = licenseUrl;
                 contentKeyManager.fpsCertificateUrl = certificateUrl;
                 [contentKeyManager createContentKeySession];
-                [assetCustom addAsContentKeyRecipient];
+                [assetCustom addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
                 contentKeyManager.downloadRequestedByUser = true;
                 [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
                 

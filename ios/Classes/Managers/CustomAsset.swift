@@ -64,9 +64,9 @@ import AVFoundation
     }
     
     // Link AVURLAsset to Content Key Session
-    @objc public   func addAsContentKeyRecipient() {
+    @objc public   func addAsContentKeyRecipient(contentKeyManager : BrightCoveContentKeyManager) {
         print("Adding AVURLAsset as a recepient to the Content Key Session")
-        BrightCoveContentKeyManager.sharedManager.contentKeySession.addContentKeyRecipient(urlAsset)
+        contentKeyManager.contentKeySession.addContentKeyRecipient(urlAsset)
     }
     
     // Using different AVURLAsset to allow simultaneous playback and download
