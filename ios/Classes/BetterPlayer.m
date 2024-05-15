@@ -215,44 +215,29 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     } else {
         AVURLAsset* asset = [AVURLAsset URLAssetWithURL:url
                                                 options:@{@"AVURLAssetHTTPHeaderFieldsKey" : headers}];
-        
         CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:[url absoluteString] url:url];
-
-        if (certificateUrl && certificateUrl != [NSNull null] && [certificateUrl length] > 0) {
-            NSURL * certificateNSURL = [[NSURL alloc] initWithString: certificateUrl];
-            NSURL * licenseNSURL = [[NSURL alloc] initWithString: licenseUrl];
-            _loaderDelegate = [[BetterPlayerEzDrmAssetsLoaderDelegate alloc] init:certificateNSURL withLicenseURL:licenseNSURL];
-            dispatch_queue_attr_t qos = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1);
-            dispatch_queue_t streamQueue = dispatch_queue_create("streamQueue", qos);
-            [asset.resourceLoader setDelegate:_loaderDelegate queue:streamQueue];
-
-        }    
-        item = [AVPlayerItem playerItemWithAsset:asset];
-
-        
-    
-        
-      
- 
-//        // Run if video downloaded Before
+        BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
+                    if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
+                    contentKeyManager.licensingServiceUrl =  licenseUrl ;
+                      contentKeyManager.fpsCertificateUrl = certificateUrl ;
+                      [contentKeyManager createContentKeySession];
+                      [assetCustom addAsContentKeyRecipient];
+                      contentKeyManager.asset = assetCustom;
+                      item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
+            
+        }else {
+            item = [AVPlayerItem playerItemWithAsset:asset];
+        }
         CustomAsset *downloadedAsset = [[AssetDownloader sharedDownloader] downloadedAssetWithName:assetCustom.name];
         if (downloadedAsset) {
-            
-            if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
-                
-                BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
-                contentKeyManager.licensingServiceUrl =  licenseUrl ;
-                contentKeyManager.fpsCertificateUrl = certificateUrl ;
-                [contentKeyManager createContentKeySession];
-                [assetCustom addAsContentKeyRecipient];
-                contentKeyManager.asset = assetCustom;
-            }
             NSLog(@"OFFLINE PLAYBACK");
-            assetCustom = downloadedAsset;
-            [assetCustom createUrlAsset];
-            item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
+            contentKeyManager.asset = downloadedAsset;
+            [downloadedAsset createUrlAsset];
+            [downloadedAsset addAsContentKeyRecipient];
+            item = [AVPlayerItem playerItemWithAsset:downloadedAsset.urlAsset];
             NSLog(@"Run OFFLINE PLAYBACK");
         }
+
         
     }
 

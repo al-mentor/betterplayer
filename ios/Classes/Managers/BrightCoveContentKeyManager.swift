@@ -81,6 +81,7 @@ import AVFoundation
         // Prepare the basic userInfo dictionary that will be posted as part of our notification
         var userInfo = [String: Any]()
         userInfo["message"] = message
+        print(message)
         
         NotificationCenter.default.post(name: .ConsoleMessageSent, object: nil, userInfo: userInfo)
     }
@@ -107,7 +108,7 @@ import AVFoundation
         handleOnlineContentKeyRequest(keyRequest: keyRequest)
     }
     @objc public func handleOnlineContentKeyRequest(keyRequest: AVContentKeyRequest) {
-        guard self.fpsCertificate != nil && self.fpsCertificate.count > 0  else {
+        guard self.fpsCertificate != nil  else {
             self.postToConsole("Application Certificate missing, will request")
             do {
                 try self.requestApplicationCertificate()
@@ -117,10 +118,14 @@ import AVFoundation
             return
         }
 
+        self.postToConsole("SUCCESS: Application Certificate Done")
+
         guard let contentKeyIdentifierString = keyRequest.identifier as? String else {
             self.postToConsole("ERROR: Failed to retrieve the contentIdentifier from the keyRequest!")
             return
         }
+         self.postToConsole("SUCCESS: Retrieve the contentIdentifier from the keyRequest!")
+
         
         // Check if "skd://" exists in contentKeyIdentifierString
         if let range = contentKeyIdentifierString.range(of: "skd://") {
@@ -131,21 +136,27 @@ import AVFoundation
                 self.postToConsole("ERROR: ContentIdentifier is empty or nil!")
                 return
             }
+            self.postToConsole("SUCCESS: ContentIdentifier has Data")
 
             // Convert contentIdentifier to Unicode string (utf8)
             guard let contentIdentifierData = contentIdentifier.data(using: .utf8) else {
                 self.postToConsole("ERROR: Failed to convert contentIdentifier to data!")
                 return
             }
+            
+            self.postToConsole("SUCCESS:  Convert contentIdentifier to data!")
+
+ 
 
             let components = contentIdentifier.components(separatedBy: ":")
-            guard let keyId = components.first else {
+            guard components.first != nil else {
                 self.postToConsole("ERROR: Invalid contentIdentifier format!")
                 return
             }
 
-//            let contentKeyIdAndIv = "- Content Key ID: \(keyId) \n"
-//            self.postToConsole("Key request info:\n \(contentKeyIdAndIv)")
+            self.postToConsole("SUCCESS: Valid contentIdentifier format!")
+
+ 
 
             if !(asset.contentKeyIdList.contains(contentKeyIdentifierString)) {
                 asset.contentKeyIdList.append(contentKeyIdentifierString)
@@ -330,7 +341,7 @@ import AVFoundation
             return
         }
         
-        let keyIV = components.count >= 2 ? components[1] : ""
+        let keyIV = keyId
         
         /*
          Console output
