@@ -221,21 +221,25 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
                     contentKeyManager.licensingServiceUrl =  licenseUrl ;
                       contentKeyManager.fpsCertificateUrl = certificateUrl ;
                       [contentKeyManager createContentKeySession];
-                      [assetCustom addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
-                      contentKeyManager.asset = assetCustom;
-                      item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
+       
             
-        }else {
-            item = [AVPlayerItem playerItemWithAsset:asset];
         }
+        
+        
         CustomAsset *downloadedAsset = [[AssetDownloader sharedDownloader] downloadedAssetWithName:assetCustom.name];
         if (downloadedAsset) {
             NSLog(@"OFFLINE PLAYBACK");
             contentKeyManager.asset = downloadedAsset;
             [downloadedAsset createUrlAsset];
-            [downloadedAsset addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
+            if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
+                [downloadedAsset addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
+            }
             item = [AVPlayerItem playerItemWithAsset:downloadedAsset.urlAsset];
             NSLog(@"Run OFFLINE PLAYBACK");
+        }else {
+            [assetCustom addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
+            contentKeyManager.asset = assetCustom;
+            item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
         }
 
         
