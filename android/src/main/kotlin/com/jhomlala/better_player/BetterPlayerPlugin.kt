@@ -12,12 +12,14 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.LongSparseArray
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.offline.Download
 import com.blankj.utilcode.util.ActivityUtils
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.MediaMetadata
-import com.google.android.exoplayer2.offline.Download
-import com.google.android.exoplayer2.util.MimeTypes
+
 import com.jhomlala.better_player.BetterPlayerCache.releaseCache
 import com.jhomlala.better_player.common.DownloadTracker
 import com.jhomlala.better_player.common.DownloadUtil
@@ -42,6 +44,7 @@ import java.lang.Exception
 /**
  * Android platform implementation of the VideoPlayerPlugin.
  */
+@androidx.annotation.OptIn(UnstableApi::class)
 class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
     private val videoPlayers = LongSparseArray<BetterPlayer>()

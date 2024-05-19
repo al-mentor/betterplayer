@@ -19,63 +19,66 @@ import android.util.Log
 import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.Observer
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
+import androidx.media3.common.ForwardingPlayer
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.Player
+import androidx.media3.common.Timeline
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.common.util.Util
+import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.*
+import androidx.media3.exoplayer.dash.DashMediaSource
+import androidx.media3.exoplayer.dash.DefaultDashChunkSource
+import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
+import androidx.media3.exoplayer.drm.DrmSessionManager
+import androidx.media3.exoplayer.drm.DrmSessionManagerProvider
+import androidx.media3.exoplayer.drm.DummyExoMediaDrm
+import androidx.media3.exoplayer.drm.FrameworkMediaDrm
+import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
+import androidx.media3.exoplayer.drm.LocalMediaDrmCallback
+import androidx.media3.exoplayer.drm.UnsupportedDrmException
+import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.offline.Download
+import androidx.media3.exoplayer.offline.DownloadRequest
+import androidx.media3.exoplayer.smoothstreaming.DefaultSsChunkSource
+import androidx.media3.exoplayer.smoothstreaming.SsMediaSource
+import androidx.media3.exoplayer.source.ClippingMediaSource
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.MediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.ui.PlayerNotificationManager
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.blankj.utilcode.util.ActivityUtils
-import com.google.android.exoplayer2.*
-import com.google.android.exoplayer2.audio.AudioAttributes
-import com.google.android.exoplayer2.drm.DefaultDrmSessionManager
-import com.google.android.exoplayer2.drm.DrmSessionManager
-import com.google.android.exoplayer2.drm.DrmSessionManagerProvider
-import com.google.android.exoplayer2.drm.DummyExoMediaDrm
-import com.google.android.exoplayer2.drm.FrameworkMediaDrm
-import com.google.android.exoplayer2.drm.HttpMediaDrmCallback
-import com.google.android.exoplayer2.drm.LocalMediaDrmCallback
-import com.google.android.exoplayer2.drm.UnsupportedDrmException
-import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
-import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory
-import com.google.android.exoplayer2.offline.Download
-import com.google.android.exoplayer2.offline.DownloadRequest
-import com.google.android.exoplayer2.source.ClippingMediaSource
-import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
-import com.google.android.exoplayer2.source.MediaSource
-import com.google.android.exoplayer2.source.ProgressiveMediaSource
-import com.google.android.exoplayer2.source.dash.DashMediaSource
-import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
-import com.google.android.exoplayer2.source.hls.HlsMediaSource
-import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource
-import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
-import com.google.android.exoplayer2.trackselection.TrackSelectionOverride
-import com.google.android.exoplayer2.ui.PlayerNotificationManager
-import com.google.android.exoplayer2.ui.PlayerNotificationManager.BitmapCallback
-import com.google.android.exoplayer2.ui.PlayerNotificationManager.MediaDescriptionAdapter
-import com.google.android.exoplayer2.upstream.DataSource
-import com.google.android.exoplayer2.upstream.DefaultDataSource
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
-import com.google.android.exoplayer2.util.MimeTypes
-import com.google.android.exoplayer2.util.Util
 import com.jhomlala.better_player.DataSourceUtils.getDataSourceFactory
 import com.jhomlala.better_player.DataSourceUtils.getUserAgent
 import com.jhomlala.better_player.DataSourceUtils.isHTTP
-import com.jhomlala.better_player.common.DownloadTracker
 import com.jhomlala.better_player.common.DownloadUtil
 import com.jhomlala.better_player.common.MediaItemTag
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.EventSink
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.view.TextureRegistry.SurfaceTextureEntry
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import java.io.File
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
 
 
+@UnstableApi
 internal class BetterPlayer(
     context: Context,
     private val eventChannel: EventChannel,
@@ -330,7 +333,8 @@ internal class BetterPlayer(
         notificationChannelName: String?,
         activityName: String
     ) {
-        val mediaDescriptionAdapter: MediaDescriptionAdapter = object : MediaDescriptionAdapter {
+        val mediaDescriptionAdapter: PlayerNotificationManager.MediaDescriptionAdapter = object :
+            PlayerNotificationManager.MediaDescriptionAdapter {
             override fun getCurrentContentTitle(player: Player): String {
                 return title
             }
@@ -355,7 +359,7 @@ internal class BetterPlayer(
             }
 
             override fun getCurrentLargeIcon(
-                player: Player, callback: BitmapCallback
+                player: Player, callback: PlayerNotificationManager.BitmapCallback
             ): Bitmap? {
                 if (imageUrl == null) {
                     return null
@@ -749,8 +753,8 @@ internal class BetterPlayer(
                 }
             })
             mediaSession.isActive = true
-            val mediaSessionConnector = MediaSessionConnector(mediaSession)
-            mediaSessionConnector.setPlayer(exoPlayer)
+//            val mediaSessionConnector = MediaSessionConnector(mediaSession)
+//            mediaSessionConnector.setPlayer(exoPlayer)
             this.mediaSession = mediaSession
             return mediaSession
         }

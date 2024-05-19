@@ -3,31 +3,25 @@ package com.jhomlala.better_player.common
 import android.app.Notification
 import android.content.Context
 import android.content.pm.ServiceInfo
-import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-import android.net.Uri
 import android.os.Build
 import androidx.annotation.OptIn
-import com.google.android.exoplayer2.offline.Download
-import com.google.android.exoplayer2.offline.DownloadManager
-import com.google.android.exoplayer2.offline.DownloadService
-import com.google.android.exoplayer2.scheduler.PlatformScheduler
-import com.google.android.exoplayer2.ui.DownloadNotificationHelper
-import com.google.android.exoplayer2.util.NotificationUtil
-import com.google.android.exoplayer2.util.Util
-import com.google.common.util.concurrent.Service
-import com.google.gson.Gson
-import com.google.gson.JsonObject
-
+import androidx.media3.common.util.NotificationUtil
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.common.util.Util
+import androidx.media3.exoplayer.offline.Download
+import androidx.media3.exoplayer.offline.DownloadManager
+import androidx.media3.exoplayer.offline.DownloadNotificationHelper
+import androidx.media3.exoplayer.offline.DownloadService
+import androidx.media3.exoplayer.scheduler.PlatformScheduler
 import com.jhomlala.better_player.R
 import com.jhomlala.better_player.common.DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID
-import io.flutter.plugin.common.EventChannel
-import io.flutter.plugin.common.MethodChannel
 
 private const val JOB_ID = 8888
 private const val FOREGROUND_NOTIFICATION_ID = 8989
 
-
+@OptIn(UnstableApi::class)
 class MyDownloadService : DownloadService(
+
     FOREGROUND_NOTIFICATION_ID,
     DEFAULT_FOREGROUND_NOTIFICATION_UPDATE_INTERVAL,
     DOWNLOAD_NOTIFICATION_CHANNEL_ID,
