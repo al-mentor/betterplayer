@@ -88,9 +88,7 @@ class DownloadTracker(
     }
 
 
-
-
-     fun isDownloaded(mediaItem: MediaItem): Boolean {
+    fun isDownloaded(mediaItem: MediaItem): Boolean {
         val uuid = mediaItem.localConfiguration?.uri?.let { DownloadUtil.extractUUIDFromUri(it) }
         if (uuid != null) {
             for ((key, value) in downloads) {
@@ -103,12 +101,11 @@ class DownloadTracker(
     }
 
 
-
-    fun hasDownload(uri: Uri?): Boolean = downloads.keys.contains(uri)
+    fun hasDownload(uri: Uri?): Boolean = (getDownload(uri) != null)
 
     fun getDownloadRequest(uri: Uri?): DownloadRequest? {
         uri ?: return null
-        val download = downloads[uri]
+        val download = getDownload(uri)
         return if (download != null && download.state != Download.STATE_FAILED) download.request else null
     }
 
@@ -209,10 +206,12 @@ class DownloadTracker(
     }
 
     fun removeDownload(uri: Uri?) {
-        val download = downloads[uri]
-        download?.let {
+
+        val downlaod = getDownload(uri);
+
+        downlaod?.let {
             DownloadService.sendRemoveDownload(
-                applicationContext, MyDownloadService::class.java, download.request.id, false
+                applicationContext, MyDownloadService::class.java, downlaod.request.id, false
             )
         }
     }
@@ -462,12 +461,12 @@ class DownloadTracker(
                 Log.e("DownloadTracker", "keySetId: $keySetId")
             }
             if (availableBytesLeft > estimatedContentLength) {
-                val downloadRequest: DownloadRequest = downloadHelper.getDownloadRequest(
+                var downloadRequest: DownloadRequest = downloadHelper.getDownloadRequest(
                     (mediaItem.localConfiguration?.tag as MediaItemTag).title,
                     Util.getUtf8Bytes(estimatedContentLength.toString())
                 )
                 if (keySetId != null) {
-                    downloadRequest.copyWithKeySetId(keySetId)
+                    downloadRequest =  downloadRequest.copyWithKeySetId(keySetId)
                 }
                 startDownload(downloadRequest)
                 availableBytesLeft -= estimatedContentLength

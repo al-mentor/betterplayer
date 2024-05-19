@@ -195,8 +195,10 @@ internal class BetterPlayer(
                 )
 
 
+            val downloadRequest: DownloadRequest? = DownloadUtil.getDownloadTracker(top)
+                .getDownloadRequest(mediaItem.localConfiguration?.uri)
 
-            exoPlayer?.setMediaItem(maybeSetDownloadProperties(mediaBuilder.build(), download.request), false)
+            exoPlayer?.setMediaItem(maybeSetDownloadProperties(mediaBuilder.build(), downloadRequest), false)
             exoPlayer?.prepare()
             result.success(null)
             return true;
