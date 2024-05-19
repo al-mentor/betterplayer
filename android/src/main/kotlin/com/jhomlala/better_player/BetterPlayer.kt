@@ -193,13 +193,10 @@ internal class BetterPlayer(
                     MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID).setLicenseUri(licenseUrl)
                         .build()
                 )
-            var media = mediaBuilder.build();
 
 
-            val downloadRequest: DownloadRequest? = DownloadUtil.getDownloadTracker(top)
-                .getDownloadRequest(mediaItem.localConfiguration?.uri)
 
-            exoPlayer?.setMediaItem(maybeSetDownloadProperties(media, downloadRequest), false)
+            exoPlayer?.setMediaItem(maybeSetDownloadProperties(mediaBuilder.build(), download.request), false)
             exoPlayer?.prepare()
             result.success(null)
             return true;
