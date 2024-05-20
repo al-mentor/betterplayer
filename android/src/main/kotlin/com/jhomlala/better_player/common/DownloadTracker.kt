@@ -451,10 +451,10 @@ class DownloadTracker(
             var keySetId: ByteArray? = null
             if (drmConfiguration != null) {
                 val offlineHelper = OfflineLicenseHelper.newWidevineInstance(
-                    drmConfiguration?.licenseUri.toString(),
-                    drmConfiguration?.forceDefaultLicenseUri ?: false,
+                    drmConfiguration.licenseUri.toString(),
+                    drmConfiguration.forceDefaultLicenseUri ?: false,
                     DownloadUtil.getHttpDataSourceFactory(context),
-                    drmConfiguration?.licenseRequestHeaders,
+                    drmConfiguration.licenseRequestHeaders,
                     DrmSessionEventListener.EventDispatcher()
                 )
                 keySetId = offlineHelper.downloadLicense(formatSelected)

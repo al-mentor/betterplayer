@@ -17,11 +17,13 @@ import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.MediaMetadata
 import com.google.android.exoplayer2.offline.Download
+import com.google.android.exoplayer2.offline.DownloadService
 import com.google.android.exoplayer2.util.MimeTypes
 import com.jhomlala.better_player.BetterPlayerCache.releaseCache
 import com.jhomlala.better_player.common.DownloadTracker
 import com.jhomlala.better_player.common.DownloadUtil
 import com.jhomlala.better_player.common.MediaItemTag
+import com.jhomlala.better_player.common.MyDownloadService
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -54,8 +56,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     private var pipRunnable: Runnable? = null
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
         val loader = FlutterLoader()
-        flutterState = FlutterState(
-            binding.applicationContext,
+        flutterState = FlutterState(binding.applicationContext,
             binding.binaryMessenger,
             object : KeyForAssetFn {
                 override fun get(asset: String?): String {
@@ -119,17 +120,15 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 val evenet = EventChannel(flutterState?.binaryMessenger, DOWNLOAD_EVENTS_CHANNEL);
 
 
-                evenet.setStreamHandler(
-                    object : EventChannel.StreamHandler {
-                        override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                            DownloadUtil.eventChannel = events
-                        }
-
-                        override fun onCancel(arguments: Any?) {
-                            DownloadUtil.eventChannel = null
-                        }
+                evenet.setStreamHandler(object : EventChannel.StreamHandler {
+                    override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                        DownloadUtil.eventChannel = events
                     }
-                )
+
+                    override fun onCancel(arguments: Any?) {
+                        DownloadUtil.eventChannel = null
+                    }
+                })
                 result.success(null);
 
             }
@@ -169,6 +168,10 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             CLEAR_CACHE_METHOD -> clearCache(result)
             DOWNLOAD_METHOD -> {
                 download(call, result)
+            }
+
+            CANCEL_DOWNLOAD_METHOD -> {
+                cancelDownload(call, result)
             }
 
             DOWNLOAD_DATA -> {
@@ -304,8 +307,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun deleteAllDownloadedAssets(call: MethodCall, result: MethodChannel.Result) {
-        DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity())
-            .deleteAllDownloadedAssets();
+        DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity()).deleteAllDownloadedAssets();
         result.success(null);
 
     }
@@ -327,22 +329,19 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         val evenet = EventChannel(flutterState?.binaryMessenger, DOWNLOAD_EVENTS_CHANNEL);
 
 
-        evenet.setStreamHandler(
-            object : EventChannel.StreamHandler {
-                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                    DownloadUtil.eventChannel = events
-                }
-
-                override fun onCancel(arguments: Any?) {
-                    DownloadUtil.eventChannel = null
-                }
+        evenet.setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                DownloadUtil.eventChannel = events
             }
-        )
+
+            override fun onCancel(arguments: Any?) {
+                DownloadUtil.eventChannel = null
+            }
+        })
     }
 
     private fun buildDownloadObject(
-        data: HashMap<Uri, Download>,
-        result: MethodChannel.Result
+        data: HashMap<Uri, Download>, result: MethodChannel.Result
     ) {
 
         val json = DownloadUtil.buildDownloadObject(data.values.toList())
@@ -417,6 +416,26 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
 
+    private fun cancelDownload(
+        call: MethodCall,
+        result: MethodChannel.Result,
+    ) {
+        val uri = call.argument<String?>(
+            URI_PARAMETER
+        )
+
+        val download = DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity())
+            .getDownload(Uri.parse(uri));
+        if (download != null) DownloadService.sendSetStopReason(
+            ActivityUtils.getTopActivity(),
+            MyDownloadService::class.java,
+            download.request.id,
+            Download.STATE_STOPPED,
+            false
+        )
+        result.success(null)
+    }
+
     private fun download(
         call: MethodCall,
         result: MethodChannel.Result,
@@ -430,12 +449,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         val uri = getParameter(dataSource, URI_PARAMETER, "")
         val licenseUrl = getParameter<String?>(dataSource, LICENSE_URL_PARAMETER, null)
         fireDownload(
-            key,
-            uri,
-            licenseUrl,
-            result,
-            overriddenDuration.toLong(),
-            quality
+            key, uri, licenseUrl, result, overriddenDuration.toLong(), quality
         )
     }
 
@@ -460,10 +474,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 MediaItem.Builder().setUri(dataSource).setMimeType(MimeTypes.APPLICATION_MPD)
                     .setDrmConfiguration(
                         MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
-                            .setLicenseUri(licenseUrl)
-                            .build()
-                    )
-                    .setMediaMetadata(
+                            .setLicenseUri(licenseUrl).build()
+                    ).setMediaMetadata(
                         MediaMetadata.Builder().setTitle(key).build()
                     ).build();
         } else {
@@ -757,6 +769,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val CREATE_METHOD = "create"
         private const val SET_DATA_SOURCE_METHOD = "setDataSource"
         private const val DOWNLOAD_METHOD = "download"
+        private const val CANCEL_DOWNLOAD_METHOD = "cancel_download"
         private const val DOWNLOAD_DATA = "download_data"
         private const val DELETE_DOWNLOADED_VIDEO = "delete_downloaded_video"
         private const val DeleteAllDownloadedVideo = "delete_all_downloaded_video"

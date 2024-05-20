@@ -155,6 +155,12 @@ abstract class VideoPlayerPlatform {
   }
 
 
+  Future<void> cancelDownloadedVideo(int? textureId , String? url) {
+    throw UnimplementedError('getDownloadData() has not been implemented.');
+  }
+
+
+
 
   /// Gets the video position as [DateTime].
   Future<DateTime?> getAbsolutePosition(int? textureId) {

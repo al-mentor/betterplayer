@@ -363,6 +363,15 @@ bool _remoteCommandsInitialized = false;
         result(nil);
 
         
+    }else if ([@"cancel_download" isEqualToString:call.method]) {
+        NSDictionary* argsMap = call.arguments;
+        NSString* uriArg = argsMap[@"uri"];
+        AssetDownloader *downloader = [AssetDownloader sharedDownloader];
+        NSURL *url = [[NSURL alloc] initWithString:uriArg];
+         CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:uriArg url:url];
+        [[AzureContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
+        [downloader cancelDownloadOfAssetWithAsset:assetCustom];
+        result(nil);
     }else if ([@"delete_all_downloaded_video" isEqualToString:call.method]) {
         AssetDownloader *downloader = [AssetDownloader sharedDownloader];
         [downloader deleteAllDownloadedAssets];
