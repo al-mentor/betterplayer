@@ -66,7 +66,13 @@ import AVFoundation
     // Link AVURLAsset to Content Key Session
     @objc public   func addAsContentKeyRecipient(contentKeyManager : BrightCoveContentKeyManager) {
         print("Adding AVURLAsset as a recepient to the Content Key Session")
-        contentKeyManager.contentKeySession.addContentKeyRecipient(urlAsset)
+        #if targetEnvironment(simulator)
+        // Simulator specific code
+        print("Running on simulator - FairPlay Streaming is not supported.")
+        #else
+                contentKeyManager.contentKeySession.addContentKeyRecipient(urlAsset)
+        #endif
+        
     }
     
     // Using different AVURLAsset to allow simultaneous playback and download

@@ -69,12 +69,19 @@ import AVFoundation
     }
     
     // Creates Content Key Session
+
     @objc public func createContentKeySession() {
+        #if targetEnvironment(simulator)
+        // Simulator specific code
+        print("Running on simulator - FairPlay Streaming is not supported.")
+        #else
+        // Device specific code
         print("Creating new AVContentKeySession")
         contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
-        contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
         contentKeySession.setDelegate(self, queue: DispatchQueue(label: "\(Bundle.main.bundleIdentifier!).ContentKeyDelegateQueue"))
+        #endif
     }
+
     
     // Sends message to Console of PlayerViewController
     @objc public func postToConsole(_ message: String) {
