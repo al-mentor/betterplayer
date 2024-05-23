@@ -35,7 +35,7 @@ import AVFoundation
     @objc public var downloadRequestedByUser: Bool = false
     
     // Certificate data
-    @objc public var fpsCertificate:Data!
+    @objc public static var fpsCertificate:Data!
     
     // A set containing the currently pending content key identifiers associated with persistable content key requests that have not been completed.
     @objc public  var pendingPersistableContentKeyIdentifiers = Set<String>()
@@ -115,7 +115,7 @@ import AVFoundation
         handleOnlineContentKeyRequest(keyRequest: keyRequest)
     }
     @objc public func handleOnlineContentKeyRequest(keyRequest: AVContentKeyRequest) {
-        guard self.fpsCertificate != nil  else {
+        guard BrightCoveContentKeyManager.fpsCertificate != nil  else {
             self.postToConsole("Application Certificate missing, will request")
             do {
                 try self.requestApplicationCertificate()
@@ -261,7 +261,7 @@ import AVFoundation
         /*
          Pass Content Id unicode string together with FPS Certificate to obtain content key request data for a specific combination of application and content.
         */
-        keyRequest.makeStreamingContentKeyRequestData(forApp: self.fpsCertificate,
+        keyRequest.makeStreamingContentKeyRequestData(forApp: BrightCoveContentKeyManager.fpsCertificate,
                                                       contentIdentifier: contentIdentifierData,
                                                       options: [AVContentKeyRequestProtocolVersionsKey: [1]],
                                                       completionHandler: getCkcAndMakeContentAvailable)
@@ -315,7 +315,7 @@ import AVFoundation
         /*
          Request Application Certificate
         */
-        guard let fpsCertificate = self.fpsCertificate else {
+        guard let fpsCertificate = BrightCoveContentKeyManager.fpsCertificate else {
             self.postToConsole("Application Certificate missing, will request")
             do {
                 try self.requestApplicationCertificate()
@@ -645,7 +645,7 @@ import AVFoundation
 
           // Assign the certificate data to fpsCertificate
         if(responseData.count > 0){
-            self.fpsCertificate = responseData
+            BrightCoveContentKeyManager.fpsCertificate = responseData
 
         }
 
