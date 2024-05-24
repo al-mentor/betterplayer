@@ -105,6 +105,8 @@ class MyDownloadService : DownloadService(
             download: Download,
             finalException: Exception?
         ) {
+                        DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(List(1) { download }));
+                        
             val notification: Notification = when (download.state) {
                 Download.STATE_COMPLETED -> {
                     notificationHelper.buildDownloadCompletedNotification(
@@ -127,7 +129,7 @@ class MyDownloadService : DownloadService(
                 else -> return
             }
             NotificationUtil.setNotification(context, nextNotificationId++, notification)
-            DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(List(1) { download }));
+
 
         }
 
