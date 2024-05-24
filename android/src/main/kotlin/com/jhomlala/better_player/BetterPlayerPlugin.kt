@@ -298,7 +298,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             }
 
             DISPOSE_METHOD -> {
-                dispose(player, textureId)
+                disposeAllPlayers()
                 result.success(null)
             }
 
