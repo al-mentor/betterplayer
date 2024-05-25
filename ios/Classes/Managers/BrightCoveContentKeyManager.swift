@@ -19,6 +19,11 @@ import AVFoundation
     // Licensing Token
     @objc public var licensingToken: String = ""
     
+    
+    @objc public var keyIV: String = ""
+
+    
+ 
     // Current asset
     @objc public  var asset: CustomAsset!
     
@@ -115,6 +120,7 @@ import AVFoundation
             do {
                 try self.requestApplicationCertificate()
             } catch {
+                cancelDownloadedVideo()
                 self.postToConsole("Failed requesting Application Certificate: \(error)")
             }
             return
@@ -124,6 +130,7 @@ import AVFoundation
 
         guard let contentKeyIdentifierString = keyRequest.identifier as? String else {
             self.postToConsole("ERROR: Failed to retrieve the contentIdentifier from the keyRequest!")
+            cancelDownloadedVideo()
             return
         }
          self.postToConsole("SUCCESS: Retrieve the contentIdentifier from the keyRequest!")
@@ -136,12 +143,14 @@ import AVFoundation
             // Check if contentIdentifier is empty or nil
             guard !contentIdentifier.isEmpty else {
                 self.postToConsole("ERROR: ContentIdentifier is empty or nil!")
+                cancelDownloadedVideo()
                 return
             }
             self.postToConsole("SUCCESS: ContentIdentifier has Data")
 
             // Convert contentIdentifier to Unicode string (utf8)
             guard let contentIdentifierData = contentIdentifier.data(using: .utf8) else {
+                cancelDownloadedVideo()
                 self.postToConsole("ERROR: Failed to convert contentIdentifier to data!")
                 return
             }
@@ -152,6 +161,7 @@ import AVFoundation
 
             let components = contentIdentifier.components(separatedBy: ":")
             guard components.first != nil else {
+                cancelDownloadedVideo()
                 self.postToConsole("ERROR: Invalid contentIdentifier format!")
                 return
             }
@@ -189,6 +199,7 @@ import AVFoundation
 
             provideOnlineKey(withKeyRequest: keyRequest, contentIdentifier: contentIdentifierData)
         } else {
+            cancelDownloadedVideo()
             self.postToConsole("ERROR: ContentIdentifier not found in keyRequest!")
         }
     }
@@ -209,6 +220,7 @@ import AVFoundation
             
             if let error = error {
                 strongSelf.postToConsole("ERROR: Failed to prepare SPC: \(error)")
+                BrightCoveContentKeyManager.sharedManager.cancelDownloadedVideo()
                 /*
                  Obtaining a content key response has failed.
                  Report error to AVFoundation.
@@ -248,6 +260,8 @@ import AVFoundation
                  Report error to AVFoundation.
                 */
                 keyRequest.processContentKeyResponseError(error)
+                BrightCoveContentKeyManager.sharedManager.cancelDownloadedVideo()
+
             }
         }
 
@@ -299,6 +313,31 @@ import AVFoundation
         handlePersistableContentKeyRequest(keyRequest: keyRequest)
     }
         
+    
+    
+    @objc public func cancelDownloadedVideo() {
+        self.postToConsole("Failed to prepare SPC: And Start Cancel Downloaded Video")
+
+        AssetDownloader.sharedDownloader.cancelDownloadOfAsset(asset: asset)
+        AssetDownloader.sharedDownloader.deleteDownloadedAsset(asset: asset)
+        deletePeristableContentKey(withAssetName: asset.name, withContentKeyId:keyIV)
+        var downloadData = [[String: Any]]()
+            var downloadMap = [String: Any]()
+            downloadMap["uri"] =  asset.name
+            downloadMap["downloadState"] = "5"
+            downloadMap["downloadId"] = asset.url
+            downloadMap["downloadPercentage"] = "0"
+            downloadData.append(downloadMap)
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: downloadData, options: [])
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                print(jsonString)
+                AssetDownloader.eventSink!(jsonData)
+            }
+            
+        } catch {
+         }
+    }
     /*
      Handles responding to an `AVPersistableContentKeyRequest` by determining if a key is already available for use on disk.
      If no key is available on disk, a persistable key is requested from the server and securely written to disk for use in the future.
@@ -315,6 +354,8 @@ import AVFoundation
             do {
                 try self.requestApplicationCertificate()
             } catch {
+                self.cancelDownloadedVideo()
+
                 self.postToConsole("Failed requesting Application Certificate: \(error)")
             }
             return
@@ -325,6 +366,8 @@ import AVFoundation
         */
         guard let contentKeyIdentifierString = keyRequest.identifier as? String else {
             self.postToConsole("ERROR: Failed to retrieve the contentIdentifier from the keyRequest!")
+            self.cancelDownloadedVideo()
+
             return
         }
 
@@ -334,17 +377,21 @@ import AVFoundation
         guard let contentIdentifier = contentKeyIdentifierString.replacingOccurrences(of: "skd://", with: "") as String?,
               let contentIdentifierData = contentIdentifier.data(using: .utf8) else {
             self.postToConsole("ERROR: Failed to retrieve or convert the contentIdentifier from the keyRequest!")
+            self.cancelDownloadedVideo()
+
             return
         }
         
         let components = contentIdentifier.components(separatedBy: ":")
         guard let keyId = components.first else {
             self.postToConsole("ERROR: Invalid contentIdentifier format!")
+            self.cancelDownloadedVideo()
+
             return
         }
         
         let keyIV = keyId
-        
+        self.keyIV = keyId;
         /*
          Console output
         */
@@ -434,6 +481,8 @@ import AVFoundation
                 strongSelf.pendingPersistableContentKeyIdentifiers.remove(contentKeyIdentifierString)
                 
                 strongSelf.downloadRequestedByUser = false
+                self?.cancelDownloadedVideo()
+
             }
         }
         
@@ -456,6 +505,8 @@ import AVFoundation
                 /*
                  Pass Content Id unicode string together with FPS Certificate to obtain content key request data for a specific combination of application and content.
                 */
+                self.cancelDownloadedVideo()
+
                 keyRequest.makeStreamingContentKeyRequestData(forApp: fpsCertificate,
                                                               contentIdentifier: contentIdentifierData,
                                                               options: [AVContentKeyRequestProtocolVersionsKey: [1]],
@@ -529,6 +580,8 @@ import AVFoundation
             
             else {
                postToConsole("ERROR: Failed to retrieve the contentIdentifier")
+                self.cancelDownloadedVideo()
+
                return
             }
                         
@@ -539,6 +592,8 @@ import AVFoundation
             try writePersistableContentKey(contentKey: persistableContentKey, withAssetName: asset.name, withContentKeyIV: contentIdentifier.components(separatedBy: ":")[1])
         } catch {
             postToConsole("ERROR: Failed to write updated persistable content key to disk: \(error.localizedDescription)")
+            self.cancelDownloadedVideo()
+
         }
     }
                 
