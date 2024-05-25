@@ -75,8 +75,8 @@ object DownloadUtil {
     fun getHttpDataSourceFactory(context: Context): HttpDataSource.Factory {
         if(!DownloadUtil::httpDataSourceFactory.isInitialized) {
             httpDataSourceFactory = DefaultHttpDataSource.Factory()
-                .setConnectTimeoutMs(8000)
-                .setReadTimeoutMs(8000)
+                .setConnectTimeoutMs(800000)
+                .setReadTimeoutMs(800000)
                 .setAllowCrossProtocolRedirects(true)
         }
         return httpDataSourceFactory
