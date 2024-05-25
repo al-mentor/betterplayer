@@ -320,7 +320,6 @@ import AVFoundation
 
         AssetDownloader.sharedDownloader.cancelDownloadOfAsset(asset: asset)
         AssetDownloader.sharedDownloader.deleteDownloadedAsset(asset: asset)
-        deletePeristableContentKey(withAssetName: asset.name, withContentKeyId:keyIV)
         var downloadData = [[String: Any]]()
             var downloadMap = [String: Any]()
             downloadMap["uri"] =  asset.name
@@ -334,7 +333,8 @@ import AVFoundation
                 print(jsonString)
                 AssetDownloader.eventSink!(jsonData)
             }
-            
+            deletePeristableContentKey(withAssetName: asset.name, withContentKeyId:keyIV)
+
         } catch {
          }
     }

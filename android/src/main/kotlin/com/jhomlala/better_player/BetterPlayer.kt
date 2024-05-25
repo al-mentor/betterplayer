@@ -221,9 +221,11 @@ internal class BetterPlayer(
 
         val drmConfiguration = item.localConfiguration!!.drmConfiguration
         if (drmConfiguration != null) {
-            builder.setDrmConfiguration(
-                drmConfiguration.buildUpon().setKeySetId(downloadRequest.keySetId).build()
-            )
+            if(downloadRequest.keySetId != null){
+                builder.setDrmConfiguration(
+                    drmConfiguration.buildUpon().setKeySetId(downloadRequest.keySetId).build()
+                )
+            }
         }
         return builder.build()
     }
