@@ -316,27 +316,27 @@ import AVFoundation
     
     
     @objc public func cancelDownloadedVideo() {
-        self.postToConsole("Failed to prepare SPC: And Start Cancel Downloaded Video")
-
-        AssetDownloader.sharedDownloader.cancelDownloadOfAsset(asset: asset)
-        AssetDownloader.sharedDownloader.deleteDownloadedAsset(asset: asset)
-        var downloadData = [[String: Any]]()
-            var downloadMap = [String: Any]()
-            downloadMap["uri"] =  asset.name
-            downloadMap["downloadState"] = "5"
-            downloadMap["downloadId"] = asset.url
-            downloadMap["downloadPercentage"] = "0"
-            downloadData.append(downloadMap)
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: downloadData, options: [])
-            if let jsonString = String(data: jsonData, encoding: .utf8) {
-                print(jsonString)
-                AssetDownloader.eventSink!(jsonData)
-            }
-            deletePeristableContentKey(withAssetName: asset.name, withContentKeyId:keyIV)
-
-        } catch {
-         }
+//        self.postToConsole("Failed to prepare SPC: And Start Cancel Downloaded Video")
+//
+//        AssetDownloader.sharedDownloader.cancelDownloadOfAsset(asset: asset)
+//        AssetDownloader.sharedDownloader.deleteDownloadedAsset(asset: asset)
+//        var downloadData = [[String: Any]]()
+//            var downloadMap = [String: Any]()
+//            downloadMap["uri"] =  asset.name
+//            downloadMap["downloadState"] = "5"
+//            downloadMap["downloadId"] = asset.url
+//            downloadMap["downloadPercentage"] = "0"
+//            downloadData.append(downloadMap)
+//        do {
+//            let jsonData = try JSONSerialization.data(withJSONObject: downloadData, options: [])
+//            if let jsonString = String(data: jsonData, encoding: .utf8) {
+//                print(jsonString)
+//                AssetDownloader.eventSink!(jsonData)
+//            }
+//          //  deletePeristableContentKey(withAssetName: asset.name, withContentKeyId:keyIV)
+//
+//        } catch {
+//         }
     }
     /*
      Handles responding to an `AVPersistableContentKeyRequest` by determining if a key is already available for use on disk.
