@@ -36,7 +36,7 @@ import AVFoundation
     @objc public var downloadRequestedByUser: Bool = false
     
     // Certificate data
-    @objc public static var fpsCertificate:Data!
+    @objc public static var fpsCertificate:Data?
     
     // A set containing the currently pending content key identifiers associated with persistable content key requests that have not been completed.
     @objc public  var pendingPersistableContentKeyIdentifiers = Set<String>()
@@ -268,7 +268,7 @@ import AVFoundation
         */
         
  
-        keyRequest.makeStreamingContentKeyRequestData(forApp: BrightCoveContentKeyManager.fpsCertificate,
+        keyRequest.makeStreamingContentKeyRequestData(forApp: BrightCoveContentKeyManager.fpsCertificate!,
                                                       contentIdentifier: contentIdentifierData,
                                                       options: [AVContentKeyRequestProtocolVersionsKey: [1]],
                                                       completionHandler: getCkcAndMakeContentAvailable)
