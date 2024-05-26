@@ -52,6 +52,29 @@ import Flutter
         }
     }
     
+    @objc public   func completeDownloadData( uri : String) -> String? {
+        var downloadData = [[String: Any]]()
+            var downloadMap = [String: Any]()
+            downloadMap["uri"] =  uri
+            downloadMap["downloadState"] = "3"
+            downloadMap["downloadId"] = uri
+            downloadMap["downloadPercentage"] = "100"
+            downloadData.append(downloadMap)
+        // Convert downloadData array to JSON string
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: downloadData, options: [])
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                print(jsonString)
+                return jsonString
+            } else {
+                return nil
+            }
+        } catch {
+            return nil
+        }
+    }
+    
+    
     @objc public func deleteAllDownloadedAssets() {
         let userDefaults = UserDefaults.standard
 
@@ -448,6 +471,10 @@ import Flutter
         
             userInfo[CustomAsset.Keys.downloadState] = CustomAsset.DownloadState.downloadedAndSavedToDevice.rawValue
             userInfo[CustomAsset.Keys.downloadSelectionDisplayName] = ""
+        }
+        
+        if(AssetDownloader.eventSink != nil){
+            AssetDownloader.eventSink!(AssetDownloader.sharedDownloader.completeDownloadData(uri: asset.name))
         }
         
         NotificationCenter.default.post(name: .AssetDownloadStateChanged, object: nil, userInfo: userInfo)

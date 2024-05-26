@@ -19,10 +19,6 @@ import AVFoundation
     // Licensing Token
     @objc public var licensingToken: String = ""
     
-    
-    @objc public var keyIV: String = ""
-
-    
  
     // Current asset
     @objc public  var asset: CustomAsset!
@@ -31,10 +27,10 @@ import AVFoundation
     @objc public static let sharedManager = BrightCoveContentKeyManager()
     
     // Content Key session
-    @objc public  var contentKeySession: AVContentKeySession!
+    @objc public  var contentKeySession: AVContentKeySession?
     
     // Content Key request
-    @objc public var contentKeyRequest: AVContentKeyRequest!
+    @objc public var contentKeyRequest: AVContentKeyRequest?
     
     // Indicates that user requested download action
     @objc public var downloadRequestedByUser: Bool = false
@@ -78,7 +74,7 @@ import AVFoundation
     @objc public func createContentKeySession() {
   
         contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
-        contentKeySession.setDelegate(self, queue: DispatchQueue(label: "\(Bundle.main.bundleIdentifier!).ContentKeyDelegateQueue"))
+        contentKeySession?.setDelegate(self, queue: DispatchQueue(label: "\(Bundle.main.bundleIdentifier!).ContentKeyDelegateQueue"))
       
     }
 
@@ -292,7 +288,7 @@ import AVFoundation
             
             pendingPersistableContentKeyIdentifiers.insert(contentKeyId)
             
-            contentKeySession.processContentKeyRequest(withIdentifier: contentKeyId, initializationData: nil, options: nil)
+            contentKeySession?.processContentKeyRequest(withIdentifier: contentKeyId, initializationData: nil, options: nil)
         }
     }
     
@@ -318,27 +314,27 @@ import AVFoundation
     
     
     @objc public func cancelDownloadedVideo() {
-//        self.postToConsole("Failed to prepare SPC: And Start Cancel Downloaded Video")
-//
-//        AssetDownloader.sharedDownloader.cancelDownloadOfAsset(asset: asset)
-//        AssetDownloader.sharedDownloader.deleteDownloadedAsset(asset: asset)
-//        var downloadData = [[String: Any]]()
-//            var downloadMap = [String: Any]()
-//            downloadMap["uri"] =  asset.name
-//            downloadMap["downloadState"] = "5"
-//            downloadMap["downloadId"] = asset.url
-//            downloadMap["downloadPercentage"] = "0"
-//            downloadData.append(downloadMap)
-//        do {
-//            let jsonData = try JSONSerialization.data(withJSONObject: downloadData, options: [])
-//            if let jsonString = String(data: jsonData, encoding: .utf8) {
-//                print(jsonString)
-//                AssetDownloader.eventSink!(jsonData)
-//            }
-//          //  deletePeristableContentKey(withAssetName: asset.name, withContentKeyId:keyIV)
-//
-//        } catch {
-//         }
+        self.postToConsole("Failed to prepare SPC: And Start Cancel Downloaded Video")
+
+        AssetDownloader.sharedDownloader.cancelDownloadOfAsset(asset: asset)
+        AssetDownloader.sharedDownloader.deleteDownloadedAsset(asset: asset)
+        var downloadData = [[String: Any]]()
+            var downloadMap = [String: Any]()
+            downloadMap["uri"] =  asset.name
+            downloadMap["downloadState"] = "5"
+            downloadMap["downloadId"] = asset.url
+            downloadMap["downloadPercentage"] = "0"
+            downloadData.append(downloadMap)
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: downloadData, options: [])
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                print(jsonString)
+                AssetDownloader.eventSink!(jsonData)
+            }
+          deletePeristableContentKey(withAssetName: asset.name)
+
+        } catch {
+         }
     }
     /*
      Handles responding to an `AVPersistableContentKeyRequest` by determining if a key is already available for use on disk.
@@ -408,7 +404,6 @@ import AVFoundation
         }
         
         let keyIV = keyId
-        self.keyIV = keyId;
         /*
          Console output
         */
@@ -602,7 +597,7 @@ import AVFoundation
                return
             }
                         
-            deletePeristableContentKey(withAssetName: asset.name, withContentKeyId: contentIdentifier)
+            deletePeristableContentKey(withAssetName: asset.name)
             
             postToConsole("Will write updated persistable content key to disk for \(asset.name)")
             
@@ -650,22 +645,13 @@ import AVFoundation
     // Deletes a persistable key for a given content key identifier.
     //
     // - Parameter assetName: The asset name.
-    @objc public func deletePeristableContentKey(withAssetName assetName: String, withContentKeyId keyId: String) {
+    @objc public func deletePeristableContentKey(withAssetName assetName: String) {
         
-        /*
-         Capture everything after "sdk://" from #EXT-X-SESSION-KEY "URI" parameter.
-        */
-        guard let contentIdentifier = keyId.replacingOccurrences(of: "skd://", with: "") as String? else {
-            postToConsole("ERROR: Failed to retrieve the contentIdentifier")
-            return
-        }
-        
-        let keyIV = contentIdentifier.components(separatedBy: ":")[1]
-        
+   
         if persistableContentKeyExistsOnDisk(withAssetName: assetName) {
-            postToConsole("Deleting content key for \(assetName) - \(keyIV): Persistable content key exists on disk")
+            postToConsole("Deleting content key for \(assetName) ")
         } else {
-            postToConsole("Deleting content key for \(assetName) - \(keyIV): No persistable content key exists on disk")
+            postToConsole("Deleting content key for \(assetName) ")
             return
         }
         
@@ -676,7 +662,7 @@ import AVFoundation
             
             UserDefaults.standard.removeObject(forKey: "\(assetName)")
             
-            postToConsole("Presistable Key for \(assetName)-\(keyIV) was deleted")
+            postToConsole("Presistable Key for \(assetName)")
         } catch {
             print("An error occured removing the persisted content key: \(error)")
         }
@@ -738,7 +724,7 @@ import AVFoundation
     */
     @objc public func deleteAllPeristableContentKeys(forAsset asset: CustomAsset) {
         for contentKeyId in asset.contentKeyIdList {
-            deletePeristableContentKey(withAssetName: asset.name, withContentKeyId: contentKeyId)
+            deletePeristableContentKey(withAssetName: asset.name)
         }
     }
     
