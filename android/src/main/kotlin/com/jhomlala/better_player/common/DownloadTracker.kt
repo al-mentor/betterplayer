@@ -472,6 +472,8 @@ class DownloadTracker(
                 availableBytesLeft -= estimatedContentLength
                 Log.e(TAG, "availableBytesLeft after calculation: $availableBytesLeft")
             } else {
+                result?.success(false)
+
                 Toast.makeText(
                     context, "Not enough space to download this file", Toast.LENGTH_LONG
                 ).show()
@@ -480,6 +482,15 @@ class DownloadTracker(
         }
 
         override fun onPrepareError(helper: DownloadHelper, e: IOException) {
+
+            DownloadUtil
+                .eventChannel?.success(DownloadUtil
+                    .buildFailedDownloadObject(mediaItem.localConfiguration?.uri!!));
+
+
+
+            result?.success(false)
+
             Toast.makeText(applicationContext, R.string.download_start_error, Toast.LENGTH_LONG)
                 .show()
             Log.e(

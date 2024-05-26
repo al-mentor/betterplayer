@@ -71,6 +71,26 @@ object DownloadUtil {
         val json = gson.toJson(downloadData)
         return json;
     }
+
+    fun buildFailedDownloadObject(
+        uri: Uri,
+    ): String? {
+        val downloadData = ArrayList<Map<String, String?>>()
+
+            val downloadMap = HashMap<String, String?>()
+            downloadMap["uri"] =  extractUUIDFromUri(uri);
+            downloadMap["downloadState"] = "5";
+            downloadMap["downloadId"] = uri.toString();
+            downloadMap["downloadPercentage"] = "0";
+            downloadData.add(downloadMap)
+
+        val gson = Gson()
+        val json = gson.toJson(downloadData)
+        return json;
+    }
+
+
+
     @Synchronized
     fun getHttpDataSourceFactory(context: Context): HttpDataSource.Factory {
         if(!DownloadUtil::httpDataSourceFactory.isInitialized) {
