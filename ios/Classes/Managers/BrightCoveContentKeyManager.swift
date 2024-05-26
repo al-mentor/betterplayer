@@ -723,9 +723,8 @@ import AVFoundation
       - Parameter asset: The `Asset` value to remove keys for.
     */
     @objc public func deleteAllPeristableContentKeys(forAsset asset: CustomAsset) {
-        for contentKeyId in asset.contentKeyIdList {
             deletePeristableContentKey(withAssetName: asset.name)
-        }
+        
     }
     
 
