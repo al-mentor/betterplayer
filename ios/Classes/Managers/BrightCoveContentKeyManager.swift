@@ -348,6 +348,21 @@ import AVFoundation
      - Parameter keyRequest: The `AVPersistableContentKeyRequest` to respond to.
     */
     @objc public func handlePersistableContentKeyRequest(keyRequest: AVPersistableContentKeyRequest) {
+            if persistableContentKeyExistsOnDisk(withAssetName: asset.name) {
+                let urlToPersistableKey = urlForPersistableContentKey(withAssetName: asset.name)
+                postToConsole("Persistable key already exists on disk at location: \(urlToPersistableKey.path)")
+                guard let contentKey = FileManager.default.contents(atPath: urlToPersistableKey.path) else {
+                    return
+                }
+                postToConsole("Creating Content Key Response from persistent CKC")
+                let keyResponse = AVContentKeyResponse(fairPlayStreamingKeyResponseData: contentKey)
+                postToConsole("Providing Content Key Response to make protected content available for processing: \(keyResponse)")
+                keyRequest.processContentKeyResponse(keyResponse)
+                NotificationCenter.default.post(name: .HasAvailablePersistableContentKey, object: nil, userInfo: nil)
+                
+                return
+            }
+        
         /*
          Request Application Certificate
         */
