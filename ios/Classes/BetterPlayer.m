@@ -233,6 +233,8 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
             [downloadedAsset createUrlAsset];
             if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
                 [downloadedAsset addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
+                [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
+
             }
             item = [AVPlayerItem playerItemWithAsset:downloadedAsset.urlAsset];
             NSLog(@"Run OFFLINE PLAYBACK");

@@ -173,8 +173,8 @@ import AVFoundation
             if !(asset.contentKeyIdList.contains(contentKeyIdentifierString)) {
                 asset.contentKeyIdList.append(contentKeyIdentifierString)
             }
-
-            if downloadRequestedByUser || persistableContentKeyExistsOnDisk(withAssetName: asset.name, withContentKeyIV: "") || shouldRequestPersistableContentKey(withIdentifier: contentKeyIdentifierString) {
+            
+            if downloadRequestedByUser || persistableContentKeyExistsOnDisk(withAssetName: asset.name) || shouldRequestPersistableContentKey(withIdentifier: contentKeyIdentifierString) {
                 self.postToConsole("User requested offline capabilities for the asset. AVPersistableContentKeyRequest object will be delivered by another delegate callback")
                
                 do {
@@ -270,6 +270,8 @@ import AVFoundation
         /*
          Pass Content Id unicode string together with FPS Certificate to obtain content key request data for a specific combination of application and content.
         */
+        
+ 
         keyRequest.makeStreamingContentKeyRequestData(forApp: BrightCoveContentKeyManager.fpsCertificate,
                                                       contentIdentifier: contentIdentifierData,
                                                       options: [AVContentKeyRequestProtocolVersionsKey: [1]],
@@ -489,9 +491,9 @@ import AVFoundation
         /*
          Check to see if we can satisfy this key request using a saved persistent key file.
         */
-        if persistableContentKeyExistsOnDisk(withAssetName: asset.name, withContentKeyIV: keyIV) {
+        if persistableContentKeyExistsOnDisk(withAssetName: asset.name) {
             
-            let urlToPersistableKey = urlForPersistableContentKey(withAssetName: asset.name, withContentKeyIV: keyIV)
+            let urlToPersistableKey = urlForPersistableContentKey(withAssetName: asset.name)
             
             postToConsole("Persistable key already exists on disk at location: \(urlToPersistableKey.path)")
             
@@ -605,7 +607,7 @@ import AVFoundation
     // - Throws: If an error occurs during the file write process.
     @objc public func writePersistableContentKey(contentKey: Data, withAssetName assetName: String, withContentKeyIV keyIV: String) throws {
         
-        let fileURL = urlForPersistableContentKey(withAssetName: assetName, withContentKeyIV: keyIV)
+        let fileURL = urlForPersistableContentKey(withAssetName: assetName)
         
         try contentKey.write(to: fileURL, options: Data.WritingOptions.atomicWrite)
         
@@ -616,8 +618,8 @@ import AVFoundation
     //
     // - Parameter assetName: The asset name.
     // - Returns: `true` if the key exists on disk, `false` otherwise.
-    @objc public func persistableContentKeyExistsOnDisk(withAssetName assetName: String, withContentKeyIV keyIV: String) -> Bool {
-        let contentKeyURL = urlForPersistableContentKey(withAssetName: assetName, withContentKeyIV: keyIV)
+    @objc public func persistableContentKeyExistsOnDisk(withAssetName assetName: String) -> Bool {
+        let contentKeyURL = urlForPersistableContentKey(withAssetName: assetName)
         
         return FileManager.default.fileExists(atPath: contentKeyURL.path)
     }
@@ -626,8 +628,8 @@ import AVFoundation
     //
     // - Parameter assetName: The asset name.
     // - Returns: The fully resolved file URL.
-    @objc public func urlForPersistableContentKey(withAssetName assetName: String, withContentKeyIV keyIV: String) -> URL {
-        return contentKeyDirectory.appendingPathComponent("\(assetName)-\(keyIV)-Key")
+    @objc public func urlForPersistableContentKey(withAssetName assetName: String) -> URL {
+        return contentKeyDirectory.appendingPathComponent("\(assetName)")
     }
     
     // Deletes a persistable key for a given content key identifier.
@@ -645,19 +647,19 @@ import AVFoundation
         
         let keyIV = contentIdentifier.components(separatedBy: ":")[1]
         
-        if persistableContentKeyExistsOnDisk(withAssetName: assetName, withContentKeyIV: keyIV) {
+        if persistableContentKeyExistsOnDisk(withAssetName: assetName) {
             postToConsole("Deleting content key for \(assetName) - \(keyIV): Persistable content key exists on disk")
         } else {
             postToConsole("Deleting content key for \(assetName) - \(keyIV): No persistable content key exists on disk")
             return
         }
         
-        let contentKeyURL = urlForPersistableContentKey(withAssetName: assetName, withContentKeyIV: keyIV)
+        let contentKeyURL = urlForPersistableContentKey(withAssetName: assetName)
         
         do {
             try FileManager.default.removeItem(at: contentKeyURL)
             
-            UserDefaults.standard.removeObject(forKey: "\(assetName)-\(keyIV)-Key")
+            UserDefaults.standard.removeObject(forKey: "\(assetName)")
             
             postToConsole("Presistable Key for \(assetName)-\(keyIV) was deleted")
         } catch {
@@ -672,8 +674,10 @@ import AVFoundation
             postToConsole("ERROR: missingApplicationCertificateUrl")
             throw ProgramError.missingApplicationCertificateUrl
         }
-         
-        let (data, response, error) = URLSession.shared.synchronousDataTask(urlRequest: URLRequest(url: url))
+        let urlRequest = URLRequest(url: url)
+            let (data, response, error) = NetworkManager.shared.synchronousDataTask(urlRequest: urlRequest)
+
+    
         
         if let error = error {
             self.postToConsole("ERROR: Error getting FPS Certificate: \(error)")
@@ -725,6 +729,7 @@ import AVFoundation
     
 
 
+    
     @objc public func requestContentKeyFromKeySecurityModule(spcData: Data) throws -> Data {
         var ckcData: Data? = nil
         
