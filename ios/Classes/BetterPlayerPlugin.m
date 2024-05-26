@@ -357,7 +357,7 @@ bool _remoteCommandsInitialized = false;
         AssetDownloader *downloader = [AssetDownloader sharedDownloader];
         NSURL *url = [[NSURL alloc] initWithString:uriArg];
          CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:uriArg url:url];
-        [[AzureContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
+        [[BrightCoveContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
         [downloader cancelDownloadOfAssetWithAsset:assetCustom];
         [downloader deleteDownloadedAssetWithAsset:assetCustom];
         result(nil);
@@ -369,7 +369,7 @@ bool _remoteCommandsInitialized = false;
         AssetDownloader *downloader = [AssetDownloader sharedDownloader];
         NSURL *url = [[NSURL alloc] initWithString:uriArg];
          CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:uriArg url:url];
-        [[AzureContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
+        [[BrightCoveContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
         [downloader cancelDownloadOfAssetWithAsset:assetCustom];
         result(nil);
     }else if ([@"delete_all_downloaded_video" isEqualToString:call.method]) {
