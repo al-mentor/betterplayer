@@ -316,9 +316,9 @@ import AVFoundation
     @objc public func cancelDownloadedVideo() {
         self.postToConsole("Failed to prepare SPC: And Start Cancel Downloaded Video")
 //
-        AssetDownloader.sharedDownloader.cancelDownloadOfAsset(asset: asset)
-        AssetDownloader.sharedDownloader.deleteDownloadedAsset(asset: asset)
-        deletePeristableContentKey(withAssetName: asset.name)
+//        AssetDownloader.sharedDownloader.cancelDownloadOfAsset(asset: asset)
+//        AssetDownloader.sharedDownloader.deleteDownloadedAsset(asset: asset)
+//        deletePeristableContentKey(withAssetName: asset.name)
 //        var downloadData = [[String: Any]]()
 //            var downloadMap = [String: Any]()
 //            downloadMap["uri"] =  asset.name
