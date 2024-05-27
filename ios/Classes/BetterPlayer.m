@@ -220,7 +220,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         dispatch_sync(syncQueue, ^{
             
             BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
-            @synchronized (contentKeyManager) {
+            
                 if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
                     contentKeyManager.licensingServiceUrl = licenseUrl;
                     contentKeyManager.fpsCertificateUrl = certificateUrl;
@@ -247,7 +247,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
                     }
                     item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
                 }
-            }
+            
         });
     }
 
