@@ -303,7 +303,7 @@ bool _remoteCommandsInitialized = false;
         result(nil);
     } else if ([@"download" isEqualToString:call.method]) {
         NSDictionary* argsMap = call.arguments;
-
+        
         NSDictionary* dataSource = argsMap[@"dataSource"];
         NSString* uriArg = dataSource[@"uri"];
         NSString* certificateUrl = dataSource[@"certificateUrl"];
@@ -312,41 +312,34 @@ bool _remoteCommandsInitialized = false;
         // print licenseUrl and certificateUrl
         NSLog(@"licenseUrl: %@", licenseUrl);
         NSLog(@"certificateUrl: %@", certificateUrl);
-
         
         dispatch_queue_t backgroundQueue = dispatch_queue_create("net.almentor.assetDownloader", NULL);
-
+        
         // Execute the download operation asynchronously on the background queue
         dispatch_async(backgroundQueue, ^{
             // Your asset download code
             AssetDownloader *downloader = [AssetDownloader sharedDownloader];
             NSURL *url = [[NSURL alloc] initWithString:uriArg];
-             CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:uriArg url:url];
+            CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:uriArg url:url];
             [assetCustom createUrlAsset];
-
-            BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
-            //            BrightCoveContentKeyManager *contentKeyManager = [[BrightCoveContentKeyManager alloc] init];
-
+            
+            // Create a separate instance for download
+            BrightCoveContentKeyManager *downloadKeyManager = [[BrightCoveContentKeyManager alloc] init];
+            
             if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
-
-                contentKeyManager.licensingServiceUrl = licenseUrl;
-                contentKeyManager.fpsCertificateUrl = certificateUrl;
-                [contentKeyManager createContentKeySession];
-                [assetCustom addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
-                contentKeyManager.downloadRequestedByUser = true;
-                [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
-                
-               }
-           
-
+                downloadKeyManager.licensingServiceUrl = licenseUrl;
+                downloadKeyManager.fpsCertificateUrl = certificateUrl;
+                [downloadKeyManager createContentKeySession];
+                [assetCustom addAsContentKeyRecipientWithContentKeyManager:downloadKeyManager];
+                downloadKeyManager.downloadRequestedByUser = true;
+                [downloadKeyManager requestPersistableContentKeysForAsset:assetCustom];
+            }
             
             AssetDownloader.avalibelAsset = assetCustom;
-           [downloader downloadWithAsset:assetCustom];
+            [downloader downloadWithAsset:assetCustom];
         });
-
- 
-        FlutterEventChannel* downloadEventsChannel = [FlutterEventChannel eventChannelWithName:@"better_player_channel/downloadStream"
-                                                                                binaryMessenger:_messenger];
+        
+        FlutterEventChannel* downloadEventsChannel = [FlutterEventChannel eventChannelWithName:@"better_player_channel/downloadStream" binaryMessenger:_messenger];
         [downloadEventsChannel setStreamHandler:AssetDownloader.sharedDownloader];
         
         result(nil);

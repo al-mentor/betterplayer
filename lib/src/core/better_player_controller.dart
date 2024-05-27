@@ -254,15 +254,18 @@ class BetterPlayerController {
     ///Setup subtitles
     final List<BetterPlayerSubtitlesSource>? betterPlayerSubtitlesSourceList = betterPlayerDataSource.subtitles;
     if (betterPlayerSubtitlesSourceList != null) {
-      _betterPlayerSubtitlesSourceList.addAll(betterPlayerDataSource.subtitles!);
+      _betterPlayerSubtitlesSourceList.addAll(betterPlayerDataSource.subtitles ?? []);
     }
-
-    if (_isDataSourceAsms(betterPlayerDataSource)) {
-      _setupAsmsDataSource(betterPlayerDataSource).then((dynamic value) {
+    try {
+      if (_isDataSourceAsms(betterPlayerDataSource)) {
+        _setupAsmsDataSource(betterPlayerDataSource).then((dynamic value) {
+          _setupSubtitles();
+        });
+      } else {
         _setupSubtitles();
-      });
-    } else {
-      _setupSubtitles();
+      }
+    } catch (e) {
+      log("Unable to setup datasources, maybe no internet connection!");
     }
 
     ///Process data source
