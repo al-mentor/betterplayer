@@ -324,7 +324,7 @@ bool _remoteCommandsInitialized = false;
             [assetCustom createUrlAsset];
             
             // Create a separate instance for download
-            BrightCoveContentKeyManager *downloadKeyManager = [[BrightCoveContentKeyManager alloc] init];
+            BrightCoveContentKeyManager *downloadKeyManager = [BrightCoveContentKeyManager sharedManager];
             
             if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
                 downloadKeyManager.licensingServiceUrl = licenseUrl;
