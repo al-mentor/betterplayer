@@ -329,10 +329,14 @@ bool _remoteCommandsInitialized = false;
             if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
                 downloadKeyManager.licensingServiceUrl = licenseUrl;
                 downloadKeyManager.fpsCertificateUrl = certificateUrl;
-                [downloadKeyManager createContentKeySession];
-                [assetCustom addAsContentKeyRecipientWithContentKeyManager:downloadKeyManager];
-                downloadKeyManager.downloadRequestedByUser = true;
-                [downloadKeyManager requestPersistableContentKeysForAsset:assetCustom];
+                // Create content key session
+                @synchronized (downloadKeyManager) {
+                    [downloadKeyManager createContentKeySession];
+                    [assetCustom addAsContentKeyRecipientWithContentKeyManager:downloadKeyManager];
+                    downloadKeyManager.downloadRequestedByUser = true;
+                    [downloadKeyManager requestPersistableContentKeysForAsset:assetCustom];
+                }
+                
             }
             
             AssetDownloader.avalibelAsset = assetCustom;
