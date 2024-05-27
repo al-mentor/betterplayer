@@ -218,30 +218,35 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         // Synchronize access to the shared manager
         dispatch_queue_t syncQueue = dispatch_queue_create("net.almentor.syncQueue", NULL);
         dispatch_sync(syncQueue, ^{
-            BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
-            if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
-                contentKeyManager.licensingServiceUrl = licenseUrl;
-                contentKeyManager.fpsCertificateUrl = certificateUrl;
-                [contentKeyManager createContentKeySession];
-            }
             
-            CustomAsset *downloadedAsset = [[AssetDownloader sharedDownloader] downloadedAssetWithName:assetCustom.name];
-            if (downloadedAsset) {
-                NSLog(@"OFFLINE PLAYBACK");
-                contentKeyManager.asset = downloadedAsset;
-                [downloadedAsset createUrlAsset];
+            BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
+            @synchronized (contentKeyManager) {
                 if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
-                    [downloadedAsset addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
-                    [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
+                    contentKeyManager.licensingServiceUrl = licenseUrl;
+                    contentKeyManager.fpsCertificateUrl = certificateUrl;
+                    
+                    [contentKeyManager createContentKeySession];
+                    
                 }
-                item = [AVPlayerItem playerItemWithAsset:downloadedAsset.urlAsset];
-                NSLog(@"Run OFFLINE PLAYBACK");
-            } else {
-                if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
-                    [assetCustom addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
-                    contentKeyManager.asset = assetCustom;
+                
+                CustomAsset *downloadedAsset = [[AssetDownloader sharedDownloader] downloadedAssetWithName:assetCustom.name];
+                if (downloadedAsset) {
+                    NSLog(@"OFFLINE PLAYBACK");
+                    contentKeyManager.asset = downloadedAsset;
+                    [downloadedAsset createUrlAsset];
+                    if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
+                        [downloadedAsset addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
+                        [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
+                    }
+                    item = [AVPlayerItem playerItemWithAsset:downloadedAsset.urlAsset];
+                    NSLog(@"Run OFFLINE PLAYBACK");
+                } else {
+                    if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
+                        [assetCustom addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
+                        contentKeyManager.asset = assetCustom;
+                    }
+                    item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
                 }
-                item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
             }
         });
     }
