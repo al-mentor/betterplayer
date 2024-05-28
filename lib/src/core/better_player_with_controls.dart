@@ -305,20 +305,7 @@ class _BetterPlayerVideoFitWidgetState
           ),
         );
       }
-      return Center(
-        child: ClipRect(
-          child: IntrinsicHeight(
-            child: FittedBox(
-              fit: BoxFit.contain,
-              child: SizedBox(
-                width: controller!.value.size?.width ?? 0,
-                height: controller!.value.size?.height ?? 0,
-                child: VideoPlayer(controller),
-              ),
-            ),
-          ),
-        ),
-      );
+      return VideoPlayer(controller);
     } else {
       return const SizedBox();
     }
