@@ -420,55 +420,65 @@ bool _remoteCommandsInitialized = false;
         }
 
         if ([@"setDataSource" isEqualToString:call.method]) {
-            [player clear];
-            // This call will clear cached frame because we will return transparent frame
+            @try {
+                [player clear];
+                // This call will clear cached frame because we will return transparent frame
 
-            NSDictionary* dataSource = argsMap[@"dataSource"];
-            [_dataSourceDict setObject:dataSource forKey:[self getTextureId:player]];
-            NSString* assetArg = dataSource[@"asset"];
-            NSString* uriArg = dataSource[@"uri"];
-            NSString* key = dataSource[@"key"];
-            NSString* certificateUrl = dataSource[@"certificateUrl"];
-            NSString* licenseUrl = dataSource[@"licenseUrl"];
-            NSDictionary* headers = dataSource[@"headers"];
-            NSString* cacheKey = dataSource[@"cacheKey"];
-            NSNumber* maxCacheSize = dataSource[@"maxCacheSize"];
-            NSString* videoExtension = dataSource[@"videoExtension"];
-            
-            int overriddenDuration = 0;
-            if ([dataSource objectForKey:@"overriddenDuration"] != [NSNull null]){
-                overriddenDuration = [dataSource[@"overriddenDuration"] intValue];
-            }
-
-            BOOL useCache = false;
-            id useCacheObject = [dataSource objectForKey:@"useCache"];
-            if (useCacheObject != [NSNull null]) {
-                useCache = [[dataSource objectForKey:@"useCache"] boolValue];
-                if (useCache){
-                    [_cacheManager setMaxCacheSize:maxCacheSize];
+                NSDictionary* dataSource = argsMap[@"dataSource"];
+                [_dataSourceDict setObject:dataSource forKey:[self getTextureId:player]];
+                NSString* assetArg = dataSource[@"asset"];
+                NSString* uriArg = dataSource[@"uri"];
+                NSString* key = dataSource[@"key"];
+                NSString* certificateUrl = dataSource[@"certificateUrl"];
+                NSString* licenseUrl = dataSource[@"licenseUrl"];
+                NSDictionary* headers = dataSource[@"headers"];
+                NSString* cacheKey = dataSource[@"cacheKey"];
+                NSNumber* maxCacheSize = dataSource[@"maxCacheSize"];
+                NSString* videoExtension = dataSource[@"videoExtension"];
+                
+                int overriddenDuration = 0;
+                if ([dataSource objectForKey:@"overriddenDuration"] != [NSNull null]){
+                    overriddenDuration = [dataSource[@"overriddenDuration"] intValue];
                 }
-            }
 
-            if (headers == [NSNull null] || headers == NULL){
-                headers = @{};
-            }
+                BOOL useCache = false;
+                id useCacheObject = [dataSource objectForKey:@"useCache"];
+                if (useCacheObject != [NSNull null]) {
+                    useCache = [[dataSource objectForKey:@"useCache"] boolValue];
+                    if (useCache){
+                        [_cacheManager setMaxCacheSize:maxCacheSize];
+                    }
+                }
 
-            if (assetArg) {
-                NSString* assetPath;
-                NSString* package = dataSource[@"package"];
-                if (![package isEqual:[NSNull null]]) {
-                    assetPath = [_registrar lookupKeyForAsset:assetArg fromPackage:package];
+                if (headers == [NSNull null] || headers == NULL){
+                    headers = @{};
+                }
+
+                if (assetArg) {
+                    NSString* assetPath;
+                    NSString* package = dataSource[@"package"];
+                    if (![package isEqual:[NSNull null]]) {
+                        assetPath = [_registrar lookupKeyForAsset:assetArg fromPackage:package];
+                    } else {
+                        assetPath = [_registrar lookupKeyForAsset:assetArg];
+                    }
+                    [player setDataSourceAsset:assetPath withKey:key withCertificateUrl:certificateUrl withLicenseUrl: licenseUrl cacheKey:cacheKey cacheManager:_cacheManager overriddenDuration:overriddenDuration];
+                } else if (uriArg) {
+                    NSURL *url = [NSURL URLWithString:uriArg];
+                    if (url == nil) {
+                        @throw [NSException exceptionWithName:NSInvalidArgumentException reason:@"Urls without a scheme are not supported" userInfo:nil];
+                    }
+                    [player setDataSourceURL:url withKey:key withCertificateUrl:certificateUrl withLicenseUrl: licenseUrl withHeaders:headers withCache: useCache cacheKey:cacheKey cacheManager:_cacheManager overriddenDuration:overriddenDuration videoExtension: videoExtension];
                 } else {
-                    assetPath = [_registrar lookupKeyForAsset:assetArg];
+                    result(FlutterMethodNotImplemented);
                 }
-                [player setDataSourceAsset:assetPath withKey:key withCertificateUrl:certificateUrl withLicenseUrl: licenseUrl cacheKey:cacheKey cacheManager:_cacheManager overriddenDuration:overriddenDuration];
-            } else if (uriArg) {
-                [player setDataSourceURL:[NSURL URLWithString:uriArg] withKey:key withCertificateUrl:certificateUrl withLicenseUrl: licenseUrl withHeaders:headers withCache: useCache cacheKey:cacheKey cacheManager:_cacheManager overriddenDuration:overriddenDuration videoExtension: videoExtension];
-            } else {
-                result(FlutterMethodNotImplemented);
+                result(nil);
             }
-            result(nil);
+            @catch (NSException *exception) {
+                result([FlutterError errorWithCode:@"SET_DATA_SOURCE_ERROR" message:exception.reason details:nil]);
+            }
         }
+
         
         
         
@@ -551,31 +561,36 @@ bool _remoteCommandsInitialized = false;
         } else if ([@"setMixWithOthers" isEqualToString:call.method]){
             [player setMixWithOthers:[argsMap[@"mixWithOthers"] boolValue]];
         } else if ([@"preCache" isEqualToString:call.method]){
-            NSDictionary* dataSource = argsMap[@"dataSource"];
-            NSString* urlArg = dataSource[@"uri"];
-            NSString* cacheKey = dataSource[@"cacheKey"];
-            NSDictionary* headers = dataSource[@"headers"];
-            NSNumber* maxCacheSize = dataSource[@"maxCacheSize"];
-            NSString* videoExtension = dataSource[@"videoExtension"];
-            
-            if (headers == [ NSNull null ]){
-                headers = @{};
-            }
-            if (videoExtension == [NSNull null]){
-                videoExtension = nil;
-            }
-            
-            if (urlArg != [NSNull null]){
-                NSURL* url = [NSURL URLWithString:urlArg];
-                if ([_cacheManager isPreCacheSupportedWithUrl:url videoExtension:videoExtension]){
-                    [_cacheManager setMaxCacheSize:maxCacheSize];
-                    [_cacheManager preCacheURL:url cacheKey:cacheKey videoExtension:videoExtension withHeaders:headers completionHandler:^(BOOL success){
-                    }];
-                } else {
-                    NSLog(@"Pre cache is not supported for given data source.");
+            @try {
+                NSDictionary* dataSource = argsMap[@"dataSource"];
+                NSString* urlArg = dataSource[@"uri"];
+                NSString* cacheKey = dataSource[@"cacheKey"];
+                NSDictionary* headers = dataSource[@"headers"];
+                NSNumber* maxCacheSize = dataSource[@"maxCacheSize"];
+                NSString* videoExtension = dataSource[@"videoExtension"];
+                
+                if (headers == [ NSNull null ]){
+                    headers = @{};
                 }
+                if (videoExtension == [NSNull null]){
+                    videoExtension = nil;
+                }
+                
+                if (urlArg != [NSNull null]){
+                    NSURL* url = [NSURL URLWithString:urlArg];
+                    if ([_cacheManager isPreCacheSupportedWithUrl:url videoExtension:videoExtension]){
+                        [_cacheManager setMaxCacheSize:maxCacheSize];
+                        [_cacheManager preCacheURL:url cacheKey:cacheKey videoExtension:videoExtension withHeaders:headers completionHandler:^(BOOL success){
+                        }];
+                    } else {
+                        NSLog(@"Pre cache is not supported for given data source.");
+                    }
+                }
+                result(nil);
+                }
+            @catch (NSException *exception) {
+                result([FlutterError errorWithCode:@"SET_DATA_SOURCE_ERROR" message:exception.reason details:nil]);
             }
-            result(nil);
         } else if ([@"clearCache" isEqualToString:call.method]){
             [_cacheManager clearCache];
             result(nil);
