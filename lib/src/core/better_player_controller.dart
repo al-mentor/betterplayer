@@ -217,7 +217,11 @@ class BetterPlayerController {
     _betterPlayerControlsConfiguration = betterPlayerConfiguration.controlsConfiguration;
     _eventListeners.add(eventListener);
     if (betterPlayerDataSource != null) {
-      setupDataSource(betterPlayerDataSource);
+      try {
+        setupDataSource(betterPlayerDataSource);
+      } catch (e) {
+        rethrow;
+      }
     }
   }
 
@@ -232,47 +236,51 @@ class BetterPlayerController {
   ///Setup new data source in Better Player.
   Future setupDataSource(BetterPlayerDataSource betterPlayerDataSource,
       {double? speed, BetterPlayerAsmsTrack? currentTrack}) async {
-    postEvent(BetterPlayerEvent(BetterPlayerEventType.setupDataSource, parameters: <String, dynamic>{
-      _dataSourceParameter: betterPlayerDataSource,
-    }));
-    _postControllerEvent(BetterPlayerControllerEvent.setupDataSource);
-    _hasCurrentDataSourceStarted = false;
-    _hasCurrentDataSourceInitialized = false;
-    _betterPlayerDataSource = betterPlayerDataSource;
-    _betterPlayerSubtitlesSourceList.clear();
-
-    ///Build videoPlayerController if null
-    if (videoPlayerController == null) {
-      videoPlayerController =
-          VideoPlayerController(bufferingConfiguration: betterPlayerDataSource.bufferingConfiguration);
-      videoPlayerController?.addListener(_onVideoPlayerChanged);
-    }
-
-    ///Clear asms tracks
-    betterPlayerAsmsTracks.clear();
-
-    ///Setup subtitles
-    final List<BetterPlayerSubtitlesSource>? betterPlayerSubtitlesSourceList = betterPlayerDataSource.subtitles;
-    if (betterPlayerSubtitlesSourceList != null) {
-      _betterPlayerSubtitlesSourceList.addAll(betterPlayerDataSource.subtitles ?? []);
-    }
     try {
-      if (_isDataSourceAsms(betterPlayerDataSource)) {
-        _setupAsmsDataSource(betterPlayerDataSource).then((dynamic value) {
+      postEvent(BetterPlayerEvent(BetterPlayerEventType.setupDataSource, parameters: <String, dynamic>{
+        _dataSourceParameter: betterPlayerDataSource,
+      }));
+      _postControllerEvent(BetterPlayerControllerEvent.setupDataSource);
+      _hasCurrentDataSourceStarted = false;
+      _hasCurrentDataSourceInitialized = false;
+      _betterPlayerDataSource = betterPlayerDataSource;
+      _betterPlayerSubtitlesSourceList.clear();
+
+      ///Build videoPlayerController if null
+      if (videoPlayerController == null) {
+        videoPlayerController =
+            VideoPlayerController(bufferingConfiguration: betterPlayerDataSource.bufferingConfiguration);
+        videoPlayerController?.addListener(_onVideoPlayerChanged);
+      }
+
+      ///Clear asms tracks
+      betterPlayerAsmsTracks.clear();
+
+      ///Setup subtitles
+      final List<BetterPlayerSubtitlesSource>? betterPlayerSubtitlesSourceList = betterPlayerDataSource.subtitles;
+      if (betterPlayerSubtitlesSourceList != null) {
+        _betterPlayerSubtitlesSourceList.addAll(betterPlayerDataSource.subtitles ?? []);
+      }
+      try {
+        if (_isDataSourceAsms(betterPlayerDataSource)) {
+          _setupAsmsDataSource(betterPlayerDataSource).then((dynamic value) {
+            _setupSubtitles();
+          });
+        } else {
           _setupSubtitles();
-        });
-      } else {
-        _setupSubtitles();
+        }
+      } catch (e) {
+        log("Unable to setup datasources, maybe no internet connection!");
+      }
+
+      ///Process data source
+      await _setupDataSource(betterPlayerDataSource.copyWith());
+      setTrack(currentTrack ?? BetterPlayerAsmsTrack.defaultTrack());
+      if (speed != null) {
+        setSpeed(speed);
       }
     } catch (e) {
-      log("Unable to setup datasources, maybe no internet connection!");
-    }
-
-    ///Process data source
-    await _setupDataSource(betterPlayerDataSource.copyWith());
-    setTrack(currentTrack ?? BetterPlayerAsmsTrack.defaultTrack());
-    if (speed != null) {
-      setSpeed(speed);
+      rethrow;
     }
   }
 

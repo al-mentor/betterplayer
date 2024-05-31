@@ -673,7 +673,7 @@ class VideoPlayer extends StatefulWidget {
 }
 
 class _VideoPlayerState extends State<VideoPlayer> {
-  late VoidCallback _listener;
+  VoidCallback? _listener;
   int? _textureId;
 
   @override
@@ -684,29 +684,33 @@ class _VideoPlayerState extends State<VideoPlayer> {
       _listener = () {
         final int? newTextureId = widget.controller!.textureId;
         if (newTextureId != _textureId) {
-          setState(() {
-            _textureId = newTextureId;
-          });
+          if (mounted) {
+            setState(() {
+              _textureId = newTextureId;
+            });
+          }
         }
       };
       // Need to listen for initialization events since the actual texture ID
       // becomes available after asynchronous initialization finishes.
-      widget.controller!.addListener(_listener);
+      if (widget.controller != null && _listener != null && mounted) widget.controller!.addListener(_listener!);
     });
   }
 
   @override
   void didUpdateWidget(VideoPlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    oldWidget.controller!.removeListener(_listener);
-    _textureId = widget.controller!.textureId;
-    widget.controller!.addListener(_listener);
+    if (widget.controller != null && _listener != null && mounted) {
+      oldWidget.controller!.removeListener(_listener!);
+      _textureId = widget.controller!.textureId;
+      widget.controller!.addListener(_listener!);
+    }
   }
 
   @override
   void deactivate() {
     super.deactivate();
-    widget.controller!.removeListener(_listener);
+    if (widget.controller != null && _listener != null && mounted) widget.controller!.removeListener(_listener!);
   }
 
   @override
