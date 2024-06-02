@@ -827,6 +827,7 @@ class BetterPlayerController {
       }
 
       _nextVideoTime = betterPlayerPlaylistConfiguration!.nextVideoDelay.inSeconds;
+      if (_nextVideoTimeStreamController.isClosed) return;
       _nextVideoTimeStreamController.add(_nextVideoTime);
       if (_nextVideoTime == 0) {
         return;
