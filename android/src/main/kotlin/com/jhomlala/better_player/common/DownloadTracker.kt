@@ -3,6 +3,8 @@ package com.jhomlala.better_player.common
 import android.app.AlertDialog
 import android.content.Context
 import android.net.Uri
+import android.os.Handler
+import android.os.HandlerThread
 import android.os.StatFs
 import android.util.Log
 import android.view.View
@@ -25,6 +27,7 @@ import com.google.android.exoplayer2.source.TrackGroupArray
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.upstream.HttpDataSource
 import com.google.android.exoplayer2.util.Assertions
+import com.google.android.exoplayer2.util.ConditionVariable
 import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.exoplayer2.util.Util
 import com.google.gson.Gson
@@ -310,9 +313,20 @@ class DownloadTracker(
             availableBytesLeft += if (download.percentDownloaded == 100f) {
                 download.bytesDownloaded
             } else {
-                Util.fromUtf8Bytes(download.request.data).toLong()
+                val dataString = Util.fromUtf8Bytes(download.request.data)
+                if (dataString.isEmpty()) {
+                    0L // or any other default value you deem appropriate
+                } else {
+                    try {
+                        dataString.toLong()
+                    } catch (e: NumberFormatException) {
+                        // Log the error if necessary
+                        0L // or handle the error as needed
+                    }
+                }
             }
         }
+
     }
 
     // Can't use applicationContext because it'll result in a crash, instead
@@ -444,12 +458,14 @@ class DownloadTracker(
         ) {
             helper.clearTrackSelections(0)
             helper.addTrackSelection(0, qualitySelected)
+
             val drmConfiguration = mediaItem.localConfiguration?.drmConfiguration
-            val estimatedContentLength: Long =
-                (qualitySelected.maxVideoBitrate * mediaItemTag.duration).div(C.MILLIS_PER_SECOND)
-                    .div(C.BITS_PER_BYTE)
+            val estimatedContentLength: Long = (qualitySelected.maxVideoBitrate * mediaItemTag.duration)
+                .div(C.MILLIS_PER_SECOND).div(C.BITS_PER_BYTE)
             var keySetId: ByteArray? = null
+
             if (drmConfiguration != null) {
+                val conditionVariable = ConditionVariable()
                 val offlineHelper = OfflineLicenseHelper.newWidevineInstance(
                     drmConfiguration.licenseUri.toString(),
                     drmConfiguration.forceDefaultLicenseUri ?: false,
@@ -457,26 +473,45 @@ class DownloadTracker(
                     drmConfiguration.licenseRequestHeaders,
                     DrmSessionEventListener.EventDispatcher()
                 )
-                keySetId = offlineHelper.downloadLicense(formatSelected)
-                Log.e("DownloadTracker", "keySetId: $keySetId")
+
+                val handlerThread = HandlerThread("DrmLicenseHelper")
+                handlerThread.start()
+                val handler = Handler(handlerThread.looper)
+
+                handler.post {
+                    try {
+                        keySetId = offlineHelper.downloadLicense(formatSelected)
+                        Log.e("DownloadTracker", "keySetId: $keySetId")
+                        conditionVariable.open()
+                    } catch (e: Exception) {
+                        Log.e("DownloadTracker", "Failed to download license", e)
+                        conditionVariable.open()
+                    }
+                }
+
+                val TIMEOUT_MS: Long = 10000 // 10 seconds timeout
+                val success = conditionVariable.block(TIMEOUT_MS)
+                if (!success) {
+                    Log.e("DownloadTracker", "Timeout while waiting for DRM license acquisition")
+                }
+
+                handlerThread.quitSafely()
             }
+
             if (availableBytesLeft > estimatedContentLength) {
-                var downloadRequest: DownloadRequest = downloadHelper.getDownloadRequest(
+                var downloadRequest: DownloadRequest = helper.getDownloadRequest(
                     (mediaItem.localConfiguration?.tag as MediaItemTag).title,
                     Util.getUtf8Bytes(estimatedContentLength.toString())
                 )
                 if (keySetId != null) {
-                    downloadRequest =  downloadRequest.copyWithKeySetId(keySetId)
+                    downloadRequest = downloadRequest.copyWithKeySetId(keySetId)
                 }
                 startDownload(downloadRequest)
                 availableBytesLeft -= estimatedContentLength
                 Log.e(TAG, "availableBytesLeft after calculation: $availableBytesLeft")
             } else {
                 result?.success(false)
-
-                Toast.makeText(
-                    context, "Not enough space to download this file", Toast.LENGTH_LONG
-                ).show()
+                Toast.makeText(context, "Not enough space to download this file", Toast.LENGTH_LONG).show()
             }
             positiveCallback?.invoke()
         }
