@@ -586,7 +586,7 @@ class BetterPlayerController {
     if (videoPlayerController == null) {
       throw StateError("The data source has not been initialized");
     }
-
+    if (_disposed) return;
     if (_appLifecycleState == AppLifecycleState.resumed) {
       await videoPlayerController!.play();
       _hasCurrentDataSourceStarted = true;
@@ -610,7 +610,7 @@ class BetterPlayerController {
     if (videoPlayerController == null) {
       throw StateError("The data source has not been initialized");
     }
-
+    if (_disposed) return;
     await videoPlayerController!.pause();
     _postEvent(BetterPlayerEvent(BetterPlayerEventType.pause));
   }
@@ -623,7 +623,7 @@ class BetterPlayerController {
     if (videoPlayerController?.value.duration == null) {
       throw StateError("The video has not been initialized yet.");
     }
-
+    if (_disposed) return;
     await videoPlayerController!.seekTo(moment);
 
     _postEvent(
