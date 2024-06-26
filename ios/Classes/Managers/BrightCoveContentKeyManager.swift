@@ -22,10 +22,7 @@ import AVFoundation
  
     // Current asset
     @objc public  var asset: CustomAsset!
-    
-    // A singleton instance of ContentKeyManager
-    @objc public static let sharedManager = BrightCoveContentKeyManager()
-    
+        
     // Content Key session
     @objc public  var contentKeySession: AVContentKeySession?
     
@@ -110,8 +107,11 @@ import AVFoundation
         
         handleOnlineContentKeyRequest(keyRequest: keyRequest)
     }
+    
+    
     @objc public func handleOnlineContentKeyRequest(keyRequest: AVContentKeyRequest) {
-        guard BrightCoveContentKeyManager.fpsCertificate != nil  else {
+        // Safely unwrap fpsCertificate
+        guard let fpsCertificate = BrightCoveContentKeyManager.fpsCertificate else {
             self.postToConsole("Application Certificate missing, will request")
             do {
                 try self.requestApplicationCertificate()
@@ -124,80 +124,76 @@ import AVFoundation
 
         self.postToConsole("SUCCESS: Application Certificate Done")
 
+        // Safely unwrap contentKeyIdentifierString
         guard let contentKeyIdentifierString = keyRequest.identifier as? String else {
             self.postToConsole("ERROR: Failed to retrieve the contentIdentifier from the keyRequest!")
             cancelDownloadedVideo()
             return
         }
-         self.postToConsole("SUCCESS: Retrieve the contentIdentifier from the keyRequest!")
+        self.postToConsole("SUCCESS: Retrieve the contentIdentifier from the keyRequest!")
 
-        
         // Check if "skd://" exists in contentKeyIdentifierString
-        if let range = contentKeyIdentifierString.range(of: "skd://") {
-            let contentIdentifier = String(contentKeyIdentifierString[range.upperBound...])
-            
-            // Check if contentIdentifier is empty or nil
-            guard !contentIdentifier.isEmpty else {
-                self.postToConsole("ERROR: ContentIdentifier is empty or nil!")
-                cancelDownloadedVideo()
-                return
-            }
-            self.postToConsole("SUCCESS: ContentIdentifier has Data")
-
-            // Convert contentIdentifier to Unicode string (utf8)
-            guard let contentIdentifierData = contentIdentifier.data(using: .utf8) else {
-                cancelDownloadedVideo()
-                self.postToConsole("ERROR: Failed to convert contentIdentifier to data!")
-                return
-            }
-            
-            self.postToConsole("SUCCESS:  Convert contentIdentifier to data!")
-
- 
-
-            let components = contentIdentifier.components(separatedBy: ":")
-            guard components.first != nil else {
-                cancelDownloadedVideo()
-                self.postToConsole("ERROR: Invalid contentIdentifier format!")
-                return
-            }
-
-            self.postToConsole("SUCCESS: Valid contentIdentifier format!")
-
- 
-
-            if !(asset.contentKeyIdList.contains(contentKeyIdentifierString)) {
-                asset.contentKeyIdList.append(contentKeyIdentifierString)
-            }
-            
-            if downloadRequestedByUser || persistableContentKeyExistsOnDisk(withAssetName: asset.name) || shouldRequestPersistableContentKey(withIdentifier: contentKeyIdentifierString) {
-                self.postToConsole("User requested offline capabilities for the asset. AVPersistableContentKeyRequest object will be delivered by another delegate callback")
-               
-                do {
-                    self.postToConsole("User requested offline capabilities for the asset. AVPersistableContentKeyRequest object will be delivered by another delegate callback")
-                    if #available(iOS 11.2, *) {
-                        try keyRequest.respondByRequestingPersistableContentKeyRequestAndReturnError()
-                    } else {
-                        // Fallback on earlier versions
-                    }
-                } catch {
-
-                    self.postToConsole("WARNING: User requested offline capabilities for the asset. But key loading request from an AirPlay Session requires online key")
-                    /*
-                    This case will occur when the client gets a key loading request from an AirPlay Session.
-                    You should answer the key request using an online key from your key server.
-                    */
-                    provideOnlineKey(withKeyRequest: keyRequest, contentIdentifier: contentIdentifierData)
-                }
-                
-                return
-            }
-
-            provideOnlineKey(withKeyRequest: keyRequest, contentIdentifier: contentIdentifierData)
-        } else {
+        guard let range = contentKeyIdentifierString.range(of: "skd://") else {
             cancelDownloadedVideo()
             self.postToConsole("ERROR: ContentIdentifier not found in keyRequest!")
+            return
         }
+        
+        let contentIdentifier = String(contentKeyIdentifierString[range.upperBound...])
+        
+        // Check if contentIdentifier is empty
+        guard !contentIdentifier.isEmpty else {
+            self.postToConsole("ERROR: ContentIdentifier is empty or nil!")
+            cancelDownloadedVideo()
+            return
+        }
+        self.postToConsole("SUCCESS: ContentIdentifier has Data")
+
+        // Convert contentIdentifier to Unicode string (utf8)
+        guard let contentIdentifierData = contentIdentifier.data(using: .utf8) else {
+            cancelDownloadedVideo()
+            self.postToConsole("ERROR: Failed to convert contentIdentifier to data!")
+            return
+        }
+        
+        self.postToConsole("SUCCESS: Convert contentIdentifier to data!")
+
+        let components = contentIdentifier.components(separatedBy: ":")
+        guard components.first != nil else {
+            cancelDownloadedVideo()
+            self.postToConsole("ERROR: Invalid contentIdentifier format!")
+            return
+        }
+
+        self.postToConsole("SUCCESS: Valid contentIdentifier format!")
+
+        // Ensure asset is not nil
+        guard let asset = asset else {
+            self.postToConsole("ERROR: Asset is nil!")
+            cancelDownloadedVideo()
+            return
+        }
+
+        if !asset.contentKeyIdList.contains(contentKeyIdentifierString) {
+            asset.contentKeyIdList.append(contentKeyIdentifierString)
+        }
+
+        if downloadRequestedByUser || persistableContentKeyExistsOnDisk(withAssetName: asset.name) || shouldRequestPersistableContentKey(withIdentifier: contentKeyIdentifierString) {
+            self.postToConsole("User requested offline capabilities for the asset. AVPersistableContentKeyRequest object will be delivered by another delegate callback")
+            do {
+                if #available(iOS 11.2, *) {
+                    try keyRequest.respondByRequestingPersistableContentKeyRequestAndReturnError()
+                } else {
+                    // Fallback on earlier versions
+                }
+            } catch {
+                self.postToConsole("WARNING: User requested offline capabilities for the asset. But key loading request from an AirPlay Session requires online key")
+                provideOnlineKey(withKeyRequest: keyRequest, contentIdentifier: contentIdentifierData)
+            }
+            return
+        }
+
+        provideOnlineKey(withKeyRequest: keyRequest, contentIdentifier: contentIdentifierData)
     }
 
     @objc public func provideOnlineKey(withKeyRequest keyRequest: AVContentKeyRequest, contentIdentifier contentIdentifierData: Data) {
@@ -216,7 +212,6 @@ import AVFoundation
             
             if let error = error {
                 strongSelf.postToConsole("ERROR: Failed to prepare SPC: \(error)")
-                BrightCoveContentKeyManager.sharedManager.cancelDownloadedVideo()
                 /*
                  Obtaining a content key response has failed.
                  Report error to AVFoundation.
@@ -256,7 +251,6 @@ import AVFoundation
                  Report error to AVFoundation.
                 */
                 keyRequest.processContentKeyResponseError(error)
-                BrightCoveContentKeyManager.sharedManager.cancelDownloadedVideo()
 
             }
         }
@@ -830,4 +824,33 @@ import AVFoundation
         return ckcData!
     }
 
+}
+
+
+
+@objc public class DownloadContentKeyManager: BrightCoveContentKeyManager {
+    
+    @objc public static let sharedManager = DownloadContentKeyManager()
+
+    @objc override public func createContentKeySession() {
+        if contentKeySession == nil {
+            contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
+        }
+        
+        contentKeySession?.setDelegate(self, queue: DispatchQueue(label: "\(Bundle.main.bundleIdentifier!).DownloadContentKeyDelegateQueue"))
+    }
+}
+
+
+@objc public class PlayContentKeyManager: BrightCoveContentKeyManager {
+    
+    @objc public static let sharedManager = PlayContentKeyManager()
+
+    @objc override public func createContentKeySession() {
+        if contentKeySession == nil {
+            contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
+        }
+        
+        contentKeySession?.setDelegate(self, queue: DispatchQueue(label: "\(Bundle.main.bundleIdentifier!).ContentKeyDelegateQueue"))
+    }
 }

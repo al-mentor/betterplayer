@@ -219,7 +219,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         dispatch_queue_t syncQueue = dispatch_queue_create("net.almentor.syncQueue", NULL);
         dispatch_sync(syncQueue, ^{
             
-            BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
+            PlayContentKeyManager *contentKeyManager = [PlayContentKeyManager sharedManager];
             
                 if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
                     contentKeyManager.licensingServiceUrl = licenseUrl;

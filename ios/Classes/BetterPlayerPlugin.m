@@ -324,7 +324,7 @@ bool _remoteCommandsInitialized = false;
             [assetCustom createUrlAsset];
             
             // Create a separate instance for download
-            BrightCoveContentKeyManager *downloadKeyManager = [BrightCoveContentKeyManager sharedManager];
+            DownloadContentKeyManager *downloadKeyManager = [DownloadContentKeyManager sharedManager];
             
             if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
                 downloadKeyManager.licensingServiceUrl = licenseUrl;
@@ -354,7 +354,7 @@ bool _remoteCommandsInitialized = false;
         AssetDownloader *downloader = [AssetDownloader sharedDownloader];
         NSURL *url = [[NSURL alloc] initWithString:uriArg];
          CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:uriArg url:url];
-        [[BrightCoveContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
+        [[DownloadContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
         [downloader cancelDownloadOfAssetWithAsset:assetCustom];
         [downloader deleteDownloadedAssetWithAsset:assetCustom];
         result(nil);
@@ -366,7 +366,7 @@ bool _remoteCommandsInitialized = false;
         AssetDownloader *downloader = [AssetDownloader sharedDownloader];
         NSURL *url = [[NSURL alloc] initWithString:uriArg];
          CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:uriArg url:url];
-        [[BrightCoveContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
+        [[DownloadContentKeyManager sharedManager] deleteAllPeristableContentKeysForAsset:assetCustom];
         [downloader cancelDownloadOfAssetWithAsset:assetCustom];
         result(nil);
     }else if ([@"delete_all_downloaded_video" isEqualToString:call.method]) {
