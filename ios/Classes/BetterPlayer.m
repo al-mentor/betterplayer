@@ -225,7 +225,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
                     contentKeyManager.licensingServiceUrl = licenseUrl;
                     contentKeyManager.fpsCertificateUrl = certificateUrl;
                     
-                    [contentKeyManager createContentKeySession];
+                    
                     
                 }
                 
@@ -233,6 +233,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
                 if (downloadedAsset) {
                     NSLog(@"OFFLINE PLAYBACK");
                     contentKeyManager.asset = downloadedAsset;
+                    [contentKeyManager createContentKeySession];
                     [downloadedAsset createUrlAsset];
                     if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
                         [downloadedAsset addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
@@ -242,8 +243,10 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
                     NSLog(@"Run OFFLINE PLAYBACK");
                 } else {
                     if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
-                        [assetCustom addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
                         contentKeyManager.asset = assetCustom;
+                        [contentKeyManager createContentKeySession];
+                        [assetCustom addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
+                        
                     }
                     item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
                 }

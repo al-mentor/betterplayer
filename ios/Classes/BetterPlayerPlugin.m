@@ -327,10 +327,12 @@ bool _remoteCommandsInitialized = false;
             DownloadContentKeyManager *downloadKeyManager = [DownloadContentKeyManager sharedManager];
             
             if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
-                downloadKeyManager.licensingServiceUrl = licenseUrl;
-                downloadKeyManager.fpsCertificateUrl = certificateUrl;
+                
                 // Create content key session
                 @synchronized (downloadKeyManager) {
+                    downloadKeyManager.licensingServiceUrl = licenseUrl;
+                    downloadKeyManager.fpsCertificateUrl = certificateUrl;
+                    downloadKeyManager.asset = assetCustom;
                     [downloadKeyManager createContentKeySession];
                     [assetCustom addAsContentKeyRecipientWithContentKeyManager:downloadKeyManager];
                     downloadKeyManager.downloadRequestedByUser = true;

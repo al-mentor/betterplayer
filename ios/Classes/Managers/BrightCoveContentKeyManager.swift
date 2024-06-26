@@ -110,8 +110,38 @@ import AVFoundation
     
     
     @objc public func handleOnlineContentKeyRequest(keyRequest: AVContentKeyRequest) {
-        // Safely unwrap fpsCertificate
-        guard let fpsCertificate = BrightCoveContentKeyManager.fpsCertificate else {
+        if(asset != nil){
+            var errorHappened = false
+            if persistableContentKeyExistsOnDisk(withAssetName: asset.name) {
+                let urlToPersistableKey = urlForPersistableContentKey(withAssetName: asset.name)
+                postToConsole("Persistable key already exists on disk at location: \(urlToPersistableKey.path)")
+                guard let contentKey = FileManager.default.contents(atPath: urlToPersistableKey.path) else {
+                    postToConsole("ERROR: Failed to retrieve content key from disk")
+                    return
+                }
+                postToConsole("Creating Content Key Response from persistent CKC")
+                let keyResponse = AVContentKeyResponse(fairPlayStreamingKeyResponseData: contentKey)
+                postToConsole("Providing Content Key Response to make protected content available for processing: \(keyResponse)")
+                do {
+                    if #available(iOS 11.2, *) {
+                        try keyRequest.respondByRequestingPersistableContentKeyRequestAndReturnError()
+                    } else {
+                        // Fallback on earlier versions
+                        errorHappened = true
+                    }
+                } catch {
+                    errorHappened = true
+                    self.postToConsole("WARNING: User requested offline capabilities for the asset. But key loading request from an AirPlay Session requires online key")
+                }
+                keyRequest.processContentKeyResponse(keyResponse)
+                NotificationCenter.default.post(name: .HasAvailablePersistableContentKey, object: nil, userInfo: nil)
+                if (!errorHappened){
+                    return
+                }
+            }
+        }
+        
+        guard BrightCoveContentKeyManager.fpsCertificate != nil else {
             self.postToConsole("Application Certificate missing, will request")
             do {
                 try self.requestApplicationCertificate()
@@ -121,18 +151,17 @@ import AVFoundation
             }
             return
         }
-
+        
         self.postToConsole("SUCCESS: Application Certificate Done")
-
-        // Safely unwrap contentKeyIdentifierString
+        
         guard let contentKeyIdentifierString = keyRequest.identifier as? String else {
             self.postToConsole("ERROR: Failed to retrieve the contentIdentifier from the keyRequest!")
             cancelDownloadedVideo()
             return
         }
+        
         self.postToConsole("SUCCESS: Retrieve the contentIdentifier from the keyRequest!")
-
-        // Check if "skd://" exists in contentKeyIdentifierString
+        
         guard let range = contentKeyIdentifierString.range(of: "skd://") else {
             cancelDownloadedVideo()
             self.postToConsole("ERROR: ContentIdentifier not found in keyRequest!")
@@ -141,15 +170,14 @@ import AVFoundation
         
         let contentIdentifier = String(contentKeyIdentifierString[range.upperBound...])
         
-        // Check if contentIdentifier is empty
         guard !contentIdentifier.isEmpty else {
             self.postToConsole("ERROR: ContentIdentifier is empty or nil!")
             cancelDownloadedVideo()
             return
         }
+        
         self.postToConsole("SUCCESS: ContentIdentifier has Data")
-
-        // Convert contentIdentifier to Unicode string (utf8)
+        
         guard let contentIdentifierData = contentIdentifier.data(using: .utf8) else {
             cancelDownloadedVideo()
             self.postToConsole("ERROR: Failed to convert contentIdentifier to data!")
@@ -157,27 +185,26 @@ import AVFoundation
         }
         
         self.postToConsole("SUCCESS: Convert contentIdentifier to data!")
-
+        
         let components = contentIdentifier.components(separatedBy: ":")
         guard components.first != nil else {
             cancelDownloadedVideo()
             self.postToConsole("ERROR: Invalid contentIdentifier format!")
             return
         }
-
+        
         self.postToConsole("SUCCESS: Valid contentIdentifier format!")
-
-        // Ensure asset is not nil
+        
         guard let asset = asset else {
             self.postToConsole("ERROR: Asset is nil!")
             cancelDownloadedVideo()
             return
         }
-
+        
         if !asset.contentKeyIdList.contains(contentKeyIdentifierString) {
             asset.contentKeyIdList.append(contentKeyIdentifierString)
         }
-
+        
         if downloadRequestedByUser || persistableContentKeyExistsOnDisk(withAssetName: asset.name) || shouldRequestPersistableContentKey(withIdentifier: contentKeyIdentifierString) {
             self.postToConsole("User requested offline capabilities for the asset. AVPersistableContentKeyRequest object will be delivered by another delegate callback")
             do {
@@ -192,81 +219,58 @@ import AVFoundation
             }
             return
         }
-
+        
         provideOnlineKey(withKeyRequest: keyRequest, contentIdentifier: contentIdentifierData)
     }
 
     @objc public func provideOnlineKey(withKeyRequest keyRequest: AVContentKeyRequest, contentIdentifier contentIdentifierData: Data) {
-        
         postToConsole("ONLINE KEY FLOW")
         
-        /*
-         Completion handler for makeStreamingContentKeyRequestData method.
-         1. Sends obtained SPC to Key Server
-         2. Receives CKC from Key Server
-         3. Makes content key response object (AVContentKeyResponse)
-         4. Provide the content key response object to make protected content available for processing
-        */
         let getCkcAndMakeContentAvailable = { [weak self] (spcData: Data?, error: Error?) in
             guard let strongSelf = self else { return }
             
             if let error = error {
                 strongSelf.postToConsole("ERROR: Failed to prepare SPC: \(error)")
-                /*
-                 Obtaining a content key response has failed.
-                 Report error to AVFoundation.
-                */
                 keyRequest.processContentKeyResponseError(error)
                 return
             }
 
-            guard let spcData = spcData else { return }
+            guard let spcData = spcData else {
+                strongSelf.postToConsole("ERROR: SPC data is nil.")
+                keyRequest.processContentKeyResponseError(NSError(domain: "com.almentor.error", code: -1, userInfo: [NSLocalizedDescriptionKey: "SPC data is nil"]))
+                return
+            }
 
             do {
                 strongSelf.postToConsole("Will use SPC (Server Playback Context) to request CKC (Content Key Context) from KSM (Key Security Module)")
                 
-                /*
-                 Send SPC to Key Server and obtain CKC.
-                */
                 let ckcData = try strongSelf.requestContentKeyFromKeySecurityModule(spcData: spcData)
-
-                strongSelf.postToConsole("Creating Content Key Response from CKC obtaned from Key Server")
                 
-                /*
-                 AVContentKeyResponse is used to represent the data returned from the key server when requesting a key for
-                 decrypting content.
-                 */
+                strongSelf.postToConsole("Creating Content Key Response from CKC obtained from Key Server")
+                
                 let keyResponse = AVContentKeyResponse(fairPlayStreamingKeyResponseData: ckcData)
-
+                
                 strongSelf.postToConsole("Providing Content Key Response to make protected content available for processing: \(keyResponse)")
                 
-                /*
-                 Provide the content key response to make protected content available for processing.
-                */
                 keyRequest.processContentKeyResponse(keyResponse)
             } catch {
                 strongSelf.postToConsole("Failed to make protected content available for processing: \(error)")
-                
-                /*
-                 Report error to AVFoundation.
-                */
                 keyRequest.processContentKeyResponseError(error)
-
             }
         }
-
-        self.postToConsole("Will prepare content key request SPC (Server Playback Context)")
-
-        /*
-         Pass Content Id unicode string together with FPS Certificate to obtain content key request data for a specific combination of application and content.
-        */
         
- 
-        keyRequest.makeStreamingContentKeyRequestData(forApp: BrightCoveContentKeyManager.fpsCertificate!,
+        self.postToConsole("Will prepare content key request SPC (Server Playback Context)")
+        
+        guard let fpsCertificate = BrightCoveContentKeyManager.fpsCertificate else {
+            self.postToConsole("ERROR: FPS certificate is nil.")
+            keyRequest.processContentKeyResponseError(NSError(domain: "com.almentor.error", code: -1, userInfo: [NSLocalizedDescriptionKey: "FPS certificate is nil"]))
+            return
+        }
+        
+        keyRequest.makeStreamingContentKeyRequestData(forApp: fpsCertificate,
                                                       contentIdentifier: contentIdentifierData,
                                                       options: [AVContentKeyRequestProtocolVersionsKey: [1]],
                                                       completionHandler: getCkcAndMakeContentAvailable)
-            
     }
     
     // MARK: Offline key retrival
