@@ -53,7 +53,7 @@ private const val TAG = "DownloadTracker"
 private const val DEFAULT_BITRATE = 500_000
 
 /** Tracks media that has been downloaded.  */
-@OptIn(UnstableApi::class)
+
 class DownloadTracker
     (
     context: Context,

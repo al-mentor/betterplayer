@@ -78,7 +78,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 
-@UnstableApi
+
 internal class BetterPlayer(
     context: Context,
     private val eventChannel: EventChannel,

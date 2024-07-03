@@ -9,7 +9,7 @@ import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import java.io.File
 
-@OptIn(UnstableApi::class)
+
 object BetterPlayerCache {
     @Volatile
     private var instance: SimpleCache? = null

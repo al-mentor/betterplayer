@@ -23,7 +23,7 @@ import com.jhomlala.better_player.common.DownloadUtil.DOWNLOAD_NOTIFICATION_CHAN
 private const val JOB_ID = 8888
 private const val FOREGROUND_NOTIFICATION_ID = 8989
 
-@OptIn(UnstableApi::class)
+
 class MyDownloadService : DownloadService(
 
     FOREGROUND_NOTIFICATION_ID,

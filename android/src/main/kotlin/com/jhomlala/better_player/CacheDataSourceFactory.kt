@@ -9,7 +9,7 @@ import androidx.media3.datasource.cache.CacheDataSink
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
 
-@UnstableApi
+
 internal class CacheDataSourceFactory(
     private val context: Context,
     private val maxCacheSize: Long,

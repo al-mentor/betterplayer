@@ -28,7 +28,7 @@ import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
 
-@UnstableApi
+
 object DownloadUtil {
     const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "download_channel"
     private const val TAG = "DownloadUtil"

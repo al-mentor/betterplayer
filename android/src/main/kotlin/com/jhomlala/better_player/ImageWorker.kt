@@ -14,7 +14,7 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-@UnstableApi
+
 class ImageWorker(
     context: Context,
     params: WorkerParameters

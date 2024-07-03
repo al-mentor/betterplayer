@@ -14,7 +14,7 @@ import java.util.ArrayList
  * This class is not thread-safe. All calls must be done on the same thread or synchronized
  * externally.
  */
-@UnstableApi
+
 internal class QueuingEventSink : EventSink {
     private var delegate: EventSink? = null
     private val eventQueue = ArrayList<Any>()
