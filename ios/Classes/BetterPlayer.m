@@ -195,54 +195,63 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     return [self setDataSourceURL:[NSURL fileURLWithPath:path] withKey:key withCertificateUrl:certificateUrl withLicenseUrl:(NSString*)licenseUrl withHeaders: @{} withCache: false cacheKey:cacheKey cacheManager:cacheManager overriddenDuration:overriddenDuration videoExtension: nil];
 }
 
-- (void)setDataSourceURL:(NSURL*)url withKey:(NSString*)key withCertificateUrl:(NSString*)certificateUrl withLicenseUrl:(NSString*)licenseUrl withHeaders:(NSDictionary*)headers withCache:(BOOL)useCache cacheKey:(NSString*)cacheKey cacheManager:(CacheManager*)cacheManager overriddenDuration:(int) overriddenDuration videoExtension: (NSString*) videoExtension{
+- (void)setDataSourceURL:(NSURL*)url withKey:(NSString*)key withCertificateUrl:(NSString*)certificateUrl withLicenseUrl:(NSString*)licenseUrl withHeaders:(NSDictionary*)headers withCache:(BOOL)useCache cacheKey:(NSString*)cacheKey cacheManager:(CacheManager*)cacheManager overriddenDuration:(int)overriddenDuration videoExtension:(NSString*)videoExtension {
     _overriddenDuration = 0;
-    if (headers == [NSNull null] || headers == NULL){
+    if (headers == [NSNull null] || headers == NULL) {
         headers = @{};
     }
     
- 
-    AVPlayerItem* item;
-    if (useCache){
-        if (cacheKey == [NSNull null]){
+    __block AVPlayerItem* item;
+    if (useCache) {
+        if (cacheKey == [NSNull null]) {
             cacheKey = nil;
         }
-        if (videoExtension == [NSNull null]){
+        if (videoExtension == [NSNull null]) {
             videoExtension = nil;
         }
         
-        item = [cacheManager getCachingPlayerItemForNormalPlayback:url cacheKey:cacheKey videoExtension: videoExtension headers:headers];
+        item = [cacheManager getCachingPlayerItemForNormalPlayback:url cacheKey:cacheKey videoExtension:videoExtension headers:headers];
     } else {
-        AVURLAsset* asset = [AVURLAsset URLAssetWithURL:url
-                                                options:@{@"AVURLAssetHTTPHeaderFieldsKey" : headers}];
+        AVURLAsset* asset = [AVURLAsset URLAssetWithURL:url options:@{@"AVURLAssetHTTPHeaderFieldsKey" : headers}];
         CustomAsset *assetCustom = [[CustomAsset alloc] initWithName:[url absoluteString] url:url];
-        BrightCoveContentKeyManager *contentKeyManager = [BrightCoveContentKeyManager sharedManager];
-                    if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
-                    contentKeyManager.licensingServiceUrl =  licenseUrl ;
-                      contentKeyManager.fpsCertificateUrl = certificateUrl ;
-                      [contentKeyManager createContentKeySession];
-       
-            
-        }
-        
-        
-        CustomAsset *downloadedAsset = [[AssetDownloader sharedDownloader] downloadedAssetWithName:assetCustom.name];
-        if (downloadedAsset) {
-            NSLog(@"OFFLINE PLAYBACK");
-            contentKeyManager.asset = downloadedAsset;
-            [downloadedAsset createUrlAsset];
-            if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
-                [downloadedAsset addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
-            }
-            item = [AVPlayerItem playerItemWithAsset:downloadedAsset.urlAsset];
-            NSLog(@"Run OFFLINE PLAYBACK");
-        }else {
-            [assetCustom addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
-            contentKeyManager.asset = assetCustom;
-            item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
-        }
 
-        
+        // Synchronize access to the shared manager
+        dispatch_queue_t syncQueue = dispatch_queue_create("net.almentor.syncQueue", NULL);
+        dispatch_sync(syncQueue, ^{
+            
+            PlayContentKeyManager *contentKeyManager = [PlayContentKeyManager sharedManager];
+            
+                if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
+                    contentKeyManager.licensingServiceUrl = licenseUrl;
+                    contentKeyManager.fpsCertificateUrl = certificateUrl;
+                    
+                    
+                    
+                }
+                
+                CustomAsset *downloadedAsset = [[AssetDownloader sharedDownloader] downloadedAssetWithName:assetCustom.name];
+                if (downloadedAsset) {
+                    NSLog(@"OFFLINE PLAYBACK");
+                    contentKeyManager.asset = downloadedAsset;
+                    [contentKeyManager createContentKeySession];
+                    [downloadedAsset createUrlAsset];
+                    if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
+                        [downloadedAsset addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
+                        [contentKeyManager requestPersistableContentKeysForAsset:assetCustom];
+                    }
+                    item = [AVPlayerItem playerItemWithAsset:downloadedAsset.urlAsset];
+                    NSLog(@"Run OFFLINE PLAYBACK");
+                } else {
+                    if (![licenseUrl isKindOfClass:[NSNull class]] && ![certificateUrl isKindOfClass:[NSNull class]] && licenseUrl.length > 0 && certificateUrl.length > 0) {
+                        contentKeyManager.asset = assetCustom;
+                        [contentKeyManager createContentKeySession];
+                        [assetCustom addAsContentKeyRecipientWithContentKeyManager:contentKeyManager];
+                        
+                    }
+                    item = [AVPlayerItem playerItemWithAsset:assetCustom.urlAsset];
+                }
+            
+        });
     }
 
     if (@available(iOS 10.0, *) && overriddenDuration > 0) {

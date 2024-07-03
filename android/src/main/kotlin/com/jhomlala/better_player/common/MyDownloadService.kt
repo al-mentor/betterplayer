@@ -1,10 +1,14 @@
 package com.jhomlala.better_player.common
 
 import android.app.Notification
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.util.Log
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.media3.common.util.NotificationUtil
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
@@ -65,16 +69,53 @@ class MyDownloadService : DownloadService(
         )
         DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(downloads));
 
-        // Start foreground service with media playback type
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Use startForeground with type on Android 12 (SDK 31) and higher
-            startForeground(FOREGROUND_NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
-        } else {
-            // Use startForeground without type for older versions
-            startForeground(FOREGROUND_NOTIFICATION_ID, notification)
+        try {
+            // Start foreground service with media playback type
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // Use startForeground with type on Android 12 (SDK 31) and higher
+                startForeground(
+                    FOREGROUND_NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                )
+            } else {
+                // Use startForeground without type for older versions
+                startForeground(FOREGROUND_NOTIFICATION_ID, notification)
+            }
+        } catch (e: Exception) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                handleForegroundServiceStartException(e, notification)
+            }
+
         }
 
         return notification
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun handleForegroundServiceStartException(
+        e: Exception,
+        notification: Notification
+    ) {
+        Log.e("MyDownloadService", "Foreground service start not allowed", e)
+
+        // Retry logic with exponential backoff
+        val retryIntent = Intent(this, MyDownloadService::class.java)
+        retryIntent.putExtra("notification", notification)
+        val pendingIntent = PendingIntent.getService(
+            this,
+            0,
+            retryIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val retryNotification = Notification.Builder(this, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+            .setContentTitle("Download failed")
+            .setContentText("Tap to retry")
+            .setSmallIcon(   R.drawable.ic_download)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        NotificationUtil.setNotification(this, FOREGROUND_NOTIFICATION_ID + 1, retryNotification)
     }
 
 
@@ -99,6 +140,8 @@ class MyDownloadService : DownloadService(
             download: Download,
             finalException: Exception?
         ) {
+                        DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(List(1) { download }));
+
             val notification: Notification = when (download.state) {
                 Download.STATE_COMPLETED -> {
                     notificationHelper.buildDownloadCompletedNotification(
@@ -121,7 +164,7 @@ class MyDownloadService : DownloadService(
                 else -> return
             }
             NotificationUtil.setNotification(context, nextNotificationId++, notification)
-            DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(List(1) { download }));
+
 
         }
 

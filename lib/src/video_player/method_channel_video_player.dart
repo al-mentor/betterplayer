@@ -266,6 +266,14 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
     );
   }
 
+
+  @override
+  Future<void> cancelDownloadedVideo(int? textureId, String? url) async {
+    var data = await _channel.invokeMethod<String?>(
+      'cancel_download',
+      <String, dynamic>{'textureId': textureId, 'uri': url},
+    );
+  }
   @override
   Future<DateTime?> getAbsolutePosition(int? textureId) async {
     final int milliseconds = await _channel.invokeMethod<int>(

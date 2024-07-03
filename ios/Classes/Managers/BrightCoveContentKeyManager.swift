@@ -19,23 +19,21 @@ import AVFoundation
     // Licensing Token
     @objc public var licensingToken: String = ""
     
+ 
     // Current asset
     @objc public  var asset: CustomAsset!
-    
-    // A singleton instance of ContentKeyManager
-    @objc public static let sharedManager = BrightCoveContentKeyManager()
-    
+        
     // Content Key session
-    @objc public  var contentKeySession: AVContentKeySession!
+    @objc public  var contentKeySession: AVContentKeySession?
     
     // Content Key request
-    @objc public var contentKeyRequest: AVContentKeyRequest!
+    @objc public var contentKeyRequest: AVContentKeyRequest?
     
     // Indicates that user requested download action
     @objc public var downloadRequestedByUser: Bool = false
     
     // Certificate data
-    @objc public var fpsCertificate:Data!
+    @objc public static var fpsCertificate:Data?
     
     // A set containing the currently pending content key identifiers associated with persistable content key requests that have not been completed.
     @objc public  var pendingPersistableContentKeyIdentifiers = Set<String>()
@@ -69,12 +67,14 @@ import AVFoundation
     }
     
     // Creates Content Key Session
+
     @objc public func createContentKeySession() {
-        print("Creating new AVContentKeySession")
+  
         contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
-        contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
-        contentKeySession.setDelegate(self, queue: DispatchQueue(label: "\(Bundle.main.bundleIdentifier!).ContentKeyDelegateQueue"))
+        contentKeySession?.setDelegate(self, queue: DispatchQueue(label: "\(Bundle.main.bundleIdentifier!).ContentKeyDelegateQueue"))
+      
     }
+
     
     // Sends message to Console of PlayerViewController
     @objc public func postToConsole(_ message: String) {
@@ -107,158 +107,170 @@ import AVFoundation
         
         handleOnlineContentKeyRequest(keyRequest: keyRequest)
     }
+    
+    
     @objc public func handleOnlineContentKeyRequest(keyRequest: AVContentKeyRequest) {
-        guard self.fpsCertificate != nil  else {
-            self.postToConsole("Application Certificate missing, will request")
-            do {
-                try self.requestApplicationCertificate()
-            } catch {
-                self.postToConsole("Failed requesting Application Certificate: \(error)")
-            }
-            return
-        }
-
-        self.postToConsole("SUCCESS: Application Certificate Done")
-
-        guard let contentKeyIdentifierString = keyRequest.identifier as? String else {
-            self.postToConsole("ERROR: Failed to retrieve the contentIdentifier from the keyRequest!")
-            return
-        }
-         self.postToConsole("SUCCESS: Retrieve the contentIdentifier from the keyRequest!")
-
-        
-        // Check if "skd://" exists in contentKeyIdentifierString
-        if let range = contentKeyIdentifierString.range(of: "skd://") {
-            let contentIdentifier = String(contentKeyIdentifierString[range.upperBound...])
-            
-            // Check if contentIdentifier is empty or nil
-            guard !contentIdentifier.isEmpty else {
-                self.postToConsole("ERROR: ContentIdentifier is empty or nil!")
-                return
-            }
-            self.postToConsole("SUCCESS: ContentIdentifier has Data")
-
-            // Convert contentIdentifier to Unicode string (utf8)
-            guard let contentIdentifierData = contentIdentifier.data(using: .utf8) else {
-                self.postToConsole("ERROR: Failed to convert contentIdentifier to data!")
-                return
-            }
-            
-            self.postToConsole("SUCCESS:  Convert contentIdentifier to data!")
-
- 
-
-            let components = contentIdentifier.components(separatedBy: ":")
-            guard components.first != nil else {
-                self.postToConsole("ERROR: Invalid contentIdentifier format!")
-                return
-            }
-
-            self.postToConsole("SUCCESS: Valid contentIdentifier format!")
-
- 
-
-            if !(asset.contentKeyIdList.contains(contentKeyIdentifierString)) {
-                asset.contentKeyIdList.append(contentKeyIdentifierString)
-            }
-
-            if downloadRequestedByUser || persistableContentKeyExistsOnDisk(withAssetName: asset.name, withContentKeyIV: "") || shouldRequestPersistableContentKey(withIdentifier: contentKeyIdentifierString) {
-                self.postToConsole("User requested offline capabilities for the asset. AVPersistableContentKeyRequest object will be delivered by another delegate callback")
-               
+        if(asset != nil){
+            var errorHappened = false
+            if persistableContentKeyExistsOnDisk(withAssetName: asset.name) {
+                let urlToPersistableKey = urlForPersistableContentKey(withAssetName: asset.name)
+                postToConsole("Persistable key already exists on disk at location: \(urlToPersistableKey.path)")
+                guard let contentKey = FileManager.default.contents(atPath: urlToPersistableKey.path) else {
+                    postToConsole("ERROR: Failed to retrieve content key from disk")
+                    return
+                }
+                postToConsole("Creating Content Key Response from persistent CKC")
+                let keyResponse = AVContentKeyResponse(fairPlayStreamingKeyResponseData: contentKey)
+                postToConsole("Providing Content Key Response to make protected content available for processing: \(keyResponse)")
                 do {
-                    self.postToConsole("User requested offline capabilities for the asset. AVPersistableContentKeyRequest object will be delivered by another delegate callback")
                     if #available(iOS 11.2, *) {
                         try keyRequest.respondByRequestingPersistableContentKeyRequestAndReturnError()
                     } else {
                         // Fallback on earlier versions
+                        errorHappened = true
                     }
                 } catch {
-
+                    errorHappened = true
                     self.postToConsole("WARNING: User requested offline capabilities for the asset. But key loading request from an AirPlay Session requires online key")
-                    /*
-                    This case will occur when the client gets a key loading request from an AirPlay Session.
-                    You should answer the key request using an online key from your key server.
-                    */
-                    provideOnlineKey(withKeyRequest: keyRequest, contentIdentifier: contentIdentifierData)
                 }
-                
-                return
+                keyRequest.processContentKeyResponse(keyResponse)
+                NotificationCenter.default.post(name: .HasAvailablePersistableContentKey, object: nil, userInfo: nil)
+                if (!errorHappened){
+                    return
+                }
             }
-
-            provideOnlineKey(withKeyRequest: keyRequest, contentIdentifier: contentIdentifierData)
-        } else {
-            self.postToConsole("ERROR: ContentIdentifier not found in keyRequest!")
         }
+        
+        guard BrightCoveContentKeyManager.fpsCertificate != nil else {
+            self.postToConsole("Application Certificate missing, will request")
+            do {
+                try self.requestApplicationCertificate()
+            } catch {
+                cancelDownloadedVideo()
+                self.postToConsole("Failed requesting Application Certificate: \(error)")
+            }
+            return
+        }
+        
+        self.postToConsole("SUCCESS: Application Certificate Done")
+        
+        guard let contentKeyIdentifierString = keyRequest.identifier as? String else {
+            self.postToConsole("ERROR: Failed to retrieve the contentIdentifier from the keyRequest!")
+            cancelDownloadedVideo()
+            return
+        }
+        
+        self.postToConsole("SUCCESS: Retrieve the contentIdentifier from the keyRequest!")
+        
+        guard let range = contentKeyIdentifierString.range(of: "skd://") else {
+            cancelDownloadedVideo()
+            self.postToConsole("ERROR: ContentIdentifier not found in keyRequest!")
+            return
+        }
+        
+        let contentIdentifier = String(contentKeyIdentifierString[range.upperBound...])
+        
+        guard !contentIdentifier.isEmpty else {
+            self.postToConsole("ERROR: ContentIdentifier is empty or nil!")
+            cancelDownloadedVideo()
+            return
+        }
+        
+        self.postToConsole("SUCCESS: ContentIdentifier has Data")
+        
+        guard let contentIdentifierData = contentIdentifier.data(using: .utf8) else {
+            cancelDownloadedVideo()
+            self.postToConsole("ERROR: Failed to convert contentIdentifier to data!")
+            return
+        }
+        
+        self.postToConsole("SUCCESS: Convert contentIdentifier to data!")
+        
+        let components = contentIdentifier.components(separatedBy: ":")
+        guard components.first != nil else {
+            cancelDownloadedVideo()
+            self.postToConsole("ERROR: Invalid contentIdentifier format!")
+            return
+        }
+        
+        self.postToConsole("SUCCESS: Valid contentIdentifier format!")
+        
+        guard let asset = asset else {
+            self.postToConsole("ERROR: Asset is nil!")
+            cancelDownloadedVideo()
+            return
+        }
+        
+        if !asset.contentKeyIdList.contains(contentKeyIdentifierString) {
+            asset.contentKeyIdList.append(contentKeyIdentifierString)
+        }
+        
+        if downloadRequestedByUser || persistableContentKeyExistsOnDisk(withAssetName: asset.name) || shouldRequestPersistableContentKey(withIdentifier: contentKeyIdentifierString) {
+            self.postToConsole("User requested offline capabilities for the asset. AVPersistableContentKeyRequest object will be delivered by another delegate callback")
+            do {
+                if #available(iOS 11.2, *) {
+                    try keyRequest.respondByRequestingPersistableContentKeyRequestAndReturnError()
+                } else {
+                    // Fallback on earlier versions
+                }
+            } catch {
+                self.postToConsole("WARNING: User requested offline capabilities for the asset. But key loading request from an AirPlay Session requires online key")
+                provideOnlineKey(withKeyRequest: keyRequest, contentIdentifier: contentIdentifierData)
+            }
+            return
+        }
+        
+        provideOnlineKey(withKeyRequest: keyRequest, contentIdentifier: contentIdentifierData)
     }
 
     @objc public func provideOnlineKey(withKeyRequest keyRequest: AVContentKeyRequest, contentIdentifier contentIdentifierData: Data) {
-        
         postToConsole("ONLINE KEY FLOW")
         
-        /*
-         Completion handler for makeStreamingContentKeyRequestData method.
-         1. Sends obtained SPC to Key Server
-         2. Receives CKC from Key Server
-         3. Makes content key response object (AVContentKeyResponse)
-         4. Provide the content key response object to make protected content available for processing
-        */
         let getCkcAndMakeContentAvailable = { [weak self] (spcData: Data?, error: Error?) in
             guard let strongSelf = self else { return }
             
             if let error = error {
                 strongSelf.postToConsole("ERROR: Failed to prepare SPC: \(error)")
-                /*
-                 Obtaining a content key response has failed.
-                 Report error to AVFoundation.
-                */
                 keyRequest.processContentKeyResponseError(error)
                 return
             }
 
-            guard let spcData = spcData else { return }
+            guard let spcData = spcData else {
+                strongSelf.postToConsole("ERROR: SPC data is nil.")
+                keyRequest.processContentKeyResponseError(NSError(domain: "com.almentor.error", code: -1, userInfo: [NSLocalizedDescriptionKey: "SPC data is nil"]))
+                return
+            }
 
             do {
                 strongSelf.postToConsole("Will use SPC (Server Playback Context) to request CKC (Content Key Context) from KSM (Key Security Module)")
                 
-                /*
-                 Send SPC to Key Server and obtain CKC.
-                */
                 let ckcData = try strongSelf.requestContentKeyFromKeySecurityModule(spcData: spcData)
-
-                strongSelf.postToConsole("Creating Content Key Response from CKC obtaned from Key Server")
                 
-                /*
-                 AVContentKeyResponse is used to represent the data returned from the key server when requesting a key for
-                 decrypting content.
-                 */
+                strongSelf.postToConsole("Creating Content Key Response from CKC obtained from Key Server")
+                
                 let keyResponse = AVContentKeyResponse(fairPlayStreamingKeyResponseData: ckcData)
-
+                
                 strongSelf.postToConsole("Providing Content Key Response to make protected content available for processing: \(keyResponse)")
                 
-                /*
-                 Provide the content key response to make protected content available for processing.
-                */
                 keyRequest.processContentKeyResponse(keyResponse)
             } catch {
                 strongSelf.postToConsole("Failed to make protected content available for processing: \(error)")
-                
-                /*
-                 Report error to AVFoundation.
-                */
                 keyRequest.processContentKeyResponseError(error)
             }
         }
-
+        
         self.postToConsole("Will prepare content key request SPC (Server Playback Context)")
-
-        /*
-         Pass Content Id unicode string together with FPS Certificate to obtain content key request data for a specific combination of application and content.
-        */
-        keyRequest.makeStreamingContentKeyRequestData(forApp: self.fpsCertificate,
+        
+        guard let fpsCertificate = BrightCoveContentKeyManager.fpsCertificate else {
+            self.postToConsole("ERROR: FPS certificate is nil.")
+            keyRequest.processContentKeyResponseError(NSError(domain: "com.almentor.error", code: -1, userInfo: [NSLocalizedDescriptionKey: "FPS certificate is nil"]))
+            return
+        }
+        
+        keyRequest.makeStreamingContentKeyRequestData(forApp: fpsCertificate,
                                                       contentIdentifier: contentIdentifierData,
                                                       options: [AVContentKeyRequestProtocolVersionsKey: [1]],
                                                       completionHandler: getCkcAndMakeContentAvailable)
-            
     }
     
     // MARK: Offline key retrival
@@ -274,7 +286,7 @@ import AVFoundation
             
             pendingPersistableContentKeyIdentifiers.insert(contentKeyId)
             
-            contentKeySession.processContentKeyRequest(withIdentifier: contentKeyId, initializationData: nil, options: nil)
+            contentKeySession?.processContentKeyRequest(withIdentifier: contentKeyId, initializationData: nil, options: nil)
         }
     }
     
@@ -297,6 +309,32 @@ import AVFoundation
         handlePersistableContentKeyRequest(keyRequest: keyRequest)
     }
         
+    
+    
+    @objc public func cancelDownloadedVideo() {
+        self.postToConsole("Failed to prepare SPC: And Start Cancel Downloaded Video")
+//
+//        AssetDownloader.sharedDownloader.cancelDownloadOfAsset(asset: asset)
+//        AssetDownloader.sharedDownloader.deleteDownloadedAsset(asset: asset)
+//        deletePeristableContentKey(withAssetName: asset.name)
+//        var downloadData = [[String: Any]]()
+//            var downloadMap = [String: Any]()
+//            downloadMap["uri"] =  asset.name
+//            downloadMap["downloadState"] = "5"
+//            downloadMap["downloadId"] = asset.url
+//            downloadMap["downloadPercentage"] = "0"
+//            downloadData.append(downloadMap)
+//        do {
+//            let jsonData = try JSONSerialization.data(withJSONObject: downloadData, options: [])
+//            if let jsonString = String(data: jsonData, encoding: .utf8) {
+//                print(jsonString)
+//                AssetDownloader.eventSink!(jsonData)
+//            }
+//
+//
+//        } catch {
+//         }
+    }
     /*
      Handles responding to an `AVPersistableContentKeyRequest` by determining if a key is already available for use on disk.
      If no key is available on disk, a persistable key is requested from the server and securely written to disk for use in the future.
@@ -305,14 +343,31 @@ import AVFoundation
      - Parameter keyRequest: The `AVPersistableContentKeyRequest` to respond to.
     */
     @objc public func handlePersistableContentKeyRequest(keyRequest: AVPersistableContentKeyRequest) {
+            if persistableContentKeyExistsOnDisk(withAssetName: asset.name) {
+                let urlToPersistableKey = urlForPersistableContentKey(withAssetName: asset.name)
+                postToConsole("Persistable key already exists on disk at location: \(urlToPersistableKey.path)")
+                guard let contentKey = FileManager.default.contents(atPath: urlToPersistableKey.path) else {
+                    return
+                }
+                postToConsole("Creating Content Key Response from persistent CKC")
+                let keyResponse = AVContentKeyResponse(fairPlayStreamingKeyResponseData: contentKey)
+                postToConsole("Providing Content Key Response to make protected content available for processing: \(keyResponse)")
+                keyRequest.processContentKeyResponse(keyResponse)
+                NotificationCenter.default.post(name: .HasAvailablePersistableContentKey, object: nil, userInfo: nil)
+                
+                return
+            }
+        
         /*
          Request Application Certificate
         */
-        guard let fpsCertificate = self.fpsCertificate else {
+        guard let fpsCertificate = BrightCoveContentKeyManager.fpsCertificate else {
             self.postToConsole("Application Certificate missing, will request")
             do {
                 try self.requestApplicationCertificate()
             } catch {
+                self.cancelDownloadedVideo()
+
                 self.postToConsole("Failed requesting Application Certificate: \(error)")
             }
             return
@@ -323,6 +378,8 @@ import AVFoundation
         */
         guard let contentKeyIdentifierString = keyRequest.identifier as? String else {
             self.postToConsole("ERROR: Failed to retrieve the contentIdentifier from the keyRequest!")
+            self.cancelDownloadedVideo()
+
             return
         }
 
@@ -332,17 +389,20 @@ import AVFoundation
         guard let contentIdentifier = contentKeyIdentifierString.replacingOccurrences(of: "skd://", with: "") as String?,
               let contentIdentifierData = contentIdentifier.data(using: .utf8) else {
             self.postToConsole("ERROR: Failed to retrieve or convert the contentIdentifier from the keyRequest!")
+            self.cancelDownloadedVideo()
+
             return
         }
         
         let components = contentIdentifier.components(separatedBy: ":")
         guard let keyId = components.first else {
             self.postToConsole("ERROR: Invalid contentIdentifier format!")
+            self.cancelDownloadedVideo()
+
             return
         }
         
         let keyIV = keyId
-        
         /*
          Console output
         */
@@ -432,15 +492,17 @@ import AVFoundation
                 strongSelf.pendingPersistableContentKeyIdentifiers.remove(contentKeyIdentifierString)
                 
                 strongSelf.downloadRequestedByUser = false
+                self?.cancelDownloadedVideo()
+
             }
         }
         
         /*
          Check to see if we can satisfy this key request using a saved persistent key file.
         */
-        if persistableContentKeyExistsOnDisk(withAssetName: asset.name, withContentKeyIV: keyIV) {
+        if persistableContentKeyExistsOnDisk(withAssetName: asset.name) {
             
-            let urlToPersistableKey = urlForPersistableContentKey(withAssetName: asset.name, withContentKeyIV: keyIV)
+            let urlToPersistableKey = urlForPersistableContentKey(withAssetName: asset.name)
             
             postToConsole("Persistable key already exists on disk at location: \(urlToPersistableKey.path)")
             
@@ -454,6 +516,8 @@ import AVFoundation
                 /*
                  Pass Content Id unicode string together with FPS Certificate to obtain content key request data for a specific combination of application and content.
                 */
+                self.cancelDownloadedVideo()
+
                 keyRequest.makeStreamingContentKeyRequestData(forApp: fpsCertificate,
                                                               contentIdentifier: contentIdentifierData,
                                                               options: [AVContentKeyRequestProtocolVersionsKey: [1]],
@@ -527,16 +591,20 @@ import AVFoundation
             
             else {
                postToConsole("ERROR: Failed to retrieve the contentIdentifier")
+                self.cancelDownloadedVideo()
+
                return
             }
                         
-            deletePeristableContentKey(withAssetName: asset.name, withContentKeyId: contentIdentifier)
+            deletePeristableContentKey(withAssetName: asset.name)
             
             postToConsole("Will write updated persistable content key to disk for \(asset.name)")
             
             try writePersistableContentKey(contentKey: persistableContentKey, withAssetName: asset.name, withContentKeyIV: contentIdentifier.components(separatedBy: ":")[1])
         } catch {
             postToConsole("ERROR: Failed to write updated persistable content key to disk: \(error.localizedDescription)")
+            self.cancelDownloadedVideo()
+
         }
     }
                 
@@ -548,7 +616,7 @@ import AVFoundation
     // - Throws: If an error occurs during the file write process.
     @objc public func writePersistableContentKey(contentKey: Data, withAssetName assetName: String, withContentKeyIV keyIV: String) throws {
         
-        let fileURL = urlForPersistableContentKey(withAssetName: assetName, withContentKeyIV: keyIV)
+        let fileURL = urlForPersistableContentKey(withAssetName: assetName)
         
         try contentKey.write(to: fileURL, options: Data.WritingOptions.atomicWrite)
         
@@ -559,8 +627,8 @@ import AVFoundation
     //
     // - Parameter assetName: The asset name.
     // - Returns: `true` if the key exists on disk, `false` otherwise.
-    @objc public func persistableContentKeyExistsOnDisk(withAssetName assetName: String, withContentKeyIV keyIV: String) -> Bool {
-        let contentKeyURL = urlForPersistableContentKey(withAssetName: assetName, withContentKeyIV: keyIV)
+    @objc public func persistableContentKeyExistsOnDisk(withAssetName assetName: String) -> Bool {
+        let contentKeyURL = urlForPersistableContentKey(withAssetName: assetName)
         
         return FileManager.default.fileExists(atPath: contentKeyURL.path)
     }
@@ -569,40 +637,31 @@ import AVFoundation
     //
     // - Parameter assetName: The asset name.
     // - Returns: The fully resolved file URL.
-    @objc public func urlForPersistableContentKey(withAssetName assetName: String, withContentKeyIV keyIV: String) -> URL {
-        return contentKeyDirectory.appendingPathComponent("\(assetName)-\(keyIV)-Key")
+    @objc public func urlForPersistableContentKey(withAssetName assetName: String) -> URL {
+        return contentKeyDirectory.appendingPathComponent("\(assetName)")
     }
     
     // Deletes a persistable key for a given content key identifier.
     //
     // - Parameter assetName: The asset name.
-    @objc public func deletePeristableContentKey(withAssetName assetName: String, withContentKeyId keyId: String) {
+    @objc public func deletePeristableContentKey(withAssetName assetName: String) {
         
-        /*
-         Capture everything after "sdk://" from #EXT-X-SESSION-KEY "URI" parameter.
-        */
-        guard let contentIdentifier = keyId.replacingOccurrences(of: "skd://", with: "") as String? else {
-            postToConsole("ERROR: Failed to retrieve the contentIdentifier")
-            return
-        }
-        
-        let keyIV = contentIdentifier.components(separatedBy: ":")[1]
-        
-        if persistableContentKeyExistsOnDisk(withAssetName: assetName, withContentKeyIV: keyIV) {
-            postToConsole("Deleting content key for \(assetName) - \(keyIV): Persistable content key exists on disk")
+   
+        if persistableContentKeyExistsOnDisk(withAssetName: assetName) {
+            postToConsole("Deleting content key for \(assetName) ")
         } else {
-            postToConsole("Deleting content key for \(assetName) - \(keyIV): No persistable content key exists on disk")
+            postToConsole("Deleting content key for \(assetName) ")
             return
         }
         
-        let contentKeyURL = urlForPersistableContentKey(withAssetName: assetName, withContentKeyIV: keyIV)
+        let contentKeyURL = urlForPersistableContentKey(withAssetName: assetName)
         
         do {
             try FileManager.default.removeItem(at: contentKeyURL)
             
-            UserDefaults.standard.removeObject(forKey: "\(assetName)-\(keyIV)-Key")
+            UserDefaults.standard.removeObject(forKey: "\(assetName)")
             
-            postToConsole("Presistable Key for \(assetName)-\(keyIV) was deleted")
+            postToConsole("Presistable Key for \(assetName)")
         } catch {
             print("An error occured removing the persisted content key: \(error)")
         }
@@ -615,8 +674,10 @@ import AVFoundation
             postToConsole("ERROR: missingApplicationCertificateUrl")
             throw ProgramError.missingApplicationCertificateUrl
         }
-         
-        let (data, response, error) = URLSession.shared.synchronousDataTask(urlRequest: URLRequest(url: url))
+        let urlRequest = URLRequest(url: url)
+            let (data, response, error) = NetworkManager.shared.synchronousDataTask(urlRequest: urlRequest)
+
+    
         
         if let error = error {
             self.postToConsole("ERROR: Error getting FPS Certificate: \(error)")
@@ -638,7 +699,7 @@ import AVFoundation
 
           // Assign the certificate data to fpsCertificate
         if(responseData.count > 0){
-            self.fpsCertificate = responseData
+            BrightCoveContentKeyManager.fpsCertificate = responseData
 
         }
 
@@ -661,13 +722,13 @@ import AVFoundation
       - Parameter asset: The `Asset` value to remove keys for.
     */
     @objc public func deleteAllPeristableContentKeys(forAsset asset: CustomAsset) {
-        for contentKeyId in asset.contentKeyIdList {
-            deletePeristableContentKey(withAssetName: asset.name, withContentKeyId: contentKeyId)
-        }
+            deletePeristableContentKey(withAssetName: asset.name)
+        
     }
     
 
 
+    
     @objc public func requestContentKeyFromKeySecurityModule(spcData: Data) throws -> Data {
         var ckcData: Data? = nil
         
@@ -767,4 +828,33 @@ import AVFoundation
         return ckcData!
     }
 
+}
+
+
+
+@objc public class DownloadContentKeyManager: BrightCoveContentKeyManager {
+    
+    @objc public static let sharedManager = DownloadContentKeyManager()
+
+    @objc override public func createContentKeySession() {
+        if contentKeySession == nil {
+            contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
+        }
+        
+        contentKeySession?.setDelegate(self, queue: DispatchQueue(label: "\(Bundle.main.bundleIdentifier!).DownloadContentKeyDelegateQueue"))
+    }
+}
+
+
+@objc public class PlayContentKeyManager: BrightCoveContentKeyManager {
+    
+    @objc public static let sharedManager = PlayContentKeyManager()
+
+    @objc override public func createContentKeySession() {
+        if contentKeySession == nil {
+            contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
+        }
+        
+        contentKeySession?.setDelegate(self, queue: DispatchQueue(label: "\(Bundle.main.bundleIdentifier!).ContentKeyDelegateQueue"))
+    }
 }
