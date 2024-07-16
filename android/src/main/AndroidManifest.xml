@@ -8,7 +8,7 @@
     <application>
 
         <service android:name=".common.MyDownloadService"
-            android:foregroundServiceType="mediaPlayback"
+            android:foregroundServiceType="mediaPlayback|location|dataSync"
             android:enabled="true"
             android:exported="false">
 

@@ -5,11 +5,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-import android.net.Uri
 import android.os.Build
 import android.util.Log
-import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.media3.common.util.NotificationUtil
 import androidx.media3.common.util.Util
@@ -17,21 +14,13 @@ import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
 import androidx.media3.exoplayer.offline.DownloadService
-import androidx.media3.exoplayer.offline.DownloadService.DEFAULT_FOREGROUND_NOTIFICATION_UPDATE_INTERVAL
-import androidx.media3.exoplayer.offline.DownloadService.startForeground
 import androidx.media3.exoplayer.scheduler.PlatformScheduler
-import com.google.common.util.concurrent.Service
-import com.google.gson.Gson
-import com.google.gson.JsonObject
-
 import com.jhomlala.better_player.R
 import com.jhomlala.better_player.common.DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID
-import io.flutter.plugin.common.EventChannel
-import io.flutter.plugin.common.MethodChannel
+
 
 private const val JOB_ID = 8888
 private const val FOREGROUND_NOTIFICATION_ID = 8989
-
 
 class MyDownloadService : DownloadService(
     FOREGROUND_NOTIFICATION_ID,
@@ -41,7 +30,6 @@ class MyDownloadService : DownloadService(
 ) {
 
     override fun getDownloadManager(): DownloadManager {
-
         // This will only happen once, because getDownloadManager is guaranteed to be called only once
         // in the life cycle of the process.
         val downloadManager: DownloadManager = DownloadUtil.getDownloadManager(this)
@@ -75,26 +63,26 @@ class MyDownloadService : DownloadService(
             downloads,
             notMetRequirements
         )
-        DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(downloads));
+        DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(downloads))
 
         try {
-            // Start foreground service with media playback type
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                // Use startForeground with type on Android 12 (SDK 31) and higher
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(
                     FOREGROUND_NOTIFICATION_ID,
                     notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
                 )
             } else {
-                // Use startForeground without type for older versions
                 startForeground(FOREGROUND_NOTIFICATION_ID, notification)
             }
-        } catch (e: Exception) {
+            // Start foreground service with media playback type
+
+        } catch (e: IllegalArgumentException) {
+            Log.e("MyDownloadService", "Foreground service type mismatch", e)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 handleForegroundServiceStartException(e, notification)
             }
-
         }
 
         return notification
@@ -119,13 +107,12 @@ class MyDownloadService : DownloadService(
         val retryNotification = Notification.Builder(this, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
             .setContentTitle("Download failed")
             .setContentText("Tap to retry")
-            .setSmallIcon(   R.drawable.ic_download)
+            .setSmallIcon(R.drawable.ic_download)
             .setContentIntent(pendingIntent)
             .build()
 
         NotificationUtil.setNotification(this, FOREGROUND_NOTIFICATION_ID + 1, retryNotification)
     }
-
 
     /**
      * Creates and displays notifications for downloads when they complete or fail.
@@ -142,14 +129,13 @@ class MyDownloadService : DownloadService(
         private val context: Context = context.applicationContext
         private var nextNotificationId: Int = firstNotificationId
 
-
         override fun onDownloadChanged(
             downloadManager: DownloadManager,
             download: Download,
             finalException: Exception?
         ) {
-                        DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(List(1) { download }));
-                        
+            DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(List(1) { download }))
+
             val notification: Notification = when (download.state) {
                 Download.STATE_COMPLETED -> {
                     notificationHelper.buildDownloadCompletedNotification(
@@ -172,10 +158,6 @@ class MyDownloadService : DownloadService(
                 else -> return
             }
             NotificationUtil.setNotification(context, nextNotificationId++, notification)
-
-
         }
-
     }
-
 }
