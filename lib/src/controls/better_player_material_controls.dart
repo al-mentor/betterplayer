@@ -478,7 +478,7 @@ class _BetterPlayerMaterialControlsState
         onTap: onClicked,
         child: Padding(
           padding: const EdgeInsets.all(8),
-          child: icon!,
+          child: icon,
         ),
       ),
     );
