@@ -38,6 +38,9 @@ class BetterPlayerSubtitle {
   static BetterPlayerSubtitle _handle2LinesSubtitles(List<String> scanner) {
     try {
       final timeSplit = scanner[0].split(timerSeparator);
+      if (timeSplit.length != 2) {
+        return BetterPlayerSubtitle._();
+      }
       final start = _stringToDuration(timeSplit[0]);
       final end = _stringToDuration(timeSplit[1]);
       final texts = scanner.sublist(1, scanner.length);
