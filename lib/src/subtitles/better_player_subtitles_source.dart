@@ -38,7 +38,7 @@ class BetterPlayerSubtitlesSource {
 
   BetterPlayerSubtitlesSource({
     this.type,
-    this.name = "Default subtitles",
+    this.name ,
     this.urls,
     this.content,
     this.selectedByDefault,
@@ -51,7 +51,7 @@ class BetterPlayerSubtitlesSource {
   ///Creates list with only one subtitles
   static List<BetterPlayerSubtitlesSource> single({
     BetterPlayerSubtitlesSourceType? type,
-    String name = "Default subtitles",
+    String name = "None",
     String? url,
     String? content,
     bool? selectedByDefault,

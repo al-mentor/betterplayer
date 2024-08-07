@@ -134,14 +134,19 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
               selectedValue:
                   '${betterPlayerController!.videoPlayerController!.value.speed}x',
             ),
-          _buildDivider(betterPlayerControlsConfiguration.enableSubtitles),
-          if (betterPlayerControlsConfiguration.enableSubtitles)
+          _buildDivider(betterPlayerControlsConfiguration.enableSubtitles
+              && betterPlayerController!.betterPlayerSubtitlesSourceList.isNotEmpty),
+          if (betterPlayerControlsConfiguration.enableSubtitles
+              && betterPlayerController!.betterPlayerSubtitlesSourceList.isNotEmpty)
             _buildMoreOptionsListRow(
                 betterPlayerControlsConfiguration.subtitlesIcon,
                 translations.overflowMenuSubtitles, () {
               Navigator.of(context).pop();
               _showSubtitlesSelectionWidget();
-            }),
+            } , selectedValue:
+            getSelectedSubtitles(
+                betterPlayerController!.betterPlayerSubtitlesSource)
+            ),
           _buildDivider(betterPlayerControlsConfiguration.enableQualities),
           if (betterPlayerControlsConfiguration.enableQualities)
             _buildMoreOptionsListRow(
@@ -901,5 +906,12 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
         controlsNotVisible = notVisible;
       });
     }
+  }
+
+ String? getSelectedSubtitles(
+      BetterPlayerSubtitlesSource? subtitlesSource) {
+
+
+   return subtitlesSource?.name;
   }
 }

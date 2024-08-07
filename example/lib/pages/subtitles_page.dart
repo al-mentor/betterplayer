@@ -40,12 +40,23 @@ class _SubtitlesPageState extends State<SubtitlesPage> {
     BetterPlayerDataSource dataSource = BetterPlayerDataSource(
       BetterPlayerDataSourceType.network,
       Constants.forBiggerBlazesUrl,
-      subtitles: BetterPlayerSubtitlesSource.single(
-        type: BetterPlayerSubtitlesSourceType.file,
-        url: await Utils.getFileUrl(Constants.fileExampleSubtitlesUrl),
-        name: "My subtitles",
-        selectedByDefault: true,
-      ),
+        subtitles: [
+          BetterPlayerSubtitlesSource(
+            type: BetterPlayerSubtitlesSourceType.network,
+            name: "EN",
+            urls: [
+              "https://dl.dropboxusercontent.com/s/71nzjo2ux3evxqk/example_subtitles.srt"
+            ],
+          ),
+
+          BetterPlayerSubtitlesSource(
+            type: BetterPlayerSubtitlesSourceType.network,
+            name: "DE",
+            urls: [
+              "https://dl.dropboxusercontent.com/s/71nzjo2ux3evxqk/example_subtitles.srt"
+            ],
+          ),
+        ],
     );
     _betterPlayerController.setupDataSource(dataSource);
   }
