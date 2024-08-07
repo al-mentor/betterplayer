@@ -63,6 +63,8 @@ class BetterPlayerSubtitlesSource {
         return "Arabic";
       } else if (name!.toLowerCase().contains("en")) {
         return "English";
+      } else if (name!.toLowerCase().contains("fr")) {
+        return "French";
       } else {
         return "Default";
       }
@@ -71,6 +73,8 @@ class BetterPlayerSubtitlesSource {
         return "العربيه";
       } else if (name!.toLowerCase().contains("en")) {
         return "الإنجليزية";
+      } else if (name!.toLowerCase().contains("fr")) {
+        return "الفرنسيه";
       } else {
         return "الافتراضي";
       }
