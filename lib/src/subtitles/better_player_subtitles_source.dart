@@ -1,4 +1,6 @@
 import 'package:better_player/src/asms/better_player_asms_subtitle_segment.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:get/get.dart';
 
 import 'better_player_subtitles_source_type.dart';
 
@@ -38,7 +40,7 @@ class BetterPlayerSubtitlesSource {
 
   BetterPlayerSubtitlesSource({
     this.type,
-    this.name ,
+    this.name,
     this.urls,
     this.content,
     this.selectedByDefault,
@@ -47,6 +49,34 @@ class BetterPlayerSubtitlesSource {
     this.asmsSegmentsTime,
     this.asmsSegments,
   });
+
+  // return name depend on language
+  String? nameLanguage(BuildContext context) {
+    var lang = Localizations.localeOf(context).languageCode;
+
+    if (name == null) {
+      return name;
+    }
+
+    if (lang.contains("en")) {
+      if (name!.toLowerCase().contains("ar")) {
+        return "Arabic";
+      } else if (name!.toLowerCase().contains("en")) {
+        return "English";
+      } else {
+        return "Default";
+      }
+    } else if (lang.contains("ar")) {
+      if (name!.toLowerCase().contains("ar")) {
+        return "العربيه";
+      } else if (name!.toLowerCase().contains("en")) {
+        return "الإنجليزية";
+      } else {
+        return "الافتراضي";
+      }
+    }
+    return name;
+  }
 
   ///Creates list with only one subtitles
   static List<BetterPlayerSubtitlesSource> single({

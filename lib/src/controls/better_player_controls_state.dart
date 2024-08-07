@@ -494,7 +494,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
             Text(
               subtitlesSource.type == BetterPlayerSubtitlesSourceType.none
                   ? betterPlayerController!.translations.generalNone
-                  : subtitlesSource.name ??
+                  : subtitlesSource.nameLanguage(context) ??
                       betterPlayerController!.translations.generalDefault,
               style: _getOverflowMenuElementTextStyle(isSelected),
             ),
@@ -912,6 +912,6 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       BetterPlayerSubtitlesSource? subtitlesSource) {
 
 
-   return subtitlesSource?.name;
+   return subtitlesSource?.nameLanguage(context);
   }
 }
