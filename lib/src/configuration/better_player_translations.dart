@@ -3,6 +3,7 @@ class BetterPlayerTranslations {
   final String languageCode;
   final String generalDefaultError;
   final String generalNone;
+  final String off;
   final String generalDefault;
   final String generalRetry;
   final String playlistLoadingNextVideo;
@@ -30,6 +31,7 @@ class BetterPlayerTranslations {
     this.upToDesc = "Up To",
     this.languageCode = "en",
     this.generalDefaultError = "Video can't be played",
+    this.off = "OFF",
     this.generalNone = "None",
     this.generalDefault = "Default",
     this.generalRetry = "Retry",
@@ -104,6 +106,7 @@ class BetterPlayerTranslations {
       languageCode: "ar",
       generalDefaultError: "لا يمكن تشغيل الفيديو",
       generalNone: "لا يوجد",
+      off: "إيقاف",
       generalDefault: "الاساسي",
       generalRetry: "اعادة المحاوله",
       playlistLoadingNextVideo: "تحميل الفيديو التالي",

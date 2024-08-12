@@ -493,7 +493,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
             const SizedBox(width: 16),
             Text(
               subtitlesSource.type == BetterPlayerSubtitlesSourceType.none
-                  ? betterPlayerController!.translations.generalNone
+                  ? betterPlayerController!.translations.off
                   : subtitlesSource.nameLanguage(context) ??
                       betterPlayerController!.translations.generalDefault,
               style: _getOverflowMenuElementTextStyle(isSelected),
