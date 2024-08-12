@@ -479,25 +479,32 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget>
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        child: Row(
+        child: Column(
           children: [
-            SizedBox(width: isSelected ? 8 : 16),
-            Visibility(
-              visible: isSelected,
-              child: Image.asset(
-                "assets/check_blue.png",
-                height: 25.0,
-                width: 25.0,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    subtitlesSource.type == BetterPlayerSubtitlesSourceType.none
+                        ? betterPlayerController!.translations.off
+                        : subtitlesSource.nameLanguage(context) ??
+                            betterPlayerController!.translations.generalDefault,
+                    style: _getOverflowMenuElementTextStyle(isSelected),
+                  ),
+                  Visibility(
+                    visible: isSelected,
+                    child: Image.asset(
+                      "assets/check_blue.png",
+                      height: 25.0,
+                      width: 25.0,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 16),
-            Text(
-              subtitlesSource.type == BetterPlayerSubtitlesSourceType.none
-                  ? betterPlayerController!.translations.off
-                  : subtitlesSource.nameLanguage(context) ??
-                      betterPlayerController!.translations.generalDefault,
-              style: _getOverflowMenuElementTextStyle(isSelected),
-            ),
+            _buildDivider(true),
           ],
         ),
       ),
