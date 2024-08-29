@@ -173,7 +173,7 @@ abstract class BetterPlayerControlsState<T extends StatefulWidget> extends State
     void Function() onTap, {
     String? selectedValue,
   }) {
-    selectedValue ??= betterPlayerController!.translations.qualityAuto;
+    selectedValue ??= betterPlayerController!.translations.off;
     return BetterPlayerMaterialClickableWidget(
       onTap: onTap,
       child: Padding(
