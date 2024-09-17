@@ -28,11 +28,13 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.LoadControl
 import androidx.media3.exoplayer.dash.DashMediaSource
@@ -46,6 +48,9 @@ import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
 import androidx.media3.exoplayer.drm.LocalMediaDrmCallback
 import androidx.media3.exoplayer.drm.UnsupportedDrmException
 import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.mediacodec.MediaCodecInfo
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
+import androidx.media3.exoplayer.mediacodec.MediaCodecUtil
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.smoothstreaming.DefaultSsChunkSource
@@ -73,11 +78,12 @@ import io.flutter.plugin.common.EventChannel.EventSink
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.view.TextureRegistry.SurfaceTextureEntry
 import java.io.File
-import java.util.*
+import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
 
 
+@UnstableApi
 internal class BetterPlayer(
     context: Context,
     private val eventChannel: EventChannel,
@@ -114,12 +120,38 @@ internal class BetterPlayer(
             this.customDefaultLoadControl.bufferForPlaybackAfterRebufferMs
         )
         loadControl = loadBuilder.build()
-        exoPlayer =
-            ExoPlayer.Builder(context).setTrackSelector(trackSelector).setLoadControl(loadControl)
-                .setMediaSourceFactory(
-                    DefaultMediaSourceFactory(DownloadUtil.getReadOnlyDataSourceFactory(context))
-                )
-                .build()
+
+
+        val codecSelector =
+            MediaCodecSelector { mimeType: String?, requiresSecureDecoder: Boolean, requiresTunnelingDecoder: Boolean ->
+                val codecInfos =
+                    MediaCodecUtil.getDecoderInfos(
+                        mimeType!!, requiresSecureDecoder, requiresTunnelingDecoder
+                    )
+                // Filter out secure decoders
+                val filteredCodecInfos: MutableList<MediaCodecInfo> =
+                    ArrayList()
+                for (info in codecInfos) {
+                    if (!info.name.contains("secure")) {
+                        filteredCodecInfos.add(info)
+                    }
+                }
+                filteredCodecInfos
+            }
+
+        val renderersFactory = DefaultRenderersFactory(context)
+            .setMediaCodecSelector(codecSelector)
+
+        exoPlayer = ExoPlayer.Builder(context)
+            .setTrackSelector(trackSelector)
+            .setLoadControl(loadControl)
+            .setMediaSourceFactory(
+                DefaultMediaSourceFactory(DownloadUtil.getReadOnlyDataSourceFactory(context))
+            )
+            .setRenderersFactory(renderersFactory)
+
+            .build()
+
         workManager = WorkManager.getInstance(context)
         workerObserverMap = HashMap()
         setupVideoPlayer(eventChannel, textureEntry, result)

@@ -17,6 +17,7 @@ import androidx.media3.common.TrackGroup
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.Assertions
 import androidx.media3.common.util.ConditionVariable
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -50,6 +51,7 @@ private const val TAG = "DownloadTracker"
 private const val DEFAULT_BITRATE = 500_000
 
 /** Tracks media that has been downloaded.  */
+@UnstableApi
 class DownloadTracker(
     context: Context,
     private val httpDataSourceFactory: HttpDataSource.Factory,

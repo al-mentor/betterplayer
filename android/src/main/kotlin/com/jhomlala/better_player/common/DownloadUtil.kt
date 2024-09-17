@@ -1,8 +1,9 @@
-package com.jhomlala.better_player.common
+ package com.jhomlala.better_player.common
 
 
 import android.content.Context
 import android.net.Uri
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.DatabaseProvider
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.DataSource
@@ -13,6 +14,9 @@ import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
+import androidx.media3.exoplayer.mediacodec.MediaCodecInfo
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
+import androidx.media3.exoplayer.mediacodec.MediaCodecUtil
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
@@ -22,8 +26,7 @@ import io.flutter.plugin.common.EventChannel.EventSink
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
-
-
+ @UnstableApi
 object DownloadUtil {
     const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "download_channel"
     private const val TAG = "DownloadUtil"
@@ -110,6 +113,7 @@ object DownloadUtil {
             )
             dataSourceFactory = CacheDataSource.Factory()
                 .setCache(getDownloadCache(contextApplication))
+
                 .setUpstreamDataSourceFactory(upstreamFactory)
                 .setCacheWriteDataSinkFactory(null)
                 .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
