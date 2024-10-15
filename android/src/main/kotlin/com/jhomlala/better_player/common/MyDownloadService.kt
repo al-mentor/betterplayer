@@ -72,7 +72,7 @@ class MyDownloadService : DownloadService(
                 startForeground(
                     FOREGROUND_NOTIFICATION_ID,
                     notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
                 )
             } else {
                 startForeground(FOREGROUND_NOTIFICATION_ID, notification)
