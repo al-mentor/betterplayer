@@ -8,7 +8,7 @@
     <application>
 
         <service android:name=".common.MyDownloadService"
-            android:foregroundServiceType="location|dataSync"
+            android:foregroundServiceType="dataSync"
             android:enabled="true"
             android:exported="false">
 
