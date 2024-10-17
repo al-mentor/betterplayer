@@ -19,12 +19,15 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
-import androidx.media3.exoplayer.offline.DownloadService
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.jhomlala.better_player.BetterPlayerCache.releaseCache
 import com.jhomlala.better_player.common.DownloadTracker
 import com.jhomlala.better_player.common.DownloadUtil
 import com.jhomlala.better_player.common.MediaItemTag
-import com.jhomlala.better_player.common.MyDownloadService
+import com.jhomlala.better_player.common.workers.StopDownloadWorker
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -418,25 +421,24 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
 
-    private fun cancelDownload(
-        call: MethodCall,
-        result: MethodChannel.Result,
-    ) {
-        val uri = call.argument<String?>(
-            URI_PARAMETER
-        )
+private fun cancelDownload(
+    call: MethodCall,
+    result: MethodChannel.Result,
+) {
+    val uri = call.argument<String?>(URI_PARAMETER)
 
-        val download = DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity())
-            .getDownload(Uri.parse(uri));
-        if (download != null) DownloadService.sendSetStopReason(
-            ActivityUtils.getTopActivity(),
-            MyDownloadService::class.java,
-            download.request.id,
-            Download.STATE_STOPPED,
-            false
-        )
-        result.success(null)
+    val download = DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity())
+        .getDownload(Uri.parse(uri))
+    if (download != null) {
+        val workRequest = OneTimeWorkRequestBuilder<StopDownloadWorker>()
+            .setInputData(workDataOf("downloadId" to download.request.id))
+            .build()
+
+        WorkManager.getInstance(ActivityUtils.getTopActivity())
+            .enqueueUniqueWork("StopDownloadWork_${download.request.id}", ExistingWorkPolicy.REPLACE, workRequest)
     }
+    result.success(null)
+}
 
     private fun download(
         call: MethodCall,

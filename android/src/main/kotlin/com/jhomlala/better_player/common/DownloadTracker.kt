@@ -1,15 +1,18 @@
-package com.jhomlala.better_player.common
+ package com.jhomlala.better_player.common
 
 import android.app.AlertDialog
 import android.content.Context
 import android.net.Uri
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Parcel
 import android.os.StatFs
+import android.util.Base64
 import android.util.Log
 import android.view.View
 import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
@@ -28,13 +31,16 @@ import androidx.media3.exoplayer.offline.DownloadHelper
 import androidx.media3.exoplayer.offline.DownloadIndex
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadRequest
-import androidx.media3.exoplayer.offline.DownloadService
 import androidx.media3.exoplayer.source.TrackGroupArray
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
-import com.google.gson.Gson
-import com.google.gson.JsonObject
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.jhomlala.better_player.R
-import io.flutter.plugin.common.EventChannel
+import com.jhomlala.better_player.common.workers.DownloadWorker
+import com.jhomlala.better_player.common.workers.PauseResumeDownloadWorker
+import com.jhomlala.better_player.common.workers.RemoveDownloadWorker
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -186,23 +192,27 @@ class DownloadTracker(
             when (it.itemId) {
                 R.id.cancel_download, R.id.delete_download -> removeDownload(download.request.uri)
                 R.id.resume_download -> {
-                    DownloadService.sendSetStopReason(
-                        context,
-                        MyDownloadService::class.java,
-                        download.request.id,
-                        Download.STOP_REASON_NONE,
-                        true
-                    )
+                    val workRequest = OneTimeWorkRequestBuilder<PauseResumeDownloadWorker>()
+                        .setInputData(workDataOf(
+                            "downloadId" to download.request.id,
+                            "stopReason" to Download.STOP_REASON_NONE
+                        ))
+                        .build()
+
+                    WorkManager.getInstance(context)
+                        .enqueueUniqueWork("ResumeDownloadWork_${download.request.id}", ExistingWorkPolicy.REPLACE, workRequest)
                 }
 
                 R.id.pause_download -> {
-                    DownloadService.sendSetStopReason(
-                        context,
-                        MyDownloadService::class.java,
-                        download.request.id,
-                        Download.STATE_STOPPED,
-                        false
-                    )
+                    val workRequest = OneTimeWorkRequestBuilder<PauseResumeDownloadWorker>()
+                        .setInputData(workDataOf(
+                            "downloadId" to download.request.id,
+                            "stopReason" to Download.STATE_STOPPED
+                        ))
+                        .build()
+
+                    WorkManager.getInstance(context)
+                        .enqueueUniqueWork("PauseDownloadWork_${download.request.id}", ExistingWorkPolicy.REPLACE, workRequest)
                 }
             }
             return@setOnMenuItemClickListener true
@@ -211,13 +221,14 @@ class DownloadTracker(
     }
 
     fun removeDownload(uri: Uri?) {
+        val download = getDownload(uri)
+        download?.let {
+            val workRequest = OneTimeWorkRequestBuilder<RemoveDownloadWorker>()
+                .setInputData(workDataOf("downloadId" to download.request.id))
+                .build()
 
-        val downlaod = getDownload(uri);
-
-        downlaod?.let {
-            DownloadService.sendRemoveDownload(
-                applicationContext, MyDownloadService::class.java, downlaod.request.id, false
-            )
+            WorkManager.getInstance(applicationContext)
+                .enqueueUniqueWork("RemoveDownloadWork_${download.request.id}", ExistingWorkPolicy.REPLACE, workRequest)
         }
     }
 
@@ -226,14 +237,16 @@ class DownloadTracker(
         for (uri in downloadUris) {
             val download = downloads[uri]
             download?.let {
-                DownloadService.sendRemoveDownload(
-                    applicationContext, MyDownloadService::class.java, download.request.id, false
-                )
+                val workRequest = OneTimeWorkRequestBuilder<RemoveDownloadWorker>()
+                    .setInputData(workDataOf("downloadId" to download.request.id))
+                    .build()
+
+                WorkManager.getInstance(applicationContext)
+                    .enqueueUniqueWork("RemoveDownloadWork_${download.request.id}", ExistingWorkPolicy.REPLACE, workRequest)
                 downloads.remove(uri)
             }
         }
     }
-
 
     private fun loadDownloads() {
         try {
@@ -539,11 +552,18 @@ class DownloadTracker(
 
         // Internal methods.
         private fun startDownload(downloadRequest: DownloadRequest = buildDownloadRequest()) {
-            DownloadService.sendAddDownload(
-                applicationContext, MyDownloadService::class.java, downloadRequest, true
-            )
-        }
+            val parcel = Parcel.obtain()
+            downloadRequest.writeToParcel(parcel, 0)
+            val downloadRequestBytes = parcel.marshall()
+            parcel.recycle()
 
+            val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
+                .setInputData(workDataOf("downloadRequest" to downloadRequestBytes))
+                .build()
+
+            WorkManager.getInstance(applicationContext)
+                .enqueueUniqueWork("DownloadWork", ExistingWorkPolicy.REPLACE, workRequest)
+        }
         private fun buildDownloadRequest(): DownloadRequest {
             return downloadHelper.getDownloadRequest(
                 (mediaItem.localConfiguration?.tag as MediaItemTag).title,
