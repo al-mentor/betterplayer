@@ -4,6 +4,7 @@
 package com.jhomlala.better_player
 
 import android.app.Activity
+import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -12,6 +13,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.LongSparseArray
+import androidx.lifecycle.Lifecycle
 import com.blankj.utilcode.util.ActivityUtils
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -648,11 +650,15 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     private fun enablePictureInPicture(player: BetterPlayer) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             player.setupMediaSession(flutterState!!.applicationContext)
-            activity!!.enterPictureInPictureMode()
-            startPictureInPictureListenerTimer(player)
-            player.onPictureInPictureStatusChanged(true)
+
+
+               activity!!.enterPictureInPictureMode(PictureInPictureParams.Builder().build())
+                startPictureInPictureListenerTimer(player)
+                player.onPictureInPictureStatusChanged(true)
+
         }
     }
+
 
     private fun disablePictureInPicture(player: BetterPlayer) {
         stopPipHandler()
