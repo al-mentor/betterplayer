@@ -300,32 +300,32 @@ class _BetterPlayerMaterialControlsState
   Widget _buildPipButtonWrapperWidget(
       bool hideStuff, void Function() onPlayerHide) {
     //  if (!Platform.isIOS) {
-    return const SizedBox.shrink();
-    //}
-    // return FutureBuilder<bool>(
-    //   future: betterPlayerController!.isPictureInPictureSupported(),
-    //   builder: (context, snapshot) {
-    //     final bool isPipSupported = snapshot.data ?? false;
-    //     if (isPipSupported &&
-    //         _betterPlayerController!.betterPlayerGlobalKey != null) {
-    //       return AnimatedOpacity(
-    //         opacity: hideStuff ? 0.0 : 1.0,
-    //         duration: betterPlayerControlsConfiguration.controlsHideTime,
-    //         onEnd: onPlayerHide,
-    //         child: Container(
-    //           child: Row(
-    //             mainAxisAlignment: MainAxisAlignment.end,
-    //             children: [
-    //               _buildPipButton(),
-    //             ],
-    //           ),
-    //         ),
-    //       );
-    //     } else {
-    //       return const SizedBox();
-    //     }
-    //   },
-    // );
+    // return const SizedBox.shrink();
+    // }
+    return FutureBuilder<bool>(
+      future: betterPlayerController!.isPictureInPictureSupported(),
+      builder: (context, snapshot) {
+        final bool isPipSupported = snapshot.data ?? false;
+        if (isPipSupported &&
+            _betterPlayerController!.betterPlayerGlobalKey != null) {
+          return AnimatedOpacity(
+            opacity: hideStuff ? 0.0 : 1.0,
+            duration: betterPlayerControlsConfiguration.controlsHideTime,
+            onEnd: onPlayerHide,
+            child: Container(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _buildPipButton(),
+                ],
+              ),
+            ),
+          );
+        } else {
+          return const SizedBox();
+        }
+      },
+    );
   }
 
   Widget _buildMoreButton() {

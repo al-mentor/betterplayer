@@ -639,11 +639,23 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 
 - (void)setupPipController {
     if (@available(iOS 9.0, *)) {
-        [[AVAudioSession sharedInstance] setActive: YES error: nil];
+        NSError *error = nil;
+        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:&error];
+        if (error) {
+            NSLog(@"Error setting AVAudioSession category: %@", error.localizedDescription);
+        }
+        
+        [[AVAudioSession sharedInstance] setActive:YES error:&error];
+        if (error) {
+            NSLog(@"Error activating AVAudioSession: %@", error.localizedDescription);
+        }
+        
         [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
+        
         if (!_pipController && self._playerLayer && [AVPictureInPictureController isPictureInPictureSupported]) {
             _pipController = [[AVPictureInPictureController alloc] initWithPlayerLayer:self._playerLayer];
             _pipController.delegate = self;
+
         }
     } else {
         // Fallback on earlier versions

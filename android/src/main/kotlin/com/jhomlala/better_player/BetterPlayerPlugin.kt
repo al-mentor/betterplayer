@@ -4,8 +4,10 @@
 package com.jhomlala.better_player
 
 import android.app.Activity
+import android.app.AppOpsManager
 import android.app.PictureInPictureParams
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -14,6 +16,7 @@ import android.os.Looper
 import android.util.Log
 import android.util.LongSparseArray
 import androidx.lifecycle.Lifecycle
+import androidx.media3.common.AudioAttributes
 import com.blankj.utilcode.util.ActivityUtils
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -23,6 +26,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadService
 import com.jhomlala.better_player.BetterPlayerCache.releaseCache
+import com.jhomlala.better_player.common.BetterPlayerService
 import com.jhomlala.better_player.common.DownloadTracker
 import com.jhomlala.better_player.common.DownloadUtil
 import com.jhomlala.better_player.common.MediaItemTag
@@ -43,6 +47,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.lang.Exception
+import kotlin.text.compareTo
 
 /**
  * Android platform implementation of the VideoPlayerPlugin.
@@ -60,7 +65,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     private var pipRunnable: Runnable? = null
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
         val loader = FlutterLoader()
-        flutterState = FlutterState(binding.applicationContext,
+        flutterState = FlutterState(
+            binding.applicationContext,
             binding.binaryMessenger,
             object : KeyForAssetFn {
                 override fun get(asset: String?): String {
@@ -647,18 +653,48 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         }
     }
 
-    private fun enablePictureInPicture(player: BetterPlayer) {
+
+
+     private fun enablePictureInPicture(player: BetterPlayer) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            player.setupMediaSession(flutterState!!.applicationContext)
+            player.setupMediaSession(ActivityUtils.getTopActivity().applicationContext)
 
 
-               activity!!.enterPictureInPictureMode(PictureInPictureParams.Builder().build())
+//            val intent = Intent(activity, BetterPlayerService::class.java)
+//            activity?.startForegroundService(intent)
+
+            val manager = ActivityUtils.getTopActivity()
+                .getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val method = AppOpsManager::class.java.getDeclaredMethod(
+                "checkOpNoThrow",
+                String::class.java,
+                Int::class.java,
+                String::class.java
+            )
+            val modeAllowed = method.invoke(
+                manager,
+                AppOpsManager.OPSTR_PICTURE_IN_PICTURE,
+                android.os.Process.myUid(),
+                ActivityUtils.getTopActivity().packageName
+            ) as Int
+            if (modeAllowed == AppOpsManager.MODE_ALLOWED) {
+                activity!!.enterPictureInPictureMode(PictureInPictureParams.Builder().build())
                 startPictureInPictureListenerTimer(player)
                 player.onPictureInPictureStatusChanged(true)
-
+            } else {
+                requestPictureInPicturePermission()
+            }
         }
     }
 
+    private fun requestPictureInPicturePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            activity?.requestPermissions(
+                arrayOf(android.Manifest.permission.SYSTEM_ALERT_WINDOW),
+                1234
+            )
+        }
+    }
 
     private fun disablePictureInPicture(player: BetterPlayer) {
         stopPipHandler()
@@ -671,7 +707,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             pipHandler = Handler(Looper.getMainLooper())
             pipRunnable = Runnable {
-                if (activity!!.isInPictureInPictureMode) {
+                if (ActivityUtils.getTopActivity().isInPictureInPictureMode) {
                     pipHandler!!.postDelayed(pipRunnable!!, 100)
                 } else {
                     player.onPictureInPictureStatusChanged(false)
