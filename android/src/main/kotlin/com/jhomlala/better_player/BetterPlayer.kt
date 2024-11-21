@@ -800,6 +800,7 @@ internal class BetterPlayer(
     }
 
     fun disposeMediaSession() {
+        
         if (mediaSession != null) {
             mediaSession?.release()
         }
@@ -993,13 +994,6 @@ internal class BetterPlayer(
         }
     }
 
-    override fun onDestroy() {
-        mediaSession?.run {
-            player.release()
-            release()
-            mediaSession = null
-        }
-        super.onDestroy()
-    }
+
 
 }
