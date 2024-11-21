@@ -787,7 +787,7 @@ internal class BetterPlayer(
             // Create and initialize the MediaSession with the activityPendingIntent
             return MediaSession.Builder(context, exoPlayer)
                 .setSessionActivity(activityPendingIntent)  // Use activity PendingIntent here
-                .setId(uniqueId)
+                .setId(TAG)
                 .build()
         }
         return null
@@ -914,7 +914,7 @@ internal class BetterPlayer(
     }
 
     companion object {
-        var uniqueId: String = UUID.randomUUID().toString()
+        String uniqueId = UUID.randomUUID().toString();
         private const val TAG = "BetterPlayer"
         private const val FORMAT_SS = "ss"
         private const val FORMAT_DASH = "dash"
@@ -991,6 +991,15 @@ internal class BetterPlayer(
             }
             result.success(null)
         }
+    }
+
+    override fun onDestroy() {
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
+        super.onDestroy()
     }
 
 }
