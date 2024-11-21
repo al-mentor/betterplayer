@@ -915,8 +915,7 @@ internal class BetterPlayer(
     }
 
     companion object {
-        String uniqueId = UUID.randomUUID().toString();
-        private const val TAG = "BetterPlayer"
+         private const val TAG = "BetterPlayer"
         private const val FORMAT_SS = "ss"
         private const val FORMAT_DASH = "dash"
         private const val FORMAT_HLS = "hls"
