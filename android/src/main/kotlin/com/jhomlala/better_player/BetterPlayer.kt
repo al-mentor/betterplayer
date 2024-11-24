@@ -764,16 +764,30 @@ internal class BetterPlayer(
         mediaSession?.release()
         context?.let {
 
-            val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
-            val pendingIntent = PendingIntent.getBroadcast(
+             val activityIntent = Intent(context, ActivityUtils.getTopActivity()!!.javaClass)
+            val activityPendingIntent = PendingIntent.getActivity(
                 context,
-                0, mediaButtonIntent,
-                PendingIntent.FLAG_IMMUTABLE
+                0,
+                activityIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-         val mediaSession = MediaSession.Builder(context, exoPlayer).build()
+  val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON).setClass(
+                context, MediaButtonReceiver::class.java
+            )
+            val mediaButtonPendingIntent = PendingIntent.getBroadcast(
+                context,
+                0,
+                mediaButtonIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+             mediaSession.isActive = true
+              return MediaSession.Builder(context, exoPlayer)
+                .setSessionActivity(activityPendingIntent)  // Use activity PendingIntent here
+                .setId(TAG)
+                .build()
         
 
-            return mediaSession
+          
         }
         return null
 
