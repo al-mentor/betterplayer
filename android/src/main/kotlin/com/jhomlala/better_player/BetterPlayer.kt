@@ -83,7 +83,6 @@ import java.io.File
 import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
-import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 
 
 @UnstableApi
@@ -779,9 +778,7 @@ internal class BetterPlayer(
                 }
             })
             mediaSession.isActive = true
-            val mediaSessionConnector = MediaSessionConnector(mediaSession)
-            mediaSessionConnector.setPlayer(exoPlayer)
-            this.mediaSession = mediaSession
+
             return mediaSession
         }
         return null
