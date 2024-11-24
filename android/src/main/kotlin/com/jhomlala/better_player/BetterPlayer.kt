@@ -784,7 +784,7 @@ internal class BetterPlayer(
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            disposeMediaSession();
+            disposeMediaSession()
 
             // Create and initialize the MediaSession with the activityPendingIntent
             return MediaSession.Builder(context, exoPlayer)
