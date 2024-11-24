@@ -780,10 +780,10 @@ internal class BetterPlayer(
                 mediaButtonIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-             mediaSession.setActive(true)
+
               return MediaSession.Builder(context, exoPlayer)
                 .setSessionActivity(activityPendingIntent)  // Use activity PendingIntent here
-                .setId(TAG)
+                .setId(java.util.UUID.randomUUID().toString())
                 .build()
         
 
