@@ -13,8 +13,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.support.v4.media.session.MediaSessionCompat
-import android.util.Log
+ import android.util.Log
 import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.Observer
@@ -760,7 +759,7 @@ internal class BetterPlayer(
      * @param context                - android context
      * @return - configured MediaSession instance
      */
-    fun setupMediaSession(context: Context?): MediaSessionCompat? {
+    fun setupMediaSession(context: Context?): MediaSession? {
         if (exoPlayer == null) return null
         mediaSession?.release()
         context?.let {
@@ -772,7 +771,7 @@ internal class BetterPlayer(
                 PendingIntent.FLAG_IMMUTABLE
             )
          val mediaSession = MediaSession.Builder(context, exoPlayer).build()
-            mediaSession.isActive = true
+        
 
             return mediaSession
         }
