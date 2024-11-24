@@ -784,6 +784,8 @@ internal class BetterPlayer(
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
+            disposeMediaSession();
+
             // Create and initialize the MediaSession with the activityPendingIntent
             return MediaSession.Builder(context, exoPlayer)
                 .setSessionActivity(activityPendingIntent)  // Use activity PendingIntent here
@@ -802,9 +804,11 @@ internal class BetterPlayer(
     fun disposeMediaSession() {
         
         if (mediaSession != null) {
-            mediaSession?.release()
+            mediaSession!.release()
+               mediaSession = null
+            
         }
-        mediaSession = null
+     
     }
 
     fun setAudioTrack(name: String, index: Int) {
