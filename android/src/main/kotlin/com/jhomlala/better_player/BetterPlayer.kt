@@ -13,6 +13,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.support.v4.media.session.MediaSessionCompat
 import android.util.Log
 import android.view.Surface
 import androidx.annotation.RequiresApi
@@ -82,6 +83,7 @@ import java.io.File
 import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
+import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 
 
 @UnstableApi
