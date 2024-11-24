@@ -759,40 +759,31 @@ internal class BetterPlayer(
      * @param context                - android context
      * @return - configured MediaSession instance
      */
-    fun setupMediaSession(context: Context?): MediaSession? {
-        if (exoPlayer == null) return null
+    fun setupMediaSession(context: Context?): MediaSessionCompat? {
         mediaSession?.release()
-
         context?.let {
-            // Set up an intent to open MainActivity (or a relevant activity for playback control)
-            val activityIntent = Intent(context, ActivityUtils.getTopActivity()!!.javaClass)
-            val activityPendingIntent = PendingIntent.getActivity(
+
+            val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
+            val pendingIntent = PendingIntent.getBroadcast(
                 context,
-                0,
-                activityIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                0, mediaButtonIntent,
+                PendingIntent.FLAG_IMMUTABLE
             )
-
-            // Optional: Configure MediaButtonReceiver to handle media button intents
-            val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON).setClass(
-                context, MediaButtonReceiver::class.java
-            )
-            val mediaButtonPendingIntent = PendingIntent.getBroadcast(
-                context,
-                0,
-                mediaButtonIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
-            disposeMediaSession()
-
-            // Create and initialize the MediaSession with the activityPendingIntent
-            return MediaSession.Builder(context, exoPlayer)
-                .setSessionActivity(activityPendingIntent)  // Use activity PendingIntent here
-                .setId(TAG)
-                .build()
+            val mediaSession = MediaSessionCompat(context, TAG, null, pendingIntent)
+            mediaSession.setCallback(object : MediaSessionCompat.Callback() {
+                override fun onSeekTo(pos: Long) {
+                    sendSeekToEvent(pos)
+                    super.onSeekTo(pos)
+                }
+            })
+            mediaSession.isActive = true
+            val mediaSessionConnector = MediaSessionConnector(mediaSession)
+            mediaSessionConnector.setPlayer(exoPlayer)
+            this.mediaSession = mediaSession
+            return mediaSession
         }
         return null
+
     }
 
     fun onPictureInPictureStatusChanged(inPip: Boolean) {
@@ -801,14 +792,11 @@ internal class BetterPlayer(
         eventSink.success(event)
     }
 
-    fun disposeMediaSession() {
-        
+   fun disposeMediaSession() {
         if (mediaSession != null) {
             mediaSession?.release()
-               mediaSession = null
-            
         }
-     
+        mediaSession = null
     }
 
     fun setAudioTrack(name: String, index: Int) {

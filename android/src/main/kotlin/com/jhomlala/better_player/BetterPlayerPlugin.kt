@@ -654,46 +654,12 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
 
 
-     private fun enablePictureInPicture(player: BetterPlayer) {
+      private fun enablePictureInPicture(player: BetterPlayer) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-            player.disposeMediaSession()
-            player.setupMediaSession(ActivityUtils.getTopActivity().applicationContext)
-
-
-//            val intent = Intent(activity, BetterPlayerService::class.java)
-//            activity?.startForegroundService(intent)
-
-            val manager = ActivityUtils.getTopActivity()
-                .getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-            val method = AppOpsManager::class.java.getDeclaredMethod(
-                "checkOpNoThrow",
-                String::class.java,
-                Int::class.java,
-                String::class.java
-            )
-            val modeAllowed = method.invoke(
-                manager,
-                AppOpsManager.OPSTR_PICTURE_IN_PICTURE,
-                android.os.Process.myUid(),
-                ActivityUtils.getTopActivity().packageName
-            ) as Int
-            if (modeAllowed == AppOpsManager.MODE_ALLOWED) {
-                activity!!.enterPictureInPictureMode(PictureInPictureParams.Builder().build())
-                startPictureInPictureListenerTimer(player)
-                player.onPictureInPictureStatusChanged(true)
-            } else {
-                requestPictureInPicturePermission()
-            }
-        }
-    }
-
-    private fun requestPictureInPicturePermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            activity?.requestPermissions(
-                arrayOf(android.Manifest.permission.SYSTEM_ALERT_WINDOW),
-                1234
-            )
+            player.setupMediaSession(flutterState!!.applicationContext)
+            activity!!.enterPictureInPictureMode(PictureInPictureParams.Builder().build())
+            startPictureInPictureListenerTimer(player)
+            player.onPictureInPictureStatusChanged(true)
         }
     }
 
@@ -703,7 +669,6 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         player.onPictureInPictureStatusChanged(false)
         player.disposeMediaSession()
     }
-
     private fun startPictureInPictureListenerTimer(player: BetterPlayer) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             pipHandler = Handler(Looper.getMainLooper())
