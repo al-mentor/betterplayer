@@ -804,7 +804,7 @@ internal class BetterPlayer(
     fun disposeMediaSession() {
         
         if (mediaSession != null) {
-            mediaSession!.release()
+            mediaSession?.release()
                mediaSession = null
             
         }
