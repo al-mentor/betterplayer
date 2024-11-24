@@ -656,6 +656,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
      private fun enablePictureInPicture(player: BetterPlayer) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            player.disposeMediaSession()
             player.setupMediaSession(ActivityUtils.getTopActivity().applicationContext)
 
 
