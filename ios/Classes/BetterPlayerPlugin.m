@@ -538,7 +538,13 @@ bool _remoteCommandsInitialized = false;
 
             [player setTrackParameters:width: height : bitrate];
             result(nil);
-        } else if ([@"enablePictureInPicture" isEqualToString:call.method]){
+        }
+
+        else if ([@"setupAutomaticPictureInPictureTransition" isEqualToString:call.method]) {
+            [player willStartPictureInPicture:[argsMap[@"willStartPIP"] boolValue]];
+            result(nil);
+        }
+            else if ([@"enablePictureInPicture" isEqualToString:call.method]){
             double left = [argsMap[@"left"] doubleValue];
             double top = [argsMap[@"top"] doubleValue];
             double width = [argsMap[@"width"] doubleValue];

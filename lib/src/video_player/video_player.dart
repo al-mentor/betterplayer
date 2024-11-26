@@ -255,8 +255,14 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         case VideoEventType.pipStop:
           value = value.copyWith(isPip: false);
           break;
+
+        case VideoEventType.enteringPIP:
+          break;
+        case VideoEventType.exitingPIP:
         case VideoEventType.unknown:
           break;
+
+
       }
     }
 
@@ -558,6 +564,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     if (positionInMs >= durationInMs && position.inMilliseconds == 0) {
       isPlaying = true;
     }
+
+
     if (_isDisposed) {
       return;
     }
@@ -610,6 +618,18 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// [bitrate] specifies bitrate of the selected track
   Future<void> setTrackParameters(int? width, int? height, int? bitrate) async {
     await _videoPlayerPlatform.setTrackParameters(_textureId, width, height, bitrate);
+  }
+
+
+  Future<void> setupAutomaticPictureInPictureTransition(
+      {bool? willStartPIP}) async {
+    await _videoPlayerPlatform.setupAutomaticPictureInPictureTransition(
+      textureId: textureId,
+      willStartPIP: willStartPIP,
+    );
+  }
+  void setDuration(Duration duration) {
+    value = value.copyWith(duration: duration);
   }
 
   Future<void> enablePictureInPicture({double? top, double? left, double? width, double? height}) async {

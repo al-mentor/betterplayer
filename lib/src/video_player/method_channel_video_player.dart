@@ -286,7 +286,19 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
 
     return DateTime.fromMillisecondsSinceEpoch(milliseconds);
   }
-
+  @override
+  Future<void> setupAutomaticPictureInPictureTransition({
+    int? textureId,
+    bool? willStartPIP,
+  }) async {
+    return _channel.invokeMethod<void>(
+      'setupAutomaticPictureInPictureTransition',
+      <String, dynamic>{
+        'textureId': textureId,
+        'willStartPIP': willStartPIP,
+      },
+    );
+  }
   @override
   Future<void> enablePictureInPicture(int? textureId, double? top, double? left,
       double? width, double? height) async {
@@ -494,6 +506,30 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
         case 'pipStop':
           return VideoEvent(
             eventType: VideoEventType.pipStop,
+            key: key,
+          );
+
+        case 'enteringPIP':
+          return VideoEvent(
+            eventType: VideoEventType.enteringPIP,
+            key: key,
+          );
+
+        case 'exitingPIP':
+          return VideoEvent(
+            eventType: VideoEventType.exitingPIP,
+            key: key,
+          );
+
+        case 'playInPIPTapped':
+          return VideoEvent(
+            eventType: VideoEventType.playInPIPTapped,
+            key: key,
+          );
+
+        case 'pauseInPIPTapped':
+          return VideoEvent(
+            eventType: VideoEventType.pauseInPIPTapped,
             key: key,
           );
 

@@ -166,6 +166,13 @@ abstract class VideoPlayerPlatform {
   Future<DateTime?> getAbsolutePosition(int? textureId) {
     throw UnimplementedError('getAbsolutePosition() has not been implemented.');
   }
+  Future<void> setupAutomaticPictureInPictureTransition({
+    int? textureId,
+    bool? willStartPIP,
+  }) {
+    throw UnimplementedError(
+        'setupAutomaticPictureInPictureTransition() has not been implemented.');
+  }
 
   ///Enables PiP mode.
   Future<void> enablePictureInPicture(int? textureId, double? top, double? left,
@@ -501,6 +508,18 @@ enum VideoEventType {
 
   /// An unknown event has been received.
   unknown,
+
+  /// will start Picture in picture
+  enteringPIP,
+
+  /// will stop Picture in picture
+  exitingPIP,
+
+  /// When tap custom play button in Picture in picture mode
+  playInPIPTapped,
+
+  /// When tap custom pause button in Picture in picture mode
+  pauseInPIPTapped,
 }
 
 /// Describes a discrete segment of time within a video using a [start] and

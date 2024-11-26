@@ -41,6 +41,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic) bool isStalledCheckStarted;
 @property(nonatomic) float playerRate;
 @property(nonatomic) int overriddenDuration;
+@property(nonatomic) BetterPlayerView* _betterPlayerView;
+@property(nonatomic) bool _willStartPictureInPicture;
 @property(nonatomic) AVPlayerTimeControlStatus lastAvPlayerTimeControlStatus;
 - (void)play;
 - (void)pause;
@@ -59,6 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void) setAudioTrack:(NSString*) name index:(int) index;
 - (void)setTrackParameters:(int) width: (int) height: (int)bitrate;
 - (void) enablePictureInPicture: (CGRect) frame;
+-(void)willStartPictureInPicture:(bool)willStart;
 - (void)setPictureInPicture:(BOOL)pictureInPicture;
 - (void)disablePictureInPicture;
 - (int64_t)absolutePosition;
