@@ -86,8 +86,10 @@ bool _remoteCommandsInitialized = false;
 }
 
 - (void) setupRemoteNotification :(BetterPlayer*) player{
+    [self disposeNotificationData:_notificationPlayer];
+
     _notificationPlayer = player;
-    [self stopOtherUpdateListener:player];
+//    [self stopOtherUpdateListener:player];
     NSDictionary* dataSource = [_dataSourceDict objectForKey:[self getTextureId:player]];
     BOOL showNotification = false;
     id showNotificationObject = [dataSource objectForKey:@"showNotification"];
@@ -119,6 +121,8 @@ bool _remoteCommandsInitialized = false;
     }
 
     [[UIApplication sharedApplication] endReceivingRemoteControlEvents];
+    [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = @{};
+
 }
 
 
@@ -253,12 +257,14 @@ bool _remoteCommandsInitialized = false;
         _remoteCommandsInitialized = false;
     }
     NSString* key =  [self getTextureId:player];
-    id _timeObserverId = _timeObserverIdDict[key];
-    [_timeObserverIdDict removeObjectForKey: key];
-    [_artworkImageDict removeObjectForKey:key];
-    if (_timeObserverId){
-        [player.player removeTimeObserver:_timeObserverId];
-        _timeObserverId = nil;
+    if (key) {
+        id _timeObserverId = _timeObserverIdDict[key];
+        [_timeObserverIdDict removeObjectForKey: key];
+        [_artworkImageDict removeObjectForKey:key];
+        if (_timeObserverId){
+            [player.player removeTimeObserver:_timeObserverId];
+            _timeObserverId = nil;
+        }
     }
     [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo =  @{};
 }
