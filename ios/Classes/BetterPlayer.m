@@ -32,6 +32,8 @@ AVPictureInPictureController *_pipController;
     if (@available(iOS 10.0, *)) {
         _player.automaticallyWaitsToMinimizeStalling = false;
     }
+    
+ 
     self._observersAdded = false;
     return self;
 }
@@ -69,7 +71,9 @@ AVPictureInPictureController *_pipController;
                                                      name:AVPlayerItemDidPlayToEndTimeNotification
                                                    object:item];
        
-
+        [item setPreferredPeakBitRate:15000000];
+ 
+        
         self._observersAdded = true;
     }
 }
