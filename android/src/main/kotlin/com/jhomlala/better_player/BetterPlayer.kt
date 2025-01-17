@@ -461,10 +461,10 @@ internal class BetterPlayer(
                 setUseNextAction(false)
                 setUsePreviousAction(false)
                 setUseStopAction(false)
-                 setUseFastForwardActionInCompactView(false)
+                setUseFastForwardAction(false)
+                setUseRewindAction(false)
+                setUseFastForwardActionInCompactView(false)
                 setUsePreviousActionInCompactView(false)
-
-
 
             }
 
