@@ -678,7 +678,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             player.setupMediaSession(flutterState!!.applicationContext)
            val builder= PictureInPictureParams.Builder().setAspectRatio(Rational(16,9))
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                builder.setAutoEnterEnabled(true)
+                builder.setAutoEnterEnabled(false)
             }
             activity!!.enterPictureInPictureMode(builder.build())
             startPictureInPictureListenerTimer(player)
