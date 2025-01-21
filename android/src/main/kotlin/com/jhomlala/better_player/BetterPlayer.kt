@@ -461,6 +461,11 @@ internal class BetterPlayer(
                 setUseNextAction(false)
                 setUsePreviousAction(false)
                 setUseStopAction(false)
+                setUseFastForwardAction(false)
+                setUseRewindAction(false)
+                setUseFastForwardActionInCompactView(false)
+                setUsePreviousActionInCompactView(false)
+
             }
 
             setupMediaSession(context)
