@@ -83,21 +83,21 @@ abstract class VideoPlayerPlatform {
   }
 
 
-
   /// Set data source of video.
   Future<void> setDataSource(int? textureId, DataSource dataSource) {
     throw UnimplementedError('setDataSource() has not been implemented.');
   }
 
 
-
   Future<void> download(int? textureId, DataSource dataSource) {
     throw UnimplementedError('download() has not been implemented.');
   }
+
   /// Returns a Stream of [VideoEventType]s.
   Stream<VideoEvent> videoEventsFor(int? textureId) {
     throw UnimplementedError('videoEventsFor() has not been implemented.');
   }
+
   Stream<DownloadVideoList> videoDownloadEventsFor(int? textureId) {
     throw UnimplementedError('videoEventsFor() has not been implemented.');
   }
@@ -129,8 +129,8 @@ abstract class VideoPlayerPlatform {
   }
 
   /// Sets the video track parameters (used to select quality of the video)
-  Future<void> setTrackParameters(
-      int? textureId, int? width, int? height, int? bitrate) {
+  Future<void> setTrackParameters(int? textureId, int? width, int? height,
+      int? bitrate) {
     throw UnimplementedError('setTrackParameters() has not been implemented.');
   }
 
@@ -150,22 +150,21 @@ abstract class VideoPlayerPlatform {
   }
 
 
-  Future<void> deleteDownloadedVideo(int? textureId , String? url) {
+  Future<void> deleteDownloadedVideo(int? textureId, String? url) {
     throw UnimplementedError('getDownloadData() has not been implemented.');
   }
 
 
-  Future<void> cancelDownloadedVideo(int? textureId , String? url) {
+  Future<void> cancelDownloadedVideo(int? textureId, String? url) {
     throw UnimplementedError('getDownloadData() has not been implemented.');
   }
-
-
 
 
   /// Gets the video position as [DateTime].
   Future<DateTime?> getAbsolutePosition(int? textureId) {
     throw UnimplementedError('getAbsolutePosition() has not been implemented.');
   }
+
   Future<void> setupAutomaticPictureInPictureTransition({
     int? textureId,
     bool? willStartPIP,
@@ -313,7 +312,7 @@ class DataSource {
   /// The package that the asset was loaded from. Only set for
   /// [DataSourceType.asset] videos.
   final String? package;
-    int? quality = 0;
+  int? quality = 0;
 
   final Map<String, String?>? headers;
 
@@ -496,6 +495,8 @@ enum VideoEventType {
 
   /// The video is set to pause
   pause,
+  next,
+  previous,
 
   /// The video is set to given to position
   seek,
@@ -573,10 +574,10 @@ class DurationRange {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is DurationRange &&
-          runtimeType == other.runtimeType &&
-          start == other.start &&
-          end == other.end;
+          other is DurationRange &&
+              runtimeType == other.runtimeType &&
+              start == other.start &&
+              end == other.end;
 
   @override
   int get hashCode => start.hashCode ^ end.hashCode;

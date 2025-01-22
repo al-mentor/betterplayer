@@ -86,7 +86,7 @@ class PIPReceiver(val binaryMessenger: BinaryMessenger, val activity: Activity):
             actions.add(pauseAction)
         }
         val nextAction = RemoteAction(
-            Icon.createWithResource(activity, R.drawable.ic_media_next),
+            Icon.createWithResource(activity, R.drawable.ic_media_previous),
             "Next",
             "Next",
             PendingIntent.getBroadcast(
@@ -101,7 +101,7 @@ class PIPReceiver(val binaryMessenger: BinaryMessenger, val activity: Activity):
         val previousAction = RemoteAction(
             Icon.createWithResource(
                 activity,
-                R.drawable.ic_media_previous
+                R.drawable. ic_media_next
             ),
             "Previous",
             "Previous",

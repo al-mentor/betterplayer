@@ -1217,6 +1217,12 @@ class BetterPlayerController {
       case VideoEventType.pause:
         _postEvent(BetterPlayerEvent(BetterPlayerEventType.pause));
         break;
+      case VideoEventType.next:
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.next));
+        break;
+      case VideoEventType.previous:
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.previous));
+        break;
       case VideoEventType.seek:
         _postEvent(BetterPlayerEvent(BetterPlayerEventType.seekTo));
         break;

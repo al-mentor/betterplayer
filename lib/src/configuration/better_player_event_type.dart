@@ -10,6 +10,9 @@ enum BetterPlayerEventType {
   progress,
   finished,
   exception,
+  next,
+  previous,
+
   controlsVisible,
   controlsHiddenStart,
   controlsHiddenEnd,

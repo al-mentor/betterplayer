@@ -23,7 +23,7 @@ class NotificationCustomReceiver(binaryMessenger: BinaryMessenger) : PlayerNotif
 
         // Next Action
         val nextAction = NotificationCompat.Action(
-            android.R.drawable.ic_media_next, // Icon for Next
+            android.R.drawable.ic_media_previous, // Icon for Next
             "Next", // Label for Next
             PendingIntent.getBroadcast(
                 context,
@@ -33,7 +33,7 @@ class NotificationCustomReceiver(binaryMessenger: BinaryMessenger) : PlayerNotif
             )
         )
         val previousAction = NotificationCompat.Action(
-            android.R.drawable.ic_media_previous, // Icon for Previous
+            android.R.drawable.ic_media_next , // Icon for Previous
             "Previous", // Label for Previous
             PendingIntent.getBroadcast(
                 context,

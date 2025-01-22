@@ -108,10 +108,12 @@ bool _remoteCommandsInitialized = false;
     }
 }
 
-- (void) setRemoteCommandsNotificationActive{
-    
-    
-    [[AVAudioSession sharedInstance] setActive:true error:nil];
+- (void)setRemoteCommandsNotificationActive {
+    NSError *error = nil;
+    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
+                                     withOptions:AVAudioSessionCategoryOptionAllowAirPlay
+                                           error:&error];
+    [[AVAudioSession sharedInstance] setActive:YES error:&error];
     [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
 }
 
@@ -126,7 +128,7 @@ bool _remoteCommandsInitialized = false;
 }
 
 
-- (void) setupRemoteCommands:(BetterPlayer*)player  {
+- (void)setupRemoteCommands:(BetterPlayer*)player  {
     if (_remoteCommandsInitialized){
         return;
     }
@@ -134,8 +136,11 @@ bool _remoteCommandsInitialized = false;
     [commandCenter.togglePlayPauseCommand setEnabled:YES];
     [commandCenter.playCommand setEnabled:YES];
     [commandCenter.pauseCommand setEnabled:YES];
-    [commandCenter.nextTrackCommand setEnabled:NO];
-    [commandCenter.previousTrackCommand setEnabled:NO];
+    
+    // Enable next and previous track commands
+    [commandCenter.nextTrackCommand setEnabled:YES];
+    [commandCenter.previousTrackCommand setEnabled:YES];
+    
     if (@available(iOS 9.1, *)) {
         [commandCenter.changePlaybackPositionCommand setEnabled:YES];
     }
@@ -165,12 +170,25 @@ bool _remoteCommandsInitialized = false;
         return MPRemoteCommandHandlerStatusSuccess;
     }];
 
+    // Add handlers for next and previous track commands
+    [commandCenter.nextTrackCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
+        if (_notificationPlayer != [NSNull null]){
+            _notificationPlayer.eventSink(@{@"event" : @"next"});
+        }
+        return MPRemoteCommandHandlerStatusSuccess;
+    }];
 
+    [commandCenter.previousTrackCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
+        if (_notificationPlayer != [NSNull null]){
+            _notificationPlayer.eventSink(@{@"event" : @"previous"});
+        }
+        return MPRemoteCommandHandlerStatusSuccess;
+    }];
 
     if (@available(iOS 9.1, *)) {
         [commandCenter.changePlaybackPositionCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
             if (_notificationPlayer != [NSNull null]){
-                MPChangePlaybackPositionCommandEvent * playbackEvent = (MPChangePlaybackRateCommandEvent * ) event;
+                MPChangePlaybackPositionCommandEvent * playbackEvent = (MPChangePlaybackPositionCommandEvent * ) event;
                 CMTime time = CMTimeMake(playbackEvent.positionTime, 1);
                 int64_t millis = [BetterPlayerTimeUtils FLTCMTimeToMillis:(time)];
                 [_notificationPlayer seekTo: millis];
@@ -181,7 +199,6 @@ bool _remoteCommandsInitialized = false;
     }
     _remoteCommandsInitialized = true;
 }
-
 - (void) setupRemoteCommandNotification:(BetterPlayer*)player, NSString* title, NSString* author, NSString* imageUrl {
     float positionInSeconds = player.position / 1000.0;
     float durationInSeconds = player.duration / 1000.0;
@@ -192,6 +209,8 @@ bool _remoteCommandsInitialized = false;
         MPNowPlayingInfoPropertyElapsedPlaybackTime: @(positionInSeconds),
         MPMediaItemPropertyPlaybackDuration: @(durationInSeconds),
         MPNowPlayingInfoPropertyPlaybackRate: @1.0,
+        // Add media type (try both audio/video depending on your content)
+        MPNowPlayingInfoPropertyMediaType: @(MPNowPlayingInfoMediaTypeAudio)
     } mutableCopy];
 
     if (imageUrl && ![imageUrl isKindOfClass:[NSNull class]]) {
