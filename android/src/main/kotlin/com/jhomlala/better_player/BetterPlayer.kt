@@ -74,9 +74,11 @@ import com.jhomlala.better_player.DataSourceUtils.getUserAgent
 import com.jhomlala.better_player.DataSourceUtils.isHTTP
 import com.jhomlala.better_player.common.DownloadUtil
 import com.jhomlala.better_player.common.MediaItemTag
+import com.jhomlala.better_player.common.NotificationCustomReceiver
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.EventSink
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.view.TextureRegistry.SurfaceTextureEntry
 import java.io.File
 import java.util.UUID
@@ -111,6 +113,7 @@ internal class BetterPlayer(
     private val customDefaultLoadControl: CustomDefaultLoadControl =
         customDefaultLoadControl ?: CustomDefaultLoadControl()
     private var lastSendBufferedPosition = 0L
+
 
     init {
         val loadBuilder = DefaultLoadControl.Builder()
@@ -153,6 +156,9 @@ internal class BetterPlayer(
         setupVideoPlayer(eventChannel, textureEntry, result)
     }
 
+    fun isPlaying(): Boolean {
+        return exoPlayer?.isPlaying ?: false
+    }
 
     private fun preparePlayerOrDownload(
         dataSource: String?,
@@ -357,7 +363,8 @@ internal class BetterPlayer(
         author: String?,
         imageUrl: String?,
         notificationChannelName: String?,
-        activityName: String
+        activityName: String,
+        binaryMessenger: BinaryMessenger
     ) {
         val mediaDescriptionAdapter: PlayerNotificationManager.MediaDescriptionAdapter =
             object : PlayerNotificationManager.MediaDescriptionAdapter {
@@ -450,9 +457,15 @@ internal class BetterPlayer(
             }
         }
 
-        playerNotificationManager = PlayerNotificationManager.Builder(
-            context, NOTIFICATION_ID, playerNotificationChannelName!!
-        ).setMediaDescriptionAdapter(mediaDescriptionAdapter).build()
+        val playerNotificationManager = PlayerNotificationManager.Builder(
+            context,
+            NOTIFICATION_ID, // Notification ID
+            playerNotificationChannelName!! // Notification channel name
+        )
+            .setMediaDescriptionAdapter(mediaDescriptionAdapter)
+            .setCustomActionReceiver(NotificationCustomReceiver(binaryMessenger))
+            .build()
+
 
         playerNotificationManager?.apply {
 
