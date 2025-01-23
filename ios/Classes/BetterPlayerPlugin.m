@@ -148,9 +148,9 @@ bool _remoteCommandsInitialized = false;
     [commandCenter.togglePlayPauseCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
         if (_notificationPlayer != [NSNull null]){
             if (_notificationPlayer.isPlaying){
-                _notificationPlayer.eventSink(@{@"event" : @"play"});
+                _notificationPlayer.eventSink(@{@"event" : @"play_action"});
             } else {
-                _notificationPlayer.eventSink(@{@"event" : @"pause"});
+                _notificationPlayer.eventSink(@{@"event" : @"pause_action"});
             }
         }
         return MPRemoteCommandHandlerStatusSuccess;
@@ -158,14 +158,14 @@ bool _remoteCommandsInitialized = false;
 
     [commandCenter.playCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
         if (_notificationPlayer != [NSNull null]){
-            _notificationPlayer.eventSink(@{@"event" : @"play"});
+            _notificationPlayer.eventSink(@{@"event" : @"play_action"});
         }
         return MPRemoteCommandHandlerStatusSuccess;
     }];
 
     [commandCenter.pauseCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
         if (_notificationPlayer != [NSNull null]){
-            _notificationPlayer.eventSink(@{@"event" : @"pause"});
+            _notificationPlayer.eventSink(@{@"event" : @"pause_action"});
         }
         return MPRemoteCommandHandlerStatusSuccess;
     }];
@@ -173,30 +173,30 @@ bool _remoteCommandsInitialized = false;
     // Add handlers for next and previous track commands
     [commandCenter.nextTrackCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
         if (_notificationPlayer != [NSNull null]){
-            _notificationPlayer.eventSink(@{@"event" : @"next"});
+            _notificationPlayer.eventSink(@{@"event" : @"next_action"});
         }
         return MPRemoteCommandHandlerStatusSuccess;
     }];
 
     [commandCenter.previousTrackCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
         if (_notificationPlayer != [NSNull null]){
-            _notificationPlayer.eventSink(@{@"event" : @"previous"});
+            _notificationPlayer.eventSink(@{@"event" : @"previous_action"});
         }
         return MPRemoteCommandHandlerStatusSuccess;
     }];
-
-    if (@available(iOS 9.1, *)) {
-        [commandCenter.changePlaybackPositionCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
-            if (_notificationPlayer != [NSNull null]){
-                MPChangePlaybackPositionCommandEvent * playbackEvent = (MPChangePlaybackPositionCommandEvent * ) event;
-                CMTime time = CMTimeMake(playbackEvent.positionTime, 1);
-                int64_t millis = [BetterPlayerTimeUtils FLTCMTimeToMillis:(time)];
-                [_notificationPlayer seekTo: millis];
-                _notificationPlayer.eventSink(@{@"event" : @"seek", @"position": @(millis)});
-            }
-            return MPRemoteCommandHandlerStatusSuccess;
-        }];
-    }
+    
+//    if (@available(iOS 9.1, *)) {
+//        [commandCenter.changePlaybackPositionCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
+//            if (_notificationPlayer != [NSNull null]){
+//                MPChangePlaybackPositionCommandEvent * playbackEvent = (MPChangePlaybackPositionCommandEvent * ) event;
+//                CMTime time = CMTimeMake(playbackEvent.positionTime, 1);
+//                int64_t millis = [BetterPlayerTimeUtils FLTCMTimeToMillis:(time)];
+//                [_notificationPlayer seekTo: millis];
+//                _notificationPlayer.eventSink(@{@"event" : @"seek", @"position": @(millis)});
+//            }
+//            return MPRemoteCommandHandlerStatusSuccess;
+//        }];
+//    }
     _remoteCommandsInitialized = true;
 }
 - (void) setupRemoteCommandNotification:(BetterPlayer*)player, NSString* title, NSString* author, NSString* imageUrl {
@@ -223,9 +223,9 @@ bool _remoteCommandsInitialized = false;
 
         if (artworkImage) {
             [nowPlayingInfoDict setObject:artworkImage forKey:MPMediaItemPropertyArtwork];
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nowPlayingInfoDict;
-            });
+//            dispatch_async(dispatch_get_main_queue(), ^{
+//                [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nowPlayingInfoDict;
+//            });
         } else {
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
                 @try {
