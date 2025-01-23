@@ -509,7 +509,17 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
             eventType: VideoEventType.bufferingEnd,
             key: key,
           );
+        case 'play':
+          return VideoEvent(
+            eventType: VideoEventType.play,
+            key: key,
+          );
 
+        case 'pause':
+          return VideoEvent(
+            eventType: VideoEventType.pause,
+            key: key,
+          );
         case 'play_action':
           return VideoEvent(
             eventType: VideoEventType.playAction,
