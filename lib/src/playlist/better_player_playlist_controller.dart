@@ -58,12 +58,6 @@ class BetterPlayerPlaylistController {
     });
   }
 
-  void setOnVideoAction(OnActionCallback onVideoAction) async {
-    await VideoPlayerPlatform.instance.onVideoAction(
-      onVideoAction,
-    );
-  }
-
   /// Setup new data source list. Pauses currently played video and init new data
   /// source list. Previous data source list will be removed.
   void setupDataSourceList(List<BetterPlayerDataSource> dataSourceList) {
