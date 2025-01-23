@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:better_player/src/configuration/better_player_buffering_configuration.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+
 import 'download_video_list.dart';
 import 'method_channel_video_player.dart';
 
@@ -66,6 +67,11 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('dispose() has not been implemented.');
   }
 
+  Future<void> onVideoAction(void Function(VideoActions?) cb) {
+    print('got here');
+    throw UnimplementedError('onVideoAction() has not been implemented.');
+  }
+
   /// Creates an instance of a video player and returns its textureId.
   Future<int?> create(
       {BetterPlayerBufferingConfiguration? bufferingConfiguration}) {
@@ -82,12 +88,10 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('stopPreCache() has not been implemented.');
   }
 
-
   /// Set data source of video.
   Future<void> setDataSource(int? textureId, DataSource dataSource) {
     throw UnimplementedError('setDataSource() has not been implemented.');
   }
-
 
   Future<void> download(int? textureId, DataSource dataSource) {
     throw UnimplementedError('download() has not been implemented.');
@@ -117,7 +121,6 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('pause() has not been implemented.');
   }
 
-
   /// Sets the volume to a range between 0.0 and 1.0.
   Future<void> setVolume(int? textureId, double volume) {
     throw UnimplementedError('setVolume() has not been implemented.');
@@ -129,8 +132,8 @@ abstract class VideoPlayerPlatform {
   }
 
   /// Sets the video track parameters (used to select quality of the video)
-  Future<void> setTrackParameters(int? textureId, int? width, int? height,
-      int? bitrate) {
+  Future<void> setTrackParameters(
+      int? textureId, int? width, int? height, int? bitrate) {
     throw UnimplementedError('setTrackParameters() has not been implemented.');
   }
 
@@ -144,21 +147,17 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('getPosition() has not been implemented.');
   }
 
-
   Future<String?> getDownloadData(int? textureId) {
     throw UnimplementedError('getDownloadData() has not been implemented.');
   }
-
 
   Future<void> deleteDownloadedVideo(int? textureId, String? url) {
     throw UnimplementedError('getDownloadData() has not been implemented.');
   }
 
-
   Future<void> cancelDownloadedVideo(int? textureId, String? url) {
     throw UnimplementedError('getDownloadData() has not been implemented.');
   }
-
 
   /// Gets the video position as [DateTime].
   Future<DateTime?> getAbsolutePosition(int? textureId) {
@@ -495,6 +494,9 @@ enum VideoEventType {
 
   /// The video is set to pause
   pause,
+
+  playAction,
+  pauseAction,
   next,
   previous,
 
@@ -574,11 +576,18 @@ class DurationRange {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-          other is DurationRange &&
-              runtimeType == other.runtimeType &&
-              start == other.start &&
-              end == other.end;
+      other is DurationRange &&
+          runtimeType == other.runtimeType &&
+          start == other.start &&
+          end == other.end;
 
   @override
   int get hashCode => start.hashCode ^ end.hashCode;
+}
+
+enum VideoActions {
+  play,
+  pause,
+  next,
+  previous,
 }

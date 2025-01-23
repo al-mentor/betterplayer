@@ -7,13 +7,11 @@ import androidx.core.app.NotificationCompat
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerNotificationManager
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.BinaryMessenger
+import com.jhomlala.better_player.BetterPlayer
+
 
 @UnstableApi
-class NotificationCustomReceiver(binaryMessenger: BinaryMessenger) : PlayerNotificationManager.CustomActionReceiver {
-    val methodChannel =
-        MethodChannel(binaryMessenger, "com.example.betterplayer/pip")
+class NotificationCustomReceiver() : PlayerNotificationManager.CustomActionReceiver {
     override fun createCustomActions(
         context: Context,
         instanceId: Int
@@ -59,10 +57,14 @@ class NotificationCustomReceiver(binaryMessenger: BinaryMessenger) : PlayerNotif
     override fun onCustomAction(player: Player, action: String, intent: Intent) {
         when (action) {
             ACTION_NEXT -> {
-                methodChannel.invokeMethod("next", null)
+                val event: MutableMap<String, Any> = HashMap()
+                event["event"] = "next_action"
+                BetterPlayer.eventSink.success(event)
             }
             ACTION_PREVIOUS -> {
-                methodChannel.invokeMethod("previous", null)
+                val event: MutableMap<String, Any> = HashMap()
+                event["event"] = "previous_action"
+                BetterPlayer.eventSink.success(event)
 
             }
         }

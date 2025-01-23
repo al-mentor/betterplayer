@@ -5,15 +5,14 @@ package com.jhomlala.better_player
 
 import android.R
 import android.app.Activity
-import android.app.AppOpsManager
 import android.app.PendingIntent
 import android.app.PictureInPictureParams
 import android.app.RemoteAction
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -21,9 +20,7 @@ import android.os.Looper
 import android.util.Log
 import android.util.LongSparseArray
 import android.util.Rational
-import androidx.lifecycle.Lifecycle
-import androidx.media3.common.AudioAttributes
-import com.blankj.utilcode.util.ActivityUtils
+import androidx.annotation.RequiresApi
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -31,32 +28,28 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadService
+import com.blankj.utilcode.util.ActivityUtils
 import com.jhomlala.better_player.BetterPlayerCache.releaseCache
 import com.jhomlala.better_player.common.DownloadTracker
 import com.jhomlala.better_player.common.DownloadUtil
 import com.jhomlala.better_player.common.MediaItemTag
 import com.jhomlala.better_player.common.MyDownloadService
-import io.flutter.embedding.engine.plugins.FlutterPlugin
-import io.flutter.embedding.engine.plugins.activity.ActivityAware
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
+import com.jhomlala.better_player.common.PIPReceiver
 import io.flutter.embedding.engine.loader.FlutterLoader
-import io.flutter.plugin.common.MethodCall
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.EventChannel
+import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.BinaryMessenger
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.view.TextureRegistry
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import java.lang.Exception
-import kotlin.text.compareTo
-import android.graphics.Rect
-import android.graphics.drawable.Icon
-import androidx.annotation.RequiresApi
-import com.jhomlala.better_player.common.PIPReceiver
 
 /**
  * Android platform implementation of the VideoPlayerPlugin.
@@ -76,6 +69,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
     private var activityBinding: ActivityPluginBinding? = null
     private var pipActionReceiver: PIPReceiver? = null
+
 
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
         val loader = FlutterLoader()
@@ -117,7 +111,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
         activityBinding = binding
-        pipActionReceiver = PIPReceiver(flutterState!!.binaryMessenger, activity!!)
+
+        pipActionReceiver = PIPReceiver(activity!!)
         val filter = IntentFilter().apply {
             addAction(ACTION_PLAY)
             addAction(ACTION_PAUSE)
@@ -670,7 +665,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                         imageUrl,
                         notificationChannelName,
                         activityName,
-                        flutterState!!.binaryMessenger
+                        flutterState!!.methodChannel
                     )
                 }
             }
@@ -851,7 +846,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         val keyForAssetAndPackageName: KeyForAssetAndPackageName,
         val textureRegistry: TextureRegistry?
     ) {
-        private val methodChannel: MethodChannel = MethodChannel(binaryMessenger, CHANNEL)
+         val methodChannel: MethodChannel = MethodChannel(binaryMessenger, CHANNEL)
+
 
         fun startListening(methodCallHandler: BetterPlayerPlugin?) {
             methodChannel.setMethodCallHandler(methodCallHandler)

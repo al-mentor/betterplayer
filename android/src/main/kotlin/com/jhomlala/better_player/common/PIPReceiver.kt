@@ -11,38 +11,44 @@ import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.util.Rational
+import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
-import io.flutter.plugin.common.BinaryMessenger
-import io.flutter.plugin.common.MethodChannel
+import androidx.media3.common.util.UnstableApi
+import com.jhomlala.better_player.BetterPlayer
 
-class PIPReceiver(val binaryMessenger: BinaryMessenger, val activity: Activity): BroadcastReceiver() {
-    @RequiresApi(Build.VERSION_CODES.O)
+class PIPReceiver( val activity: Activity): BroadcastReceiver() {
+    @OptIn(UnstableApi::class) @RequiresApi(Build.VERSION_CODES.O)
     override fun onReceive(context: Context?, intent: Intent?) {
-        val methodChannel =
-            MethodChannel(binaryMessenger, "com.example.betterplayer/pip")
-
         when (intent?.action) {
             ACTION_PLAY -> {
-                methodChannel.invokeMethod("play", null)
+                val event: MutableMap<String, Any> = HashMap()
+                event["event"] = "play_action"
+                BetterPlayer.eventSink.success(event)
                 val params = pipParams(true)
                 activity.setPictureInPictureParams(params);
             }
 
             ACTION_PAUSE -> {
-                methodChannel.invokeMethod("pause", null)
+                val event: MutableMap<String, Any> = HashMap()
+                event["event"] = "pause_action"
+                BetterPlayer.eventSink.success(event)
                 val params = pipParams(false)
                 activity.setPictureInPictureParams(params);
 
             }
 
             ACTION_NEXT -> {
-                methodChannel.invokeMethod("next", null)
+                val event: MutableMap<String, Any> = HashMap()
+                event["event"] = "next_action"
+                BetterPlayer.eventSink.success(event)
                 val params = pipParams(true)
                 activity.setPictureInPictureParams(params);
             }
 
             ACTION_PREVIOUS -> {
-                methodChannel.invokeMethod("previous", null)
+                val event: MutableMap<String, Any> = HashMap()
+                event["event"] = "previous_action"
+                BetterPlayer.eventSink.success(event)
                 val params = pipParams(true)
                 activity.setPictureInPictureParams(params);
             }

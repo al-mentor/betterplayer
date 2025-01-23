@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:better_player/better_player.dart';
 
 ///Controller used to manage playlist player.
@@ -57,6 +58,12 @@ class BetterPlayerPlaylistController {
     });
   }
 
+  void setOnVideoAction(OnActionCallback onVideoAction) async {
+    await VideoPlayerPlatform.instance.onVideoAction(
+      onVideoAction,
+    );
+  }
+
   /// Setup new data source list. Pauses currently played video and init new data
   /// source list. Previous data source list will be removed.
   void setupDataSourceList(List<BetterPlayerDataSource> dataSourceList) {
@@ -80,7 +87,9 @@ class BetterPlayerPlaylistController {
       // _betterPlayerController!.exitFullScreen();
     }
     _changingToNextVideo = true;
-    setupDataSource(nextDataSourceId,speed: betterPlayerController?.videoPlayerController?.value.speed,currentTrack: betterPlayerController?.betterPlayerAsmsTrack);
+    setupDataSource(nextDataSourceId,
+        speed: betterPlayerController?.videoPlayerController?.value.speed,
+        currentTrack: betterPlayerController?.betterPlayerAsmsTrack);
 
     _changingToNextVideo = false;
   }
@@ -98,15 +107,18 @@ class BetterPlayerPlaylistController {
 
   ///Setup data source with index based on [_betterPlayerDataSourceList] provided
   ///in constructor. Index must
-  void setupDataSource(int index,{double? speed, BetterPlayerAsmsTrack? currentTrack}) {
+  void setupDataSource(int index,
+      {double? speed, BetterPlayerAsmsTrack? currentTrack}) {
     assert(
         index >= 0 && index < _betterPlayerDataSourceList.length,
         "Index must be greater than 0 and less than size of data source "
         "list - 1");
     if (index <= _dataSourceLength) {
       _currentDataSourceIndex = index;
-      _betterPlayerController!
-          .setupDataSource(_betterPlayerDataSourceList[index],speed: speed,currentTrack: currentTrack);
+      _betterPlayerController!.setupDataSource(
+          _betterPlayerDataSourceList[index],
+          speed: speed,
+          currentTrack: currentTrack);
     }
   }
 

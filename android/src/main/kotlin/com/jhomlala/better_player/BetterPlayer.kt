@@ -95,7 +95,6 @@ internal class BetterPlayer(
     result: MethodChannel.Result
 ) {
     private val exoPlayer: ExoPlayer?
-    private val eventSink = QueuingEventSink()
     private val trackSelector: DefaultTrackSelector = DefaultTrackSelector(context)
     private val loadControl: LoadControl
     private var isInitialized = false
@@ -113,6 +112,7 @@ internal class BetterPlayer(
     private val customDefaultLoadControl: CustomDefaultLoadControl =
         customDefaultLoadControl ?: CustomDefaultLoadControl()
     private var lastSendBufferedPosition = 0L
+
 
 
     init {
@@ -364,7 +364,7 @@ internal class BetterPlayer(
         imageUrl: String?,
         notificationChannelName: String?,
         activityName: String,
-        binaryMessenger: BinaryMessenger
+        methodChannel: MethodChannel
     ) {
         val mediaDescriptionAdapter: PlayerNotificationManager.MediaDescriptionAdapter =
             object : PlayerNotificationManager.MediaDescriptionAdapter {
@@ -463,7 +463,7 @@ internal class BetterPlayer(
             playerNotificationChannelName!! // Notification channel name
         )
             .setMediaDescriptionAdapter(mediaDescriptionAdapter)
-            .setCustomActionReceiver(NotificationCustomReceiver(binaryMessenger))
+            .setCustomActionReceiver(NotificationCustomReceiver())
             .build()
 
 
@@ -940,6 +940,7 @@ internal class BetterPlayer(
         private const val DEFAULT_NOTIFICATION_CHANNEL = "BETTER_PLAYER_NOTIFICATION"
         private const val NOTIFICATION_ID = 20772077
 
+        val eventSink = QueuingEventSink()
         //Clear cache without accessing BetterPlayerCache.
         fun clearCache(context: Context?, result: MethodChannel.Result) {
             try {

@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
+
 import 'package:better_player/better_player.dart';
 import 'package:better_player/src/configuration/better_player_controller_event.dart';
 import 'package:better_player/src/core/better_player_utils.dart';
 import 'package:better_player/src/subtitles/better_player_subtitle.dart';
 import 'package:better_player/src/subtitles/better_player_subtitles_factory.dart';
-import 'package:better_player/src/video_player/video_player.dart';
-import 'package:better_player/src/video_player/video_player_platform_interface.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
@@ -1110,8 +1109,8 @@ class BetterPlayerController {
     } else {
       BetterPlayerUtils.log(
           "Picture in picture is not supported in this device. If you're "
-              "using Android, please check if you're using activity v2 "
-              "embedding.");
+          "using Android, please check if you're using activity v2 "
+          "embedding.");
     }
   }
 
@@ -1128,6 +1127,7 @@ class BetterPlayerController {
       );
     }
   }
+
   ///Enable Picture in Picture (PiP) mode. [betterPlayerGlobalKey] is required
   ///to open PiP mode in iOS. When device is not supported, PiP mode won't be
   ///open.
@@ -1211,6 +1211,12 @@ class BetterPlayerController {
   ///Handle VideoEvent when remote controls notification / PiP is shown
   void _handleVideoEvent(VideoEvent event) async {
     switch (event.eventType) {
+      case VideoEventType.playAction:
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.playInPIPTapped));
+        break;
+      case VideoEventType.pauseAction:
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.pauseInPIPTapped));
+        break;
       case VideoEventType.play:
         _postEvent(BetterPlayerEvent(BetterPlayerEventType.play));
         break;
@@ -1256,21 +1262,21 @@ class BetterPlayerController {
       case VideoEventType.pipStop:
         isPIPStart = false;
         break;
-    case VideoEventType.enteringPIP:
-    _postEvent(BetterPlayerEvent(BetterPlayerEventType.enteringPIP));
-    break;
+      case VideoEventType.enteringPIP:
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.enteringPIP));
+        break;
 
-    case VideoEventType.exitingPIP:
-    _postEvent(BetterPlayerEvent(BetterPlayerEventType.exitingPIP));
-    break;
+      case VideoEventType.exitingPIP:
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.exitingPIP));
+        break;
 
-    case VideoEventType.playInPIPTapped:
-    _postEvent(BetterPlayerEvent(BetterPlayerEventType.playInPIPTapped));
-    break;
+      case VideoEventType.playInPIPTapped:
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.playInPIPTapped));
+        break;
 
-    case VideoEventType.pauseInPIPTapped:
-    _postEvent(BetterPlayerEvent(BetterPlayerEventType.pauseInPIPTapped));
-    break;
+      case VideoEventType.pauseInPIPTapped:
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.pauseInPIPTapped));
+        break;
       default:
 
         ///TODO: Handle when needed
