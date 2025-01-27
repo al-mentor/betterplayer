@@ -21,7 +21,7 @@ class NotificationCustomReceiver() : PlayerNotificationManager.CustomActionRecei
 
         // Next Action
         val nextAction = NotificationCompat.Action(
-            android.R.drawable.ic_media_previous, // Icon for Next
+            android.R.drawable.ic_media_next, // Icon for Next
             "Next", // Label for Next
             PendingIntent.getBroadcast(
                 context,
@@ -31,7 +31,7 @@ class NotificationCustomReceiver() : PlayerNotificationManager.CustomActionRecei
             )
         )
         val previousAction = NotificationCompat.Action(
-            android.R.drawable.ic_media_next , // Icon for Previous
+            android.R.drawable.ic_media_previous , // Icon for Previous
             "Previous", // Label for Previous
             PendingIntent.getBroadcast(
                 context,
@@ -40,9 +40,9 @@ class NotificationCustomReceiver() : PlayerNotificationManager.CustomActionRecei
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
         )
-        customActions[ACTION_PREVIOUS] = previousAction
 
         customActions[ACTION_NEXT] = nextAction
+        customActions[ACTION_PREVIOUS] = previousAction
 
 
 

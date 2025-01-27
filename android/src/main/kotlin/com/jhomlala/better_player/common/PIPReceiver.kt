@@ -92,7 +92,7 @@ class PIPReceiver( val activity: Activity): BroadcastReceiver() {
             actions.add(pauseAction)
         }
         val nextAction = RemoteAction(
-            Icon.createWithResource(activity, R.drawable.ic_media_previous),
+            Icon.createWithResource(activity, R.drawable.ic_media_next),
             "Next",
             "Next",
             PendingIntent.getBroadcast(
@@ -102,12 +102,11 @@ class PIPReceiver( val activity: Activity): BroadcastReceiver() {
                 PendingIntent.FLAG_IMMUTABLE
             )
         )
-        actions.add(nextAction)
 
         val previousAction = RemoteAction(
             Icon.createWithResource(
                 activity,
-                R.drawable. ic_media_next
+                R.drawable. ic_media_previous
             ),
             "Previous",
             "Previous",
@@ -118,6 +117,8 @@ class PIPReceiver( val activity: Activity): BroadcastReceiver() {
                 PendingIntent.FLAG_IMMUTABLE
             )
         )
+        actions.add(nextAction)
+
         actions.add(previousAction)
 
         // Set the actions in PiP mode
