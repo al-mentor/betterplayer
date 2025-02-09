@@ -8,13 +8,16 @@ import android.app.RemoteAction
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.util.Rational
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
 import com.jhomlala.better_player.BetterPlayer
+import com.jhomlala.better_player.common.PIPReceiver.Companion.isRegistered
 
 class PIPReceiver( val activity: Activity): BroadcastReceiver() {
     @OptIn(UnstableApi::class) @RequiresApi(Build.VERSION_CODES.O)
@@ -128,12 +131,38 @@ class PIPReceiver( val activity: Activity): BroadcastReceiver() {
             .build()
         return params;
     }
+    fun registerReceiver(context: Context) {
+        if (!isRegistered) {
+            val filter = IntentFilter().apply {
+                addAction(ACTION_PLAY)
+                addAction(ACTION_PAUSE)
+                addAction(ACTION_NEXT)
+                addAction(ACTION_PREVIOUS)
+            }
+            ContextCompat.registerReceiver(
+                context,
+                this,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+            isRegistered = true
+        }
+    }
+
+    fun unregisterReceiver(context: Context) {
+        if (isRegistered) {
+            context.unregisterReceiver(this)
+            isRegistered = false
+        }
+    }
 
     companion object{
         const val ACTION_PLAY = "com.jhomlala.better_player.PLAY"
         const val ACTION_PAUSE = "com.jhomlala.better_player.PAUSE"
         const val ACTION_NEXT = "com.jhomlala.better_player.NEXT"
         const val ACTION_PREVIOUS = "com.jhomlala.better_player.PREVIOUS"
+        var isRegistered = false
+
     }
 
 

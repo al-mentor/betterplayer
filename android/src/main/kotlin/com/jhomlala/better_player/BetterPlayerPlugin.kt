@@ -113,13 +113,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         activityBinding = binding
 
         pipActionReceiver = PIPReceiver(activity!!)
-        val filter = IntentFilter().apply {
-            addAction(ACTION_PLAY)
-            addAction(ACTION_PAUSE)
-            addAction(ACTION_NEXT)
-            addAction(ACTION_PREVIOUS)
-        }
-        activity!!.registerReceiver(pipActionReceiver, filter, Context.RECEIVER_EXPORTED)
+        pipActionReceiver?.registerReceiver(activity!!)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -131,9 +125,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     override fun onDetachedFromActivity() {
-        activityBinding?.activity?.unregisterReceiver(pipActionReceiver)
+        pipActionReceiver?.unregisterReceiver(activity!!)
         activityBinding = null
-        activity!!.unregisterReceiver(pipActionReceiver)
     }
 
     private fun disposeAllPlayers() {
