@@ -37,7 +37,6 @@ import com.jhomlala.better_player.BetterPlayerCache.releaseCache
 import com.jhomlala.better_player.common.DownloadTracker
 import com.jhomlala.better_player.common.DownloadUtil
 import com.jhomlala.better_player.common.MediaItemTag
-import com.jhomlala.better_player.common.MyDownloadService
 import com.jhomlala.better_player.common.PIPReceiver
 import io.flutter.embedding.engine.loader.FlutterLoader
 import com.jhomlala.better_player.common.workers.StopDownloadWorker
