@@ -25,6 +25,7 @@
             android:value="2" />
         <service
             android:name=".BetterPlayerService"
+            android:foregroundServiceType="mediaPlayback"
             android:stopWithTask="false" />
         
     </application>

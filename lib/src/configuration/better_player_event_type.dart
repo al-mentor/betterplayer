@@ -10,6 +10,9 @@ enum BetterPlayerEventType {
   progress,
   finished,
   exception,
+  next,
+  previous,
+
   controlsVisible,
   controlsHiddenStart,
   controlsHiddenEnd,
@@ -25,5 +28,10 @@ enum BetterPlayerEventType {
   bufferingUpdate,
   bufferingEnd,
   changedPlaylistItem,
+  setDuration,
+  enteringPIP, // Fire when start PIP by tap button in UI and close app.
+  exitingPIP, // Fire when start PIP by tap button in UI and open app from PIP.
+  playInPIPTapped, // Android only. Fire when tap play button on PIP window.
+  pauseInPIPTapped, //
 
 }

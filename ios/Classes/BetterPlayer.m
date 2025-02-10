@@ -32,6 +32,8 @@ AVPictureInPictureController *_pipController;
     if (@available(iOS 10.0, *)) {
         _player.automaticallyWaitsToMinimizeStalling = false;
     }
+    
+ 
     self._observersAdded = false;
     return self;
 }
@@ -39,6 +41,10 @@ AVPictureInPictureController *_pipController;
 - (nonnull UIView *)view {
     BetterPlayerView *playerView = [[BetterPlayerView alloc] initWithFrame:CGRectZero];
     playerView.player = _player;
+    self._betterPlayerView = playerView;
+        if (!_pipController && self._willStartPictureInPicture) {
+            [self setupPipController];
+        }
     return playerView;
 }
 
@@ -64,10 +70,14 @@ AVPictureInPictureController *_pipController;
                                                  selector:@selector(itemDidPlayToEndTime:)
                                                      name:AVPlayerItemDidPlayToEndTimeNotification
                                                    object:item];
+       
+//        [item setPreferredPeakBitRate:15000000];
+ 
+        
         self._observersAdded = true;
     }
 }
-
+ 
 - (void)clear {
     _isInitialized = false;
     _isPlaying = false;
@@ -105,6 +115,8 @@ AVPictureInPictureController *_pipController;
                                    forKeyPath:@"playbackBufferFull"
                                       context:playbackBufferFullContext];
         [[NSNotificationCenter defaultCenter] removeObserver:self];
+        
+
         self._observersAdded = false;
     }
 }
@@ -266,6 +278,13 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     _isStalledCheckStarted = false;
     _playerRate = 1;
     [_player replaceCurrentItemWithPlayerItem:item];
+    if (!@available(iOS 16.0, *)) {
+        // https://dw-ml-nfc.atlassian.net/browse/DAF-3642
+        // set buffer time into 1 second
+        // This option cannot keep the buffer fixed to 1s, but the value can only be maxed to 10s.
+        // It keeps the player not frozen when fast-forwarding
+        item.preferredForwardBufferDuration = 1;
+    }
 
     AVAsset* asset = [item asset];
     void (^assetCompletionHandler)(void) = ^{
@@ -500,6 +519,9 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         if (_overriddenDuration > 0 && duration > _overriddenDuration){
             _player.currentItem.forwardPlaybackEndTime = CMTimeMake(_overriddenDuration/1000, 1);
         }
+        else if (isLive && _overriddenDuration > 0) {
+                  _player.currentItem.forwardPlaybackEndTime = CMTimeMake(_overriddenDuration/1000, 1);
+              }
 
         _isInitialized = true;
         [self updatePlayingState];
@@ -517,7 +539,9 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     _stalledCount = 0;
     _isStalledCheckStarted = false;
     _isPlaying = true;
-    [self updatePlayingState];
+    if (!self._willStartPictureInPicture) {
+            [self updatePlayingState];
+        }
 }
 
 - (void)pause {
@@ -615,6 +639,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 {
     self._pictureInPicture = pictureInPicture;
     if (@available(iOS 9.0, *)) {
+
         if (_pipController && self._pictureInPicture && ![_pipController isPictureInPictureActive]) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 [_pipController startPictureInPicture];
@@ -626,6 +651,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         } else {
             // Fallback on earlier versions
         } }
+
 }
 
 #if TARGET_OS_IOS
@@ -639,14 +665,60 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 
 - (void)setupPipController {
     if (@available(iOS 9.0, *)) {
-        [[AVAudioSession sharedInstance] setActive: YES error: nil];
+        NSError *error = nil;
+        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:&error];
+        if (error) {
+            NSLog(@"Error setting AVAudioSession category: %@", error.localizedDescription);
+        }
+        
+        [[AVAudioSession sharedInstance] setActive:YES error:&error];
+        if (error) {
+            NSLog(@"Error activating AVAudioSession: %@", error.localizedDescription);
+        }
+        
         [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
-        if (!_pipController && self._playerLayer && [AVPictureInPictureController isPictureInPictureSupported]) {
-            _pipController = [[AVPictureInPictureController alloc] initWithPlayerLayer:self._playerLayer];
-            _pipController.delegate = self;
+        
+        AVPlayerLayer *playerLayer = self._betterPlayerView.playerLayer;
+              if (!_pipController && playerLayer && [AVPictureInPictureController isPictureInPictureSupported]) {
+                  _pipController = [[AVPictureInPictureController alloc] initWithPlayerLayer: playerLayer];
+                  if (@available(iOS 14.2, *)) {
+                       _pipController.canStartPictureInPictureAutomaticallyFromInline = true;
+                  }
+                  _pipController.delegate = self;
+
         }
     } else {
         // Fallback on earlier versions
+    }
+}
+
+-(void)preparePictureInPicture: (CGRect) frame
+{
+    if(_player)
+    {
+        // Create new controller passing reference to the AVPlayerLayer
+        self._playerLayer = [AVPlayerLayer playerLayerWithPlayer:_player];
+        UIViewController* vc = [[[UIApplication sharedApplication] keyWindow] rootViewController];
+        self._playerLayer.frame = frame;
+        self._playerLayer.needsDisplayOnBoundsChange = YES;
+        [vc.view.layer addSublayer:self._playerLayer];
+        vc.view.layer.needsDisplayOnBoundsChange = YES;
+        if (@available(iOS 9.0, *)) {
+            _pipController = NULL;
+        }
+        [self setupPipController];
+    }
+}
+
+- (void)willStartPictureInPicture: (bool) willStart
+{
+    self._willStartPictureInPicture = willStart;
+    if (willStart) {
+        if(!_pipController) {
+            [self preparePictureInPicture:CGRectZero];
+        }
+    } else {
+        _pipController = nil;
     }
 }
 
@@ -680,10 +752,13 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 
 - (void)disablePictureInPicture
 {
-    [self setPictureInPicture:true];
-    if (__playerLayer){
+     if (__playerLayer){
         [self._playerLayer removeFromSuperlayer];
         self._playerLayer = nil;
+        if (_pipController) {
+                   _pipController = nil;
+                   [self willStartPictureInPicture: true];
+               }
         if (_eventSink != nil) {
             _eventSink(@{@"event" : @"pipStop"});
         }
@@ -703,10 +778,16 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)pictureInPictureControllerWillStopPictureInPicture:(AVPictureInPictureController *)pictureInPictureController  API_AVAILABLE(ios(9.0)){
+    if (_eventSink != nil) {
+            _eventSink(@{@"event" : @"exitingPIP"});
+        }
 
 }
 
 - (void)pictureInPictureControllerWillStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
+    if (_eventSink != nil) {
+            _eventSink(@{@"event" : @"enteringPIP"});
+        }
 
 }
 
@@ -780,6 +861,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)dispose {
+    _pipController = nil;
     [self pause];
     [self disposeSansEventChannel];
     [_eventChannel setStreamHandler:nil];

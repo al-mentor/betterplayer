@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:better_player/src/configuration/better_player_buffering_configuration.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+
 import 'download_video_list.dart';
 import 'method_channel_video_player.dart';
 
@@ -66,6 +67,11 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('dispose() has not been implemented.');
   }
 
+  Future<void> onVideoAction(void Function(VideoActions?) cb) {
+    print('got here');
+    throw UnimplementedError('onVideoAction() has not been implemented.');
+  }
+
   /// Creates an instance of a video player and returns its textureId.
   Future<int?> create(
       {BetterPlayerBufferingConfiguration? bufferingConfiguration}) {
@@ -82,22 +88,20 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('stopPreCache() has not been implemented.');
   }
 
-
-
   /// Set data source of video.
   Future<void> setDataSource(int? textureId, DataSource dataSource) {
     throw UnimplementedError('setDataSource() has not been implemented.');
   }
 
-
-
   Future<void> download(int? textureId, DataSource dataSource) {
     throw UnimplementedError('download() has not been implemented.');
   }
+
   /// Returns a Stream of [VideoEventType]s.
   Stream<VideoEvent> videoEventsFor(int? textureId) {
     throw UnimplementedError('videoEventsFor() has not been implemented.');
   }
+
   Stream<DownloadVideoList> videoDownloadEventsFor(int? textureId) {
     throw UnimplementedError('videoEventsFor() has not been implemented.');
   }
@@ -116,7 +120,6 @@ abstract class VideoPlayerPlatform {
   Future<void> pause(int? textureId) {
     throw UnimplementedError('pause() has not been implemented.');
   }
-
 
   /// Sets the volume to a range between 0.0 and 1.0.
   Future<void> setVolume(int? textureId, double volume) {
@@ -144,27 +147,29 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('getPosition() has not been implemented.');
   }
 
-
   Future<String?> getDownloadData(int? textureId) {
     throw UnimplementedError('getDownloadData() has not been implemented.');
   }
 
-
-  Future<void> deleteDownloadedVideo(int? textureId , String? url) {
+  Future<void> deleteDownloadedVideo(int? textureId, String? url) {
     throw UnimplementedError('getDownloadData() has not been implemented.');
   }
 
-
-  Future<void> cancelDownloadedVideo(int? textureId , String? url) {
+  Future<void> cancelDownloadedVideo(int? textureId, String? url) {
     throw UnimplementedError('getDownloadData() has not been implemented.');
   }
-
-
-
 
   /// Gets the video position as [DateTime].
   Future<DateTime?> getAbsolutePosition(int? textureId) {
     throw UnimplementedError('getAbsolutePosition() has not been implemented.');
+  }
+
+  Future<void> setupAutomaticPictureInPictureTransition({
+    int? textureId,
+    bool? willStartPIP,
+  }) {
+    throw UnimplementedError(
+        'setupAutomaticPictureInPictureTransition() has not been implemented.');
   }
 
   ///Enables PiP mode.
@@ -306,7 +311,7 @@ class DataSource {
   /// The package that the asset was loaded from. Only set for
   /// [DataSourceType.asset] videos.
   final String? package;
-    int? quality = 0;
+  int? quality = 0;
 
   final Map<String, String?>? headers;
 
@@ -490,6 +495,11 @@ enum VideoEventType {
   /// The video is set to pause
   pause,
 
+  playAction,
+  pauseAction,
+  next,
+  previous,
+
   /// The video is set to given to position
   seek,
 
@@ -501,6 +511,18 @@ enum VideoEventType {
 
   /// An unknown event has been received.
   unknown,
+
+  /// will start Picture in picture
+  enteringPIP,
+
+  /// will stop Picture in picture
+  exitingPIP,
+
+  /// When tap custom play button in Picture in picture mode
+  playInPIPTapped,
+
+  /// When tap custom pause button in Picture in picture mode
+  pauseInPIPTapped,
 }
 
 /// Describes a discrete segment of time within a video using a [start] and
@@ -561,4 +583,11 @@ class DurationRange {
 
   @override
   int get hashCode => start.hashCode ^ end.hashCode;
+}
+
+enum VideoActions {
+  play,
+  pause,
+  next,
+  previous,
 }

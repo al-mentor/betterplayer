@@ -3,12 +3,14 @@
 // found in the LICENSE file.
 import 'dart:async';
 import 'dart:developer';
+
 import 'package:better_player/src/configuration/better_player_buffering_configuration.dart';
 import 'package:better_player/src/core/better_player_utils.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+
 import 'download_video_list.dart';
 import 'video_player_platform_interface.dart';
 
@@ -26,6 +28,34 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
     return _channel.invokeMethod<void>(
       'dispose',
       <String, dynamic>{'textureId': textureId},
+    );
+  }
+
+  @override
+  Future<void> onVideoAction(void Function(VideoActions?) cb) async {
+    print('something got here');
+    _channel.setMethodCallHandler(
+      (call) async {
+        VideoActions? action;
+        print('_______________________________');
+        print('tomato');
+        print(call.method);
+        switch (call.method) {
+          case 'play':
+            action = VideoActions.play;
+            break;
+          case 'pause':
+            action = VideoActions.pause;
+            break;
+          case 'next':
+            action = VideoActions.next;
+            break;
+          case 'previous':
+            action = VideoActions.previous;
+            break;
+        }
+        cb(action);
+      },
     );
   }
 
@@ -266,7 +296,6 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
     );
   }
 
-
   @override
   Future<void> cancelDownloadedVideo(int? textureId, String? url) async {
     var data = await _channel.invokeMethod<String?>(
@@ -274,6 +303,7 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
       <String, dynamic>{'textureId': textureId, 'uri': url},
     );
   }
+
   @override
   Future<DateTime?> getAbsolutePosition(int? textureId) async {
     final int milliseconds = await _channel.invokeMethod<int>(
@@ -285,6 +315,20 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
     if (milliseconds <= 0) return null;
 
     return DateTime.fromMillisecondsSinceEpoch(milliseconds);
+  }
+
+  @override
+  Future<void> setupAutomaticPictureInPictureTransition({
+    int? textureId,
+    bool? willStartPIP,
+  }) async {
+    return _channel.invokeMethod<void>(
+      'setupAutomaticPictureInPictureTransition',
+      <String, dynamic>{
+        'textureId': textureId,
+        'willStartPIP': willStartPIP,
+      },
+    );
   }
 
   @override
@@ -465,7 +509,6 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
             eventType: VideoEventType.bufferingEnd,
             key: key,
           );
-
         case 'play':
           return VideoEvent(
             eventType: VideoEventType.play,
@@ -475,6 +518,29 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
         case 'pause':
           return VideoEvent(
             eventType: VideoEventType.pause,
+            key: key,
+          );
+        case 'play_action':
+          return VideoEvent(
+            eventType: VideoEventType.playAction,
+            key: key,
+          );
+
+        case 'pause_action':
+          return VideoEvent(
+            eventType: VideoEventType.pauseAction,
+            key: key,
+          );
+
+        case 'next_action':
+          return VideoEvent(
+            eventType: VideoEventType.next,
+            key: key,
+          );
+
+        case 'previous_action':
+          return VideoEvent(
+            eventType: VideoEventType.previous,
             key: key,
           );
 
@@ -494,6 +560,30 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
         case 'pipStop':
           return VideoEvent(
             eventType: VideoEventType.pipStop,
+            key: key,
+          );
+
+        case 'enteringPIP':
+          return VideoEvent(
+            eventType: VideoEventType.enteringPIP,
+            key: key,
+          );
+
+        case 'exitingPIP':
+          return VideoEvent(
+            eventType: VideoEventType.exitingPIP,
+            key: key,
+          );
+
+        case 'playInPIPTapped':
+          return VideoEvent(
+            eventType: VideoEventType.playInPIPTapped,
+            key: key,
+          );
+
+        case 'pauseInPIPTapped':
+          return VideoEvent(
+            eventType: VideoEventType.pauseInPIPTapped,
             key: key,
           );
 

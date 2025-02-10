@@ -86,8 +86,10 @@ bool _remoteCommandsInitialized = false;
 }
 
 - (void) setupRemoteNotification :(BetterPlayer*) player{
+    [self disposeNotificationData:_notificationPlayer];
+
     _notificationPlayer = player;
-    [self stopOtherUpdateListener:player];
+//    [self stopOtherUpdateListener:player];
     NSDictionary* dataSource = [_dataSourceDict objectForKey:[self getTextureId:player]];
     BOOL showNotification = false;
     id showNotificationObject = [dataSource objectForKey:@"showNotification"];
@@ -106,10 +108,12 @@ bool _remoteCommandsInitialized = false;
     }
 }
 
-- (void) setRemoteCommandsNotificationActive{
-    
-    
-    [[AVAudioSession sharedInstance] setActive:true error:nil];
+- (void)setRemoteCommandsNotificationActive {
+    NSError *error = nil;
+    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
+                                     withOptions:AVAudioSessionCategoryOptionAllowAirPlay
+                                           error:&error];
+    [[AVAudioSession sharedInstance] setActive:YES error:&error];
     [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
 }
 
@@ -119,10 +123,12 @@ bool _remoteCommandsInitialized = false;
     }
 
     [[UIApplication sharedApplication] endReceivingRemoteControlEvents];
+    [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = @{};
+
 }
 
 
-- (void) setupRemoteCommands:(BetterPlayer*)player  {
+- (void)setupRemoteCommands:(BetterPlayer*)player  {
     if (_remoteCommandsInitialized){
         return;
     }
@@ -130,8 +136,11 @@ bool _remoteCommandsInitialized = false;
     [commandCenter.togglePlayPauseCommand setEnabled:YES];
     [commandCenter.playCommand setEnabled:YES];
     [commandCenter.pauseCommand setEnabled:YES];
-    [commandCenter.nextTrackCommand setEnabled:NO];
-    [commandCenter.previousTrackCommand setEnabled:NO];
+    
+    // Enable next and previous track commands
+    [commandCenter.nextTrackCommand setEnabled:YES];
+    [commandCenter.previousTrackCommand setEnabled:YES];
+    
     if (@available(iOS 9.1, *)) {
         [commandCenter.changePlaybackPositionCommand setEnabled:YES];
     }
@@ -139,9 +148,9 @@ bool _remoteCommandsInitialized = false;
     [commandCenter.togglePlayPauseCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
         if (_notificationPlayer != [NSNull null]){
             if (_notificationPlayer.isPlaying){
-                _notificationPlayer.eventSink(@{@"event" : @"play"});
+                _notificationPlayer.eventSink(@{@"event" : @"play_action"});
             } else {
-                _notificationPlayer.eventSink(@{@"event" : @"pause"});
+                _notificationPlayer.eventSink(@{@"event" : @"pause_action"});
             }
         }
         return MPRemoteCommandHandlerStatusSuccess;
@@ -149,83 +158,117 @@ bool _remoteCommandsInitialized = false;
 
     [commandCenter.playCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
         if (_notificationPlayer != [NSNull null]){
-            _notificationPlayer.eventSink(@{@"event" : @"play"});
+            _notificationPlayer.eventSink(@{@"event" : @"play_action"});
         }
         return MPRemoteCommandHandlerStatusSuccess;
     }];
 
     [commandCenter.pauseCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
         if (_notificationPlayer != [NSNull null]){
-            _notificationPlayer.eventSink(@{@"event" : @"pause"});
+            _notificationPlayer.eventSink(@{@"event" : @"pause_action"});
         }
         return MPRemoteCommandHandlerStatusSuccess;
     }];
 
+    // Add handlers for next and previous track commands
+    [commandCenter.nextTrackCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
+        if (_notificationPlayer != [NSNull null]){
+            _notificationPlayer.eventSink(@{@"event" : @"next_action"});
+        }
+        return MPRemoteCommandHandlerStatusSuccess;
+    }];
 
-
-    if (@available(iOS 9.1, *)) {
-        [commandCenter.changePlaybackPositionCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
-            if (_notificationPlayer != [NSNull null]){
-                MPChangePlaybackPositionCommandEvent * playbackEvent = (MPChangePlaybackRateCommandEvent * ) event;
-                CMTime time = CMTimeMake(playbackEvent.positionTime, 1);
-                int64_t millis = [BetterPlayerTimeUtils FLTCMTimeToMillis:(time)];
-                [_notificationPlayer seekTo: millis];
-                _notificationPlayer.eventSink(@{@"event" : @"seek", @"position": @(millis)});
-            }
-            return MPRemoteCommandHandlerStatusSuccess;
-        }];
-    }
+    [commandCenter.previousTrackCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
+        if (_notificationPlayer != [NSNull null]){
+            _notificationPlayer.eventSink(@{@"event" : @"previous_action"});
+        }
+        return MPRemoteCommandHandlerStatusSuccess;
+    }];
+    
+//    if (@available(iOS 9.1, *)) {
+//        [commandCenter.changePlaybackPositionCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
+//            if (_notificationPlayer != [NSNull null]){
+//                MPChangePlaybackPositionCommandEvent * playbackEvent = (MPChangePlaybackPositionCommandEvent * ) event;
+//                CMTime time = CMTimeMake(playbackEvent.positionTime, 1);
+//                int64_t millis = [BetterPlayerTimeUtils FLTCMTimeToMillis:(time)];
+//                [_notificationPlayer seekTo: millis];
+//                _notificationPlayer.eventSink(@{@"event" : @"seek", @"position": @(millis)});
+//            }
+//            return MPRemoteCommandHandlerStatusSuccess;
+//        }];
+//    }
     _remoteCommandsInitialized = true;
 }
+- (void) setupRemoteCommandNotification:(BetterPlayer*)player, NSString* title, NSString* author, NSString* imageUrl {
+    float positionInSeconds = player.position / 1000.0;
+    float durationInSeconds = player.duration / 1000.0;
 
-- (void) setupRemoteCommandNotification:(BetterPlayer*)player, NSString* title, NSString* author , NSString* imageUrl{
-    float positionInSeconds = player.position /1000;
-    float durationInSeconds = player.duration/ 1000;
-
-
-    NSMutableDictionary * nowPlayingInfoDict = [@{MPMediaItemPropertyArtist: author,
-                                                  MPMediaItemPropertyTitle: title,
-                                                  MPNowPlayingInfoPropertyElapsedPlaybackTime: [ NSNumber numberWithFloat : positionInSeconds],
-                                                  MPMediaItemPropertyPlaybackDuration: [NSNumber numberWithFloat:durationInSeconds],
-                                                  MPNowPlayingInfoPropertyPlaybackRate: @1,
+    NSMutableDictionary * nowPlayingInfoDict = [@{
+        MPMediaItemPropertyArtist: author ?: @"",
+        MPMediaItemPropertyTitle: title ?: @"",
+        MPNowPlayingInfoPropertyElapsedPlaybackTime: @(positionInSeconds),
+        MPMediaItemPropertyPlaybackDuration: @(durationInSeconds),
+        MPNowPlayingInfoPropertyPlaybackRate: @1.0,
+        // Add media type (try both audio/video depending on your content)
+        MPNowPlayingInfoPropertyMediaType: @(MPNowPlayingInfoMediaTypeAudio)
     } mutableCopy];
 
-    if (imageUrl != [NSNull null]){
-        NSString* key =  [self getTextureId:player];
-        MPMediaItemArtwork* artworkImage = [_artworkImageDict objectForKey:key];
+    if (imageUrl && ![imageUrl isKindOfClass:[NSNull class]]) {
+        NSString* key = [self getTextureId:player];
+        MPMediaItemArtwork* artworkImage = nil;
 
-        if (key != [NSNull null]){
-            if (artworkImage){
-                [nowPlayingInfoDict setObject:artworkImage forKey:MPMediaItemPropertyArtwork];
-                [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nowPlayingInfoDict;
+        @synchronized(self) {
+            artworkImage = [_artworkImageDict objectForKey:key];
+        }
 
-            } else {
-                dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-                dispatch_async(queue, ^{
-                    @try{
-                        UIImage * tempArtworkImage = nil;
-                        if ([imageUrl rangeOfString:@"http"].location == NSNotFound){
-                            tempArtworkImage = [UIImage imageWithContentsOfFile:imageUrl];
+        if (artworkImage) {
+            [nowPlayingInfoDict setObject:artworkImage forKey:MPMediaItemPropertyArtwork];
+//            dispatch_async(dispatch_get_main_queue(), ^{
+//                [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nowPlayingInfoDict;
+//            });
+        } else {
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                @try {
+                    UIImage *tempArtworkImage = nil;
+                    if (![imageUrl containsString:@"http"]) {
+                        tempArtworkImage = [UIImage imageWithContentsOfFile:imageUrl];
+                    } else {
+                        NSURL *nsImageUrl = [NSURL URLWithString:imageUrl];
+                        NSData *imageData = [NSData dataWithContentsOfURL:nsImageUrl];
+                        tempArtworkImage = imageData ? [UIImage imageWithData:imageData] : nil;
+                    }
+
+                    if (tempArtworkImage) {
+                        MPMediaItemArtwork* newArtworkImage = nil;
+                        if (@available(iOS 10.0, *)) {
+                            newArtworkImage = [[MPMediaItemArtwork alloc] initWithBoundsSize:tempArtworkImage.size requestHandler:^UIImage * _Nonnull(CGSize size) {
+                                return tempArtworkImage;
+                            }];
                         } else {
-                            NSURL *nsImageUrl =[NSURL URLWithString:imageUrl];
-                            tempArtworkImage = [UIImage imageWithData:[NSData dataWithContentsOfURL:nsImageUrl]];
+                            newArtworkImage = [[MPMediaItemArtwork alloc] initWithImage:tempArtworkImage];
                         }
-                        if(tempArtworkImage)
-                        {
-                            MPMediaItemArtwork* artworkImage = [[MPMediaItemArtwork alloc] initWithImage: tempArtworkImage];
-                            [_artworkImageDict setObject:artworkImage forKey:key];
-                            [nowPlayingInfoDict setObject:artworkImage forKey:MPMediaItemPropertyArtwork];
-                        }
-                        [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nowPlayingInfoDict;
-                    }
-                    @catch(NSException *exception) {
 
+                        if (newArtworkImage) {
+                            @synchronized(self) {
+                                [_artworkImageDict setObject:newArtworkImage forKey:key];
+                            }
+                            [nowPlayingInfoDict setObject:newArtworkImage forKey:MPMediaItemPropertyArtwork];
+                        }
                     }
-                });
-            }
+
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nowPlayingInfoDict;
+                    });
+                }
+                @catch (NSException *exception) {
+                    NSLog(@"Exception while setting artwork image: %@, %@", exception.name, exception.reason);
+                }
+            });
         }
     } else {
-        [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nowPlayingInfoDict;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nowPlayingInfoDict;
+        });
     }
 }
 
@@ -253,12 +296,14 @@ bool _remoteCommandsInitialized = false;
         _remoteCommandsInitialized = false;
     }
     NSString* key =  [self getTextureId:player];
-    id _timeObserverId = _timeObserverIdDict[key];
-    [_timeObserverIdDict removeObjectForKey: key];
-    [_artworkImageDict removeObjectForKey:key];
-    if (_timeObserverId){
-        [player.player removeTimeObserver:_timeObserverId];
-        _timeObserverId = nil;
+    if (key) {
+        id _timeObserverId = _timeObserverIdDict[key];
+        [_timeObserverIdDict removeObjectForKey: key];
+        [_artworkImageDict removeObjectForKey:key];
+        if (_timeObserverId){
+            [player.player removeTimeObserver:_timeObserverId];
+            _timeObserverId = nil;
+        }
     }
     [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo =  @{};
 }
@@ -538,7 +583,13 @@ bool _remoteCommandsInitialized = false;
 
             [player setTrackParameters:width: height : bitrate];
             result(nil);
-        } else if ([@"enablePictureInPicture" isEqualToString:call.method]){
+        }
+
+        else if ([@"setupAutomaticPictureInPictureTransition" isEqualToString:call.method]) {
+            [player willStartPictureInPicture:[argsMap[@"willStartPIP"] boolValue]];
+            result(nil);
+        }
+            else if ([@"enablePictureInPicture" isEqualToString:call.method]){
             double left = [argsMap[@"left"] doubleValue];
             double top = [argsMap[@"top"] doubleValue];
             double width = [argsMap[@"width"] doubleValue];
