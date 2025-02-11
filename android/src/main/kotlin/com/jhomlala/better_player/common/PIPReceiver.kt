@@ -124,17 +124,25 @@ class PIPReceiver(val activity: Activity) : BroadcastReceiver() {
                 addAction(ACTION_NEXT)
                 addAction(ACTION_PREVIOUS)
             }
-            ContextCompat.registerReceiver(
-                context, this, filter, ContextCompat.RECEIVER_NOT_EXPORTED
-            )
-            isRegistered = true
+            try {
+                context.registerReceiver(this, filter)
+                isRegistered = true
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
+
     fun unregisterReceiver(context: Context) {
         if (isRegistered) {
-            context.unregisterReceiver(this)
-            isRegistered = false
+            try {
+                context.unregisterReceiver(this)
+                isRegistered = false
+            } catch (e: IllegalArgumentException) {
+                // Prevents "Receiver not registered" crash
+                e.printStackTrace()
+            }
         }
     }
 }
