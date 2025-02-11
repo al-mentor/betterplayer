@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.jhomlala.better_player">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.jhomlala.better_player">
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -10,7 +11,16 @@
 
     <application>
 
-
+        <receiver android:name=".common.PIPReceiver"
+            android:exported="false"
+            tools:ignore="Instantiatable">
+            <intent-filter>
+                <action android:name="com.jhomlala.better_player.PLAY" />
+                <action android:name="com.jhomlala.better_player.PAUSE" />
+                <action android:name="com.jhomlala.better_player.NEXT" />
+                <action android:name="com.jhomlala.better_player.PREVIOUS" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

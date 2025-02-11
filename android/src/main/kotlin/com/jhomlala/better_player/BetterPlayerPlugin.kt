@@ -54,6 +54,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlin.text.compareTo
 
 /**
  * Android platform implementation of the VideoPlayerPlugin.
@@ -115,9 +116,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
         activityBinding = binding
-
-        pipActionReceiver = PIPReceiver(activity!!)
-        pipActionReceiver?.registerReceiver(activity!!)
+        pipActionReceiver = PIPReceiver(activityBinding?.activity!!)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -718,7 +717,7 @@ private fun cancelDownload(
                 PendingIntent.getBroadcast(
                     activity!!,
                     0,
-                    Intent(ACTION_PLAY),
+                    Intent(PIPReceiver.ACTION_PLAY).setPackage(activity!!.packageName),
                     PendingIntent.FLAG_IMMUTABLE
                 )
             )
@@ -735,7 +734,7 @@ private fun cancelDownload(
                 PendingIntent.getBroadcast(
                     activityBinding?.activity,
                     1,
-                    Intent(ACTION_PAUSE),
+                    Intent(PIPReceiver.ACTION_PAUSE).setPackage(activityBinding?.activity!!.packageName),
                     PendingIntent.FLAG_IMMUTABLE
                 )
             )
@@ -748,7 +747,7 @@ private fun cancelDownload(
             PendingIntent.getBroadcast(
                 activityBinding?.activity,
                 2,
-                Intent(ACTION_NEXT),
+                Intent(PIPReceiver.ACTION_NEXT).setPackage(activityBinding?.activity!!.packageName),
                 PendingIntent.FLAG_IMMUTABLE
             )
         )
@@ -764,7 +763,7 @@ private fun cancelDownload(
             PendingIntent.getBroadcast(
                 activityBinding?.activity,
                 3,
-                Intent(ACTION_PREVIOUS),
+                Intent(PIPReceiver.ACTION_PREVIOUS).setPackage(activityBinding?.activity!!.packageName),
                 PendingIntent.FLAG_IMMUTABLE
             )
         )
@@ -775,21 +774,19 @@ private fun cancelDownload(
             .setActions(actions)
             .setAspectRatio(Rational(16, 9))
             .build()
-        return params;
+        return params
     }
-
 
     private fun enablePictureInPicture(player: BetterPlayer) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             player.setupMediaSession(flutterState!!.applicationContext)
-//            val builder = PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9))
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//                builder.setAutoEnterEnabled(false)
-            }
             val params = pipParams(player.isPlaying())
             activity!!.enterPictureInPictureMode(params)
             startPictureInPictureListenerTimer(player)
             player.onPictureInPictureStatusChanged(true)
+
+            // Register PIPReceiver
+            pipActionReceiver?.registerReceiver(activityBinding?.activity!!)
         }
     }
 
@@ -810,6 +807,9 @@ private fun cancelDownload(
                     player.onPictureInPictureStatusChanged(false)
                     player.disposeMediaSession()
                     stopPipHandler()
+
+                    // Unregister PIPReceiver
+                    pipActionReceiver?.unregisterReceiver( activityBinding?.activity!!)
                 }
             }
             pipHandler!!.post(pipRunnable!!)
@@ -938,10 +938,7 @@ private fun cancelDownload(
         private const val SETUP_AUTOMATIC_PICTURE_IN_PICTURE_TRANSITION =
             "setupAutomaticPictureInPictureTransition"
 
-        const val ACTION_PLAY = "com.jhomlala.better_player.PLAY"
-        const val ACTION_PAUSE = "com.jhomlala.better_player.PAUSE"
-        const val ACTION_NEXT = "com.jhomlala.better_player.NEXT"
-        const val ACTION_PREVIOUS = "com.jhomlala.better_player.PREVIOUS"
+
 
 
     }
