@@ -129,7 +129,11 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     override fun onDetachedFromActivity() {
-        pipActionReceiver?.unregisterReceiver(activity!!)
+        pipActionReceiver?.let {
+            if (PIPReceiver.isRegistered) {
+                it.unregisterReceiver(activity!!)
+            }
+        }
         activityBinding = null
     }
 
