@@ -362,7 +362,7 @@ class DownloadTracker(
         }
 
         fun release() {
-            downloadHelper.release()
+//            downloadHelper.release()
             trackSelectionDialog?.dismiss()
         }
 
