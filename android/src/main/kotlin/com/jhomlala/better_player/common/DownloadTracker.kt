@@ -1,4 +1,4 @@
- package com.jhomlala.better_player.common
+package com.jhomlala.better_player.common
 
 import android.app.AlertDialog
 import android.content.Context
@@ -140,6 +140,7 @@ class DownloadTracker(
         result: MethodChannel.Result? = null,
     ) {
         startDownloadDialogHelper?.release()
+        startDownloadDialogHelper = null
 
 
         if (mediaItems != null) {
@@ -193,26 +194,38 @@ class DownloadTracker(
                 R.id.cancel_download, R.id.delete_download -> removeDownload(download.request.uri)
                 R.id.resume_download -> {
                     val workRequest = OneTimeWorkRequestBuilder<PauseResumeDownloadWorker>()
-                        .setInputData(workDataOf(
-                            "downloadId" to download.request.id,
-                            "stopReason" to Download.STOP_REASON_NONE
-                        ))
+                        .setInputData(
+                            workDataOf(
+                                "downloadId" to download.request.id,
+                                "stopReason" to Download.STOP_REASON_NONE
+                            )
+                        )
                         .build()
 
                     WorkManager.getInstance(context)
-                        .enqueueUniqueWork("ResumeDownloadWork_${download.request.id}", ExistingWorkPolicy.REPLACE, workRequest)
+                        .enqueueUniqueWork(
+                            "ResumeDownloadWork_${download.request.id}",
+                            ExistingWorkPolicy.REPLACE,
+                            workRequest
+                        )
                 }
 
                 R.id.pause_download -> {
                     val workRequest = OneTimeWorkRequestBuilder<PauseResumeDownloadWorker>()
-                        .setInputData(workDataOf(
-                            "downloadId" to download.request.id,
-                            "stopReason" to Download.STATE_STOPPED
-                        ))
+                        .setInputData(
+                            workDataOf(
+                                "downloadId" to download.request.id,
+                                "stopReason" to Download.STATE_STOPPED
+                            )
+                        )
                         .build()
 
                     WorkManager.getInstance(context)
-                        .enqueueUniqueWork("PauseDownloadWork_${download.request.id}", ExistingWorkPolicy.REPLACE, workRequest)
+                        .enqueueUniqueWork(
+                            "PauseDownloadWork_${download.request.id}",
+                            ExistingWorkPolicy.REPLACE,
+                            workRequest
+                        )
                 }
             }
             return@setOnMenuItemClickListener true
@@ -228,7 +241,11 @@ class DownloadTracker(
                 .build()
 
             WorkManager.getInstance(applicationContext)
-                .enqueueUniqueWork("RemoveDownloadWork_${download.request.id}", ExistingWorkPolicy.REPLACE, workRequest)
+                .enqueueUniqueWork(
+                    "RemoveDownloadWork_${download.request.id}",
+                    ExistingWorkPolicy.REPLACE,
+                    workRequest
+                )
         }
     }
 
@@ -242,7 +259,11 @@ class DownloadTracker(
                     .build()
 
                 WorkManager.getInstance(applicationContext)
-                    .enqueueUniqueWork("RemoveDownloadWork_${download.request.id}", ExistingWorkPolicy.REPLACE, workRequest)
+                    .enqueueUniqueWork(
+                        "RemoveDownloadWork_${download.request.id}",
+                        ExistingWorkPolicy.REPLACE,
+                        workRequest
+                    )
                 downloads.remove(uri)
             }
         }
@@ -356,18 +377,43 @@ class DownloadTracker(
     ) : DownloadHelper.Callback {
 
         private var trackSelectionDialog: AlertDialog? = null
+        private var isReleased = false
+        private val lock = Any()
 
         init {
             downloadHelper.prepare(this)
         }
 
+
         fun release() {
-//            downloadHelper.release()
-            trackSelectionDialog?.dismiss()
+            synchronized(lock) {
+                if (!isReleased) {
+                    try {
+                        trackSelectionDialog?.dismiss()
+                        trackSelectionDialog = null
+
+                        // Safely release the downloadHelper
+                        try {
+                            downloadHelper.release()
+                        } catch (e: IllegalArgumentException) {
+                            // Log but don't crash if receiver is already unregistered
+                            Log.w(TAG, "Error releasing downloadHelper: ${e.message}")
+                        }
+
+                        isReleased = true
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error during release", e)
+                    }
+                }
+            }
         }
+
 
         // DownloadHelper.Callback implementation.
         override fun onPrepared(helper: DownloadHelper) {
+            if (isReleased) {
+                return
+            }
             if (helper.periodCount == 0) {
                 Log.d(TAG, "No periods found. Downloading entire stream.")
                 val mediaItemTag: MediaItemTag = mediaItem.localConfiguration?.tag as MediaItemTag
@@ -475,8 +521,9 @@ class DownloadTracker(
             helper.addTrackSelection(0, qualitySelected)
 
             val drmConfiguration = mediaItem.localConfiguration?.drmConfiguration
-            val estimatedContentLength: Long = (qualitySelected.maxVideoBitrate * mediaItemTag.duration)
-                .div(C.MILLIS_PER_SECOND).div(C.BITS_PER_BYTE)
+            val estimatedContentLength: Long =
+                (qualitySelected.maxVideoBitrate * mediaItemTag.duration)
+                    .div(C.MILLIS_PER_SECOND).div(C.BITS_PER_BYTE)
             var keySetId: ByteArray? = null
 
             if (drmConfiguration != null) {
@@ -526,44 +573,52 @@ class DownloadTracker(
                 Log.e(TAG, "availableBytesLeft after calculation: $availableBytesLeft")
             } else {
                 result?.success(false)
-                Toast.makeText(context, "Not enough space to download this file", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Not enough space to download this file", Toast.LENGTH_LONG)
+                    .show()
             }
             positiveCallback?.invoke()
         }
 
         override fun onPrepareError(helper: DownloadHelper, e: IOException) {
-
-            DownloadUtil
-                .eventChannel?.success(DownloadUtil
-                    .buildFailedDownloadObject(mediaItem.localConfiguration?.uri!!));
-
-
-
-            result?.success(false)
-
-            Toast.makeText(applicationContext, R.string.download_start_error, Toast.LENGTH_LONG)
-                .show()
-            Log.e(
-                TAG,
-                if (e is DownloadHelper.LiveContentUnsupportedException) "Downloading live content unsupported" else "Failed to start download",
-                e
-            )
+            if (!isReleased) {
+                DownloadUtil.eventChannel?.success(
+                    DownloadUtil.buildFailedDownloadObject(mediaItem.localConfiguration?.uri!!)
+                )
+                result?.success(false)
+                Toast.makeText(applicationContext, R.string.download_start_error, Toast.LENGTH_LONG)
+                    .show()
+                Log.e(
+                    TAG,
+                    if (e is DownloadHelper.LiveContentUnsupportedException)
+                        "Downloading live content unsupported"
+                    else "Failed to start download",
+                    e
+                )
+                release()
+            }
         }
+
 
         // Internal methods.
-        private fun startDownload(downloadRequest: DownloadRequest = buildDownloadRequest()) {
-            val parcel = Parcel.obtain()
-            downloadRequest.writeToParcel(parcel, 0)
-            val downloadRequestBytes = parcel.marshall()
-            parcel.recycle()
+        private fun startDownload(downloadRequest: DownloadRequest) {
+            if (!isReleased) {
+                val parcel = Parcel.obtain()
+                try {
+                    downloadRequest.writeToParcel(parcel, 0)
+                    val downloadRequestBytes = parcel.marshall()
 
-            val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
-                .setInputData(workDataOf("downloadRequest" to downloadRequestBytes))
-                .build()
+                    val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
+                        .setInputData(workDataOf("downloadRequest" to downloadRequestBytes))
+                        .build()
 
-            WorkManager.getInstance(applicationContext)
-                .enqueueUniqueWork("DownloadWork", ExistingWorkPolicy.REPLACE, workRequest)
+                    WorkManager.getInstance(applicationContext)
+                        .enqueueUniqueWork("DownloadWork", ExistingWorkPolicy.REPLACE, workRequest)
+                } finally {
+                    parcel.recycle()
+                }
+            }
         }
+
         private fun buildDownloadRequest(): DownloadRequest {
             return downloadHelper.getDownloadRequest(
                 (mediaItem.localConfiguration?.tag as MediaItemTag).title,
