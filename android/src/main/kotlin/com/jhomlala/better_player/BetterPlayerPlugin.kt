@@ -98,6 +98,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             },
             binding.textureRegistry
         )
+        DownloadUtil.createNotificationChannel(binding.applicationContext)
+
         flutterState?.startListening(this)
     }
 
@@ -110,6 +112,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         releaseCache()
         flutterState?.stopListening()
         flutterState = null
+        DownloadUtil.releaseDownloadTracker()
+
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

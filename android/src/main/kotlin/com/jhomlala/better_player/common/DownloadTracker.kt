@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Looper
 import android.os.Parcel
 import android.os.StatFs
 import android.util.Base64
@@ -84,10 +85,24 @@ class DownloadTracker(
         StatFs(DownloadUtil.getDownloadDirectory(context).path).availableBytes
 
     val downloads: HashMap<Uri, Download> = HashMap()
+    private val downloadManagerListener = DownloadManagerListener()
 
     init {
-        downloadManager.addListener(DownloadManagerListener())
+        downloadManager.addListener(downloadManagerListener)
         loadDownloads()
+    }
+
+    fun release() {
+        // First release any active dialog helper
+        startDownloadDialogHelper?.release()
+        startDownloadDialogHelper = null
+
+        // Then clean up listeners
+        val listenersCopy = listeners.toArray()
+        listeners.clear()
+
+        // Remove the download manager listener
+        downloadManager.removeListener(downloadManagerListener)
     }
 
     fun addListener(listener: Listener) {
@@ -389,6 +404,18 @@ class DownloadTracker(
             downloadHelper.prepare(this)
         }
 
+        private fun releaseHelper() {
+            try {
+                if (!isReleased) {
+                    downloadHelper.release()
+                }
+            } catch (e: IllegalArgumentException) {
+                // Log but don't crash if receiver is already unregistered
+                BetterPlayer.eventSink.error("downloadHelper",
+                    "Error releasing downloadHelper ${e.toString()}", "")
+                Log.w(TAG, "Error releasing downloadHelper: ${e.message}")
+            }
+        }
 
         fun release() {
             synchronized(lock) {
@@ -397,14 +424,10 @@ class DownloadTracker(
                         trackSelectionDialog?.dismiss()
                         trackSelectionDialog = null
 
-                        // Safely release the downloadHelper
-                        try {
-                            downloadHelper.release()
-                        } catch (e: IllegalArgumentException) {
-                            BetterPlayer.eventSink.error("downloadHelper",
-                                "Error releasing downloadHelper ${e.toString()}", "")
-                            // Log but don't crash if receiver is already unregistered
-                            Log.w(TAG, "Error releasing downloadHelper: ${e.message}")
+                        if (Looper.myLooper() == Looper.getMainLooper()) {
+                            releaseHelper()
+                        } else {
+                            Handler(Looper.getMainLooper()).post { releaseHelper() }
                         }
 
                         isReleased = true
@@ -560,6 +583,8 @@ class DownloadTracker(
 
                         Log.e("DownloadTracker", "Failed to download license", e)
                         conditionVariable.open()
+                    }finally {
+                        offlineHelper.release() // Make sure to release the offlineHelper
                     }
                 }
 

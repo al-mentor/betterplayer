@@ -121,14 +121,6 @@ object DownloadUtil {
         return dataSourceFactory
     }
 
-    @Synchronized
-    fun getDownloadNotificationHelper(context: Context?): DownloadNotificationHelper {
-        if(!DownloadUtil::downloadNotificationHelper.isInitialized) {
-            downloadNotificationHelper =
-                DownloadNotificationHelper(context!!, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
-        }
-        return downloadNotificationHelper
-    }
 
     @Synchronized
     fun getDownloadManager(context: Context): DownloadManager {
@@ -200,5 +192,47 @@ object DownloadUtil {
         }
         return downloadDirectory
     }
+     @Synchronized
+     fun releaseDownloadTracker() {
+         if (this::downloadTracker.isInitialized) {
+             downloadTracker.release()
+         }
+     }
+
+     // Add this method to DownloadUtil.kt
+     @UnstableApi
+     fun createNotificationChannel(context: Context) {
+         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+
+             // Check if the channel already exists to avoid recreating it
+             if (notificationManager.getNotificationChannel(DOWNLOAD_NOTIFICATION_CHANNEL_ID) == null) {
+                 val channel = android.app.NotificationChannel(
+                     DOWNLOAD_NOTIFICATION_CHANNEL_ID,
+                     "Downloads", // User visible name of the channel
+                     android.app.NotificationManager.IMPORTANCE_LOW // Low importance to avoid sound/vibration
+                 )
+                 channel.description = "Channel for download notifications"
+                 channel.setSound(null, null) // No sound
+                 channel.enableVibration(false) // No vibration
+
+                 notificationManager.createNotificationChannel(channel)
+             }
+         }
+     }
+
+     // Then modify the getDownloadNotificationHelper method in DownloadUtil.kt
+     @Synchronized
+     fun getDownloadNotificationHelper(context: Context?): DownloadNotificationHelper {
+         if (context != null) {
+             createNotificationChannel(context) // Add this line
+         }
+
+         if(!DownloadUtil::downloadNotificationHelper.isInitialized) {
+             downloadNotificationHelper =
+                 DownloadNotificationHelper(context!!, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+         }
+         return downloadNotificationHelper
+     }
 
 }
