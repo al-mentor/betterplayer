@@ -99,8 +99,6 @@ class DownloadWorker(
             download: Download,
             finalException: Exception?
         ) {
-            // Send immediate update for state changes
-            DownloadUtil.eventChannel?.success(DownloadUtil.buildDownloadObject(List(1) { download }))
 
             when (download.state) {
                 Download.STATE_DOWNLOADING -> {
