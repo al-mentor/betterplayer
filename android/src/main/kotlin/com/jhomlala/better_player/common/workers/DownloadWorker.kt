@@ -155,7 +155,9 @@ class DownloadWorker(
                         Util.fromUtf8Bytes(download.request.data)
                     )
                     NotificationUtil.setNotification(context, nextNotificationId++, completionNotification)
-
+                    DownloadUtil.eventChannel?.success(
+                        DownloadUtil.buildDownloadObject(List(1) { download })
+                    )
                 }
 
                 Download.STATE_FAILED -> {
@@ -173,6 +175,9 @@ class DownloadWorker(
                         Util.fromUtf8Bytes(download.request.data)
                     )
                     NotificationUtil.setNotification(context, nextNotificationId++, notification)
+                    DownloadUtil.eventChannel?.success(
+                        DownloadUtil.buildDownloadObject(List(1) { download })
+                    )
                 }
 
                 Download.STATE_STOPPED, Download.STATE_QUEUED, Download.STATE_REMOVING, Download.STATE_RESTARTING -> {
