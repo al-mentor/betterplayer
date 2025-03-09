@@ -1,8 +1,6 @@
 package com.jhomlala.better_player.common.workers
 
-import android.app.Notification
 import android.content.Context
-import android.net.Uri
 import android.os.Parcel
 import androidx.annotation.OptIn
 import androidx.media3.common.util.NotificationUtil
@@ -12,21 +10,11 @@ import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
 import androidx.media3.exoplayer.offline.DownloadRequest
-import androidx.media3.exoplayer.scheduler.Requirements
 import androidx.work.CoroutineWorker
-import androidx.work.WorkerParameters
 import androidx.work.ForegroundInfo
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
-import com.google.gson.JsonPrimitive
-import com.google.gson.JsonSerializationContext
-import com.google.gson.JsonSerializer
+import androidx.work.WorkerParameters
 import com.jhomlala.better_player.R
 import com.jhomlala.better_player.common.DownloadUtil
-import java.lang.reflect.Type
 
 @OptIn(UnstableApi::class)
 class DownloadWorker(
@@ -47,12 +35,15 @@ class DownloadWorker(
         val downloadNotificationHelper: DownloadNotificationHelper =
             DownloadUtil.getDownloadNotificationHelper(applicationContext)
 
-        terminalStateHelper = TerminalStateNotificationHelper(
-            applicationContext,
-            downloadNotificationHelper,
-            FOREGROUND_NOTIFICATION_ID + 1
-        )
-        downloadManager.addListener(terminalStateHelper!!)
+        if (terminalStateHelper == null) {
+            terminalStateHelper = TerminalStateNotificationHelper(
+                applicationContext,
+                downloadNotificationHelper,
+                FOREGROUND_NOTIFICATION_ID + 1
+            )
+            downloadManager.addListener(terminalStateHelper!!)
+        }
+
 
 
 
@@ -64,6 +55,7 @@ class DownloadWorker(
 
         return Result.success()
     }
+
 
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
@@ -143,7 +135,7 @@ class DownloadWorker(
                 Download.STATE_COMPLETED -> {
                     // Cancel progress updates
                     cancelProgressUpdates(download.request.id)
-
+                    downloadManager.removeListener(this)
                     // Cancel the ongoing foreground notification
                     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
                     notificationManager.cancel(FOREGROUND_NOTIFICATION_ID)
