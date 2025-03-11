@@ -294,8 +294,8 @@ class DownloadTracker(
                 }
             }
         } catch (e: IOException) {
-            BetterPlayer.eventSink.error("Failed to download license",
-                "Failed to query downloads ${e.toString()}", "")
+//            BetterPlayer.eventSink.error("Failed to download license",
+//                "Failed to query downloads ${e.toString()}", "")
             Log.w(TAG, "Failed to query downloads", e)
         }
     }
@@ -374,8 +374,8 @@ class DownloadTracker(
                     try {
                         dataString.toLong()
                     } catch (e: NumberFormatException) {
-                        BetterPlayer.eventSink.error("Failed to download license",
-                            "Failed to query downloads ${e.toString()}", "")
+//                        BetterPlayer.eventSink.error("Failed to download license",
+//                            "Failed to query downloads ${e.toString()}", "")
                         // Log the error if necessary
                         0L // or handle the error as needed
                     }
@@ -411,8 +411,8 @@ class DownloadTracker(
                 }
             } catch (e: IllegalArgumentException) {
                 // Log but don't crash if receiver is already unregistered
-                BetterPlayer.eventSink.error("downloadHelper",
-                    "Error releasing downloadHelper ${e.toString()}", "")
+//                BetterPlayer.eventSink.error("downloadHelper",
+//                    "Error releasing downloadHelper ${e.toString()}", "")
                 Log.w(TAG, "Error releasing downloadHelper: ${e.message}")
             }
         }
@@ -432,8 +432,8 @@ class DownloadTracker(
 
                         isReleased = true
                     } catch (e: Exception) {
-                        BetterPlayer.eventSink.error("release",
-                            "release  ${e.toString()}", e)
+//                        BetterPlayer.eventSink.error("release",
+//                            "release  ${e.toString()}", e)
                         Log.e(TAG, "Error during release", e)
                     }
                 }
@@ -578,8 +578,8 @@ class DownloadTracker(
                         Log.e("DownloadTracker", "keySetId: $keySetId")
                         conditionVariable.open()
                     } catch (e: Exception) {
-                        BetterPlayer.eventSink.error("Failed to download license",
-                            "Video player had error ${e.toString()}", "")
+//                        BetterPlayer.eventSink.error("Failed to download license",
+//                            "Video player had error ${e.toString()}", "")
 
                         Log.e("DownloadTracker", "Failed to download license", e)
                         conditionVariable.open()

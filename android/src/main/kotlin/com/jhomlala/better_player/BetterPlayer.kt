@@ -308,8 +308,8 @@ internal class BetterPlayer(
                                 mediaDrm.setPropertyString("securityLevel", "L3")
                                 return@setUuidAndExoMediaDrmProvider mediaDrm
                             } catch (e: UnsupportedDrmException) {
-                                eventSink.error("release",
-                                    "setAudioTrack  ${e.toString()}", e)
+//                                eventSink.error("release",
+//                                    "setAudioTrack  ${e.toString()}", e)
                                 return@setUuidAndExoMediaDrmProvider DummyExoMediaDrm()
                             }
                         }.setMultiSession(false).build(httpMediaDrmCallback)
@@ -434,8 +434,8 @@ internal class BetterPlayer(
                                 }
                             }
                         } catch (exception: Exception) {
-                            eventSink.error("release",
-                                "setAudioTrack  ${exception.toString()}", exception)
+//                            eventSink.error("release",
+//                                "setAudioTrack  ${exception.toString()}", exception)
                             Log.e(TAG, "Image select error: $exception")
                         }
                     }
@@ -599,8 +599,8 @@ internal class BetterPlayer(
             }.createMediaSource(mediaItem)
 
             else -> {
-                BetterPlayer.eventSink.error("release",
-                    "release  ${type.toString()}", type)
+//                BetterPlayer.eventSink.error("release",
+//                    "release  ${type.toString()}", type)
                 throw IllegalStateException("Unsupported type: $type")
             }
         }
@@ -877,8 +877,8 @@ internal class BetterPlayer(
                 }
             }
         } catch (exception: Exception) {
-             eventSink.error("release",
-                "setAudioTrack  ${exception.toString()}", exception)
+//             eventSink.error("release",
+//                "setAudioTrack  ${exception.toString()}", exception)
             Log.e(TAG, "setAudioTrack failed$exception")
         }
     }
@@ -958,8 +958,8 @@ internal class BetterPlayer(
                 }
                 result.success(null)
             } catch (exception: Exception) {
-                eventSink.error("release",
-                    "setAudioTrack  ${exception.toString()}", exception)
+//                eventSink.error("release",
+//                    "setAudioTrack  ${exception.toString()}", exception)
                 Log.e(TAG, exception.toString())
                 result.error("", "", "")
             }
