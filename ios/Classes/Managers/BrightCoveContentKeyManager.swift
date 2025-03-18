@@ -132,10 +132,13 @@ import AVFoundation
                 } catch {
                     errorHappened = true
                     self.postToConsole("WARNING: User requested offline capabilities for the asset. But key loading request from an AirPlay Session requires online key")
+                    keyRequest.processContentKeyResponseError(error)
+                    return
                 }
-                keyRequest.processContentKeyResponse(keyResponse)
-                NotificationCenter.default.post(name: .HasAvailablePersistableContentKey, object: nil, userInfo: nil)
-                if (!errorHappened){
+                
+                if !errorHappened {
+                    keyRequest.processContentKeyResponse(keyResponse)
+                    NotificationCenter.default.post(name: .HasAvailablePersistableContentKey, object: nil, userInfo: nil)
                     return
                 }
             }
