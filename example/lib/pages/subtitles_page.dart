@@ -1,6 +1,5 @@
 import 'package:better_player/better_player.dart';
 import 'package:better_player_example/constants.dart';
-import 'package:better_player_example/utils.dart';
 import 'package:flutter/material.dart';
 
 class SubtitlesPage extends StatefulWidget {
@@ -40,23 +39,22 @@ class _SubtitlesPageState extends State<SubtitlesPage> {
     BetterPlayerDataSource dataSource = BetterPlayerDataSource(
       BetterPlayerDataSourceType.network,
       Constants.forBiggerBlazesUrl,
-        subtitles: [
-          BetterPlayerSubtitlesSource(
-            type: BetterPlayerSubtitlesSourceType.network,
-            name: "EN",
-            urls: [
-              "https://dl.dropboxusercontent.com/s/71nzjo2ux3evxqk/example_subtitles.srt"
-            ],
-          ),
-
-          BetterPlayerSubtitlesSource(
-            type: BetterPlayerSubtitlesSourceType.network,
-            name: "DE",
-            urls: [
-              "https://dl.dropboxusercontent.com/s/71nzjo2ux3evxqk/example_subtitles.srt"
-            ],
-          ),
-        ],
+      subtitles: [
+        BetterPlayerSubtitlesSource(
+          type: BetterPlayerSubtitlesSourceType.network,
+          name: "EN",
+          urls: [
+            "https://dl.dropboxusercontent.com/s/71nzjo2ux3evxqk/example_subtitles.srt"
+          ],
+        ),
+        BetterPlayerSubtitlesSource(
+          type: BetterPlayerSubtitlesSourceType.network,
+          name: "DE",
+          urls: [
+            "https://dl.dropboxusercontent.com/s/71nzjo2ux3evxqk/example_subtitles.srt"
+          ],
+        ),
+      ],
     );
     _betterPlayerController.setupDataSource(dataSource);
   }

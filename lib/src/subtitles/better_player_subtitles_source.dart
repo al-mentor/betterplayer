@@ -1,6 +1,5 @@
 import 'package:better_player/src/asms/better_player_asms_subtitle_segment.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:get/get.dart';
 
 import 'better_player_subtitles_source_type.dart';
 

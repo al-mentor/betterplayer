@@ -32,7 +32,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import androidx.media3.exoplayer.offline.DownloadService
-import com.blankj.utilcode.util.ActivityUtils
+import com.jhomlala.better_player.common.ActivityUtils
 import com.jhomlala.better_player.BetterPlayerCache.releaseCache
 import com.jhomlala.better_player.common.DownloadTracker
 import com.jhomlala.better_player.common.DownloadUtil
@@ -78,6 +78,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
 
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
         val loader = FlutterLoader()
+        ActivityUtils.init(binding.applicationContext)
         flutterState = FlutterState(
             binding.applicationContext,
             binding.binaryMessenger,
@@ -353,27 +354,27 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
     }
 
     private fun deleteAllDownloadedAssets(call: MethodCall, result: MethodChannel.Result) {
-        DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity()).deleteAllDownloadedAssets();
+        val context = ActivityUtils.getApplicationContext() ?: return
+        DownloadUtil.getDownloadTracker(context).deleteAllDownloadedAssets();
         result.success(null);
-
     }
 
     private fun deleteDownloadedVideo(call: MethodCall, result: MethodChannel.Result) {
         val uri = call.argument<String?>(
             URI_PARAMETER
         )
-        DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity())
+        val context = ActivityUtils.getApplicationContext() ?: return
+        DownloadUtil.getDownloadTracker(context)
             .removeDownload(Uri.parse(uri));
         result.success(null);
     }
 
     private fun downloadData(call: MethodCall, result: MethodChannel.Result) {
-        val data = DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity()).downloads;
-        // array of maps have uri and download state and download id and download percentage and put it in result
+        val context = ActivityUtils.getApplicationContext() ?: return
+        val data = DownloadUtil.getDownloadTracker(context).downloads;
         buildDownloadObject(data, result)
 
         val evenet = EventChannel(flutterState?.binaryMessenger, DOWNLOAD_EVENTS_CHANNEL);
-
 
         evenet.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
@@ -467,15 +468,16 @@ private fun cancelDownload(
     result: MethodChannel.Result,
 ) {
     val uri = call.argument<String?>(URI_PARAMETER)
+    val context = ActivityUtils.getApplicationContext() ?: return
 
-    val download = DownloadUtil.getDownloadTracker(ActivityUtils.getTopActivity())
+    val download = DownloadUtil.getDownloadTracker(context)
         .getDownload(Uri.parse(uri))
     if (download != null) {
         val workRequest = OneTimeWorkRequestBuilder<StopDownloadWorker>()
             .setInputData(workDataOf("downloadId" to download.request.id))
             .build()
 
-        WorkManager.getInstance(ActivityUtils.getTopActivity())
+        WorkManager.getInstance(context)
             .enqueueUniqueWork("StopDownloadWork_${download.request.id}", ExistingWorkPolicy.REPLACE, workRequest)
     }
     result.success(null)
@@ -525,12 +527,11 @@ private fun cancelDownload(
         overriddenDuration: Long,
         quality: Int,
     ): Boolean {
-        val top = ActivityUtils.getTopActivity()
+        val context = ActivityUtils.getApplicationContext() ?: return false
+        val top = ActivityUtils.getTopActivity() ?: return false
         val topView = top.window.decorView.rootView
 
-
         val mediaItem: MediaItem?;
-
 
         if (licenseUrl != null) {
             mediaItem =
@@ -547,38 +548,32 @@ private fun cancelDownload(
                     .setMediaMetadata(
                         MediaMetadata.Builder().setTitle(key).build()
                     ).build();
-
         }
 
-        if (DownloadUtil.getDownloadTracker(top).isDownloaded(mediaItem)) {
+        if (DownloadUtil.getDownloadTracker(context).isDownloaded(mediaItem)) {
             result.error("already Downloaded", "This video is already downloaded", null);
         } else {
             val duration: Long = (overriddenDuration / 10);
             if (duration > 0L) {
                 val item = mediaItem.buildUpon().setTag(MediaItemTag(duration, key!!))
-
                     .build()
-                if (!DownloadUtil.getDownloadTracker(top)
+                if (!DownloadUtil.getDownloadTracker(context)
                         .hasDownload(item.localConfiguration?.uri)
                 ) {
                     DownloadTracker.globalQualitySelected = quality
                     GlobalScope.launch(Dispatchers.IO) {
-                        DownloadUtil.getDownloadTracker(top)
+                        DownloadUtil.getDownloadTracker(context)
                             .toggleDownloadDialogHelper(top, item, result = result)
                     }
                 } else {
-
-                    DownloadUtil.getDownloadTracker(top).toggleDownloadPopupMenu(
+                    DownloadUtil.getDownloadTracker(context).toggleDownloadPopupMenu(
                         top, topView, item.localConfiguration?.uri
                     )
                 }
-
             }
-
         }
 
         return false;
-
     }
 
     /**
@@ -805,7 +800,8 @@ private fun cancelDownload(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             pipHandler = Handler(Looper.getMainLooper())
             pipRunnable = Runnable {
-                if (ActivityUtils.getTopActivity().isInPictureInPictureMode) {
+                val topActivity = ActivityUtils.getTopActivity()
+                if (topActivity?.isInPictureInPictureMode == true) {
                     pipHandler!!.postDelayed(pipRunnable!!, 100)
                 } else {
                     player.onPictureInPictureStatusChanged(false)
@@ -813,7 +809,7 @@ private fun cancelDownload(
                     stopPipHandler()
 
                     // Unregister PIPReceiver
-                    pipActionReceiver?.unregisterReceiver( activityBinding?.activity!!)
+                    pipActionReceiver?.unregisterReceiver(activityBinding?.activity!!)
                 }
             }
             pipHandler!!.post(pipRunnable!!)

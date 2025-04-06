@@ -16,7 +16,7 @@ import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
-import com.blankj.utilcode.util.ActivityUtils
+import com.jhomlala.better_player.common.ActivityUtils
 import com.jhomlala.better_player.BetterPlayer
 import com.jhomlala.better_player.common.PIPReceiver
 
