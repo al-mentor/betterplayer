@@ -66,7 +66,6 @@ android {
         implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
         implementation "androidx.annotation:annotation:$annotationVersion"
         implementation "androidx.work:work-runtime:$workVersion"
-        implementation 'com.blankj:utilcodex:1.31.1'
         implementation 'com.google.android.material:material:1.11.0'
         implementation 'com.google.code.gson:gson:2.10.1'
         implementation "androidx.work:work-runtime-ktx:2.9.0"

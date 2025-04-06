@@ -13,7 +13,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
- import android.util.Log
+import android.util.Log
 import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.Observer
@@ -68,7 +68,7 @@ import androidx.work.Data
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import com.blankj.utilcode.util.ActivityUtils
+import com.jhomlala.better_player.common.ActivityUtils
 import com.jhomlala.better_player.DataSourceUtils.getDataSourceFactory
 import com.jhomlala.better_player.DataSourceUtils.getUserAgent
 import com.jhomlala.better_player.DataSourceUtils.isHTTP
@@ -166,9 +166,9 @@ internal class BetterPlayer(
         result: MethodChannel.Result,
     ): Boolean {
         val top = ActivityUtils.getTopActivity()
+        val context = ActivityUtils.getApplicationContext() ?: return false
 
         val mediaItem: MediaItem?;
-
 
         if (licenseUrl != null) {
             mediaItem =
@@ -185,32 +185,24 @@ internal class BetterPlayer(
                     .setMediaMetadata(
                         MediaMetadata.Builder().setTitle(key).build()
                     ).build();
-
         }
 
-
-
-
-        if (DownloadUtil.getDownloadTracker(top).isDownloaded(mediaItem)) {
+        if (DownloadUtil.getDownloadTracker(context).isDownloaded(mediaItem)) {
             if (runDownloadVideoFromLocal(
                     mediaItem, licenseUrl, result
                 )
             ) return true
-
         }
 
-
         return false;
-
     }
-
 
     private fun runDownloadVideoFromLocal(
         mediaItem: MediaItem, licenseUrl: String?, result: MethodChannel.Result
     ): Boolean {
-        val top = ActivityUtils.getTopActivity()
+        val context = ActivityUtils.getApplicationContext() ?: return false
         val download =
-            DownloadUtil.getDownloadTracker(top).getDownload(mediaItem.localConfiguration!!.uri)!!;
+            DownloadUtil.getDownloadTracker(context).getDownload(mediaItem.localConfiguration!!.uri)!!;
 
         if (download.state == Download.STATE_COMPLETED && download.percentDownloaded > 99f) {
             var mediaBuilder = MediaItem.Builder().setUri(download.request.uri.toString())
@@ -223,8 +215,7 @@ internal class BetterPlayer(
                     .build()
             )
 
-
-            val downloadRequest: DownloadRequest? = DownloadUtil.getDownloadTracker(top)
+            val downloadRequest: DownloadRequest? = DownloadUtil.getDownloadTracker(context)
                 .getDownloadRequest(mediaItem.localConfiguration?.uri)
 
             exoPlayer?.setMediaItem(
@@ -237,10 +228,8 @@ internal class BetterPlayer(
             return true;
         }
 
-
         return false
     }
-
 
     private fun maybeSetDownloadProperties(
         item: MediaItem, downloadRequest: DownloadRequest?
