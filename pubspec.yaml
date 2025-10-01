@@ -17,13 +17,13 @@ dependencies:
   cupertino_icons: ^1.0.5
   #  wakelock: ^0.6.2
   meta: ^1.8.0
-  flutter_widget_from_html_core: ^0.8.5+3
+  flutter_widget_from_html_core: ^0.17.0
   visibility_detector: ^0.3.3
   path_provider: ^2.0.11
   collection: ^1.16.0
   xml: ^6.1.0
   flutter_screenutil: ^5.9.0
-  firebase_crashlytics: ^4.0.4
+  firebase_crashlytics: ^5.0.2
   get: ^4.6.6
   flutter_svg: ^2.0.9
   wakelock_plus: ^1.1.4
