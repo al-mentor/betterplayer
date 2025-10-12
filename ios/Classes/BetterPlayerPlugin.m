@@ -148,6 +148,7 @@ bool _remoteCommandsInitialized = false;
     [commandCenter.togglePlayPauseCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
         if (_notificationPlayer != [NSNull null]){
             if (_notificationPlayer.isPlaying){
+                [_notificationPlayer playFromNotification];
                 _notificationPlayer.eventSink(@{@"event" : @"play_action"});
             } else {
                 _notificationPlayer.eventSink(@{@"event" : @"pause_action"});
@@ -158,6 +159,7 @@ bool _remoteCommandsInitialized = false;
 
     [commandCenter.playCommand addTargetWithHandler: ^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
         if (_notificationPlayer != [NSNull null]){
+            [_notificationPlayer playFromNotification];
             _notificationPlayer.eventSink(@{@"event" : @"play_action"});
         }
         return MPRemoteCommandHandlerStatusSuccess;

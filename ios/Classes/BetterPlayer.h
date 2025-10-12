@@ -41,10 +41,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic) bool isStalledCheckStarted;
 @property(nonatomic) float playerRate;
 @property(nonatomic) int overriddenDuration;
-@property(nonatomic) BetterPlayerView* _betterPlayerView;
-@property(nonatomic) bool _willStartPictureInPicture;
 @property(nonatomic) AVPlayerTimeControlStatus lastAvPlayerTimeControlStatus;
 - (void)play;
+- (void)playFromNotification;
 - (void)pause;
 - (void)setIsLooping:(bool)isLooping;
 - (void)updatePlayingState;
