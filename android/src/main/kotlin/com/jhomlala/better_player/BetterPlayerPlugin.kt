@@ -137,6 +137,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 it.unregisterReceiver(activity!!)
             }
         }
+        removeOtherNotificationListeners()
         activityBinding = null
     }
 
@@ -947,4 +948,3 @@ private fun cancelDownload(
 
     }
 }
-

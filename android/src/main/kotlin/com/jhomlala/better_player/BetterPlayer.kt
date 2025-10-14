@@ -17,6 +17,7 @@ import android.os.Looper
 import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.Observer
+import androidx.core.app.NotificationManagerCompat
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.ForwardingPlayer
@@ -97,6 +98,9 @@ internal class BetterPlayer(
     private val exoPlayer: ExoPlayer?
     private val trackSelector: DefaultTrackSelector = DefaultTrackSelector(context)
     private val loadControl: LoadControl
+    private val applicationContext: Context = context.applicationContext
+    private val notificationManager: NotificationManager? =
+        applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
     private var isInitialized = false
     private var surface: Surface? = null
     private var key: String? = null
@@ -378,14 +382,41 @@ internal class BetterPlayer(
                 @SuppressLint("UnspecifiedImmutableFlag")
                 override fun createCurrentContentIntent(player: Player): PendingIntent? {
                     val packageName = context.applicationContext.packageName
-                    val notificationIntent = Intent()
-                    notificationIntent.setClassName(
-                        packageName, "$packageName.$activityName"
-                    )
+                    val packageManager = context.packageManager
+                    val baseIntent =
+                        packageManager.getLaunchIntentForPackage(packageName)?.let { Intent(it) }
+                            ?: Intent(Intent.ACTION_MAIN).apply {
+                                addCategory(Intent.CATEGORY_LAUNCHER)
+                                setPackage(packageName)
+                            }
+
+                    val resolvedActivityName = when {
+                        activityName.isBlank() -> ""
+                        activityName.startsWith(".") -> packageName + activityName
+                        activityName.contains(".") -> activityName
+                        else -> "$packageName.$activityName"
+                    }
+
+                    val notificationIntent = Intent(baseIntent)
+                    if (resolvedActivityName.isNotEmpty()) {
+                        try {
+                            Class.forName(resolvedActivityName)
+                            notificationIntent.setClassName(packageName, resolvedActivityName)
+                        } catch (_: ClassNotFoundException) {
+                            // Fallback to default launch intent if the provided activity can't be resolved.
+                        }
+                    }
+
                     notificationIntent.flags =
-                        (Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP
+
                     return PendingIntent.getActivity(
-                        context, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE
+                        context,
+                        0,
+                        notificationIntent,
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                     )
                 }
 
@@ -528,6 +559,9 @@ internal class BetterPlayer(
         if (playerNotificationManager != null) {
             playerNotificationManager?.setPlayer(null)
         }
+        notificationManager?.cancel(NOTIFICATION_ID)
+        NotificationManagerCompat.from(applicationContext).cancel(NOTIFICATION_ID)
+        playerNotificationManager = null
         bitmap = null
     }
 

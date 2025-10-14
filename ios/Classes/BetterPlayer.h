@@ -25,6 +25,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface BetterPlayer : NSObject <FlutterPlatformView, FlutterStreamHandler, AVPictureInPictureControllerDelegate>
 @property(readonly, nonatomic) AVPlayer* player;
 @property(readonly, nonatomic) BetterPlayerEzDrmAssetsLoaderDelegate* loaderDelegate;
+@property(nonatomic, strong, nullable) BetterPlayerView *playerView;
+@property(nonatomic, strong, nullable) UIView *pipInlinePlaceholderView;
 @property(nonatomic) FlutterEventChannel* eventChannel;
 @property(nonatomic) FlutterEventSink eventSink;
 @property(nonatomic) CGAffineTransform preferredTransform;
@@ -42,6 +44,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic) float playerRate;
 @property(nonatomic) int overriddenDuration;
 @property(nonatomic) AVPlayerTimeControlStatus lastAvPlayerTimeControlStatus;
+@property (nonatomic, strong) AVPictureInPictureController *pipController;
+@property (nonatomic, strong, nullable) AVPlayerItem *observedItem;
+@property (nonatomic, assign) BOOL hasLastTimeControlStatus;
+@property (nonatomic, assign) NSInteger lastTimeControlStatusRaw; // -1 sentinel when unknown
+
+
 - (void)play;
 - (void)playFromNotification;
 - (void)pause;
@@ -57,10 +65,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setDataSourceURL:(NSURL*)url withKey:(NSString*)key withCertificateUrl:(NSString*)certificateUrl withLicenseUrl:(NSString*)licenseUrl withHeaders:(NSDictionary*)headers withCache:(BOOL)useCache cacheKey:(NSString*)cacheKey cacheManager:(CacheManager*)cacheManager overriddenDuration:(int) overriddenDuration videoExtension: (NSString*) videoExtension;
 - (void)setVolume:(double)volume;
 - (void)setSpeed:(double)speed result:(FlutterResult)result;
-- (void) setAudioTrack:(NSString*) name index:(int) index;
+- (void)setAudioTrack:(NSString*) name index:(int) index;
 - (void)setTrackParameters:(int) width: (int) height: (int)bitrate;
-- (void) enablePictureInPicture: (CGRect) frame;
--(void)willStartPictureInPicture:(bool)willStart;
+- (void)enablePictureInPicture: (CGRect) frame;
+- (void)willStartPictureInPicture:(bool)willStart;
 - (void)setPictureInPicture:(BOOL)pictureInPicture;
 - (void)disablePictureInPicture;
 - (int64_t)absolutePosition;

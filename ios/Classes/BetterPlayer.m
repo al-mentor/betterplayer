@@ -16,7 +16,7 @@ static void* presentationSizeContext = &presentationSizeContext;
 #if TARGET_OS_IOS
 void (^__strong _Nonnull _restoreUserInterfaceForPIPStopCompletionHandler)(BOOL);
 API_AVAILABLE(ios(9.0))
-AVPictureInPictureController *_pipController;
+//AVPictureInPictureController *_pipController;
 #endif
 
 @implementation BetterPlayer
@@ -30,18 +30,22 @@ AVPictureInPictureController *_pipController;
     _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
     ///Fix for loading large videos
     if (@available(iOS 10.0, *)) {
-        _player.automaticallyWaitsToMinimizeStalling = false;
+        _player.automaticallyWaitsToMinimizeStalling = true;
     }
     
  
     self._observersAdded = false;
+    self.hasLastTimeControlStatus = NO;
+    self.lastTimeControlStatusRaw = -1;
     return self;
 }
 
 - (nonnull UIView *)view {
-    BetterPlayerView *playerView = [[BetterPlayerView alloc] initWithFrame:CGRectZero];
-    playerView.player = _player;
-    return playerView;
+    if (self.playerView == nil) {
+        self.playerView = [[BetterPlayerView alloc] initWithFrame:CGRectZero];
+    }
+    self.playerView.player = _player;
+    return self.playerView;
 }
 
 - (void)addObservers:(AVPlayerItem*)item {
@@ -80,39 +84,33 @@ AVPictureInPictureController *_pipController;
     _disposed = false;
     _failedCount = 0;
     _key = nil;
-    if (_player.currentItem == nil) {
-        return;
-    }
-
-    if (_player.currentItem == nil) {
-        return;
-    }
-
+    
     [self removeObservers];
-    AVAsset* asset = [_player.currentItem asset];
-    [asset cancelLoading];
+    
+    AVPlayerItem *item = _player.currentItem;
+    if (item) {
+        [[item asset] cancelLoading];
+    }
+    [_player replaceCurrentItemWithPlayerItem:nil];
 }
 
 - (void) removeObservers{
     if (self._observersAdded){
-        [_player removeObserver:self forKeyPath:@"rate" context:nil];
-        [[_player currentItem] removeObserver:self forKeyPath:@"status" context:statusContext];
-        [[_player currentItem] removeObserver:self forKeyPath:@"presentationSize" context:presentationSizeContext];
-        [[_player currentItem] removeObserver:self
-                                   forKeyPath:@"loadedTimeRanges"
-                                      context:timeRangeContext];
-        [[_player currentItem] removeObserver:self
-                                   forKeyPath:@"playbackLikelyToKeepUp"
-                                      context:playbackLikelyToKeepUpContext];
-        [[_player currentItem] removeObserver:self
-                                   forKeyPath:@"playbackBufferEmpty"
-                                      context:playbackBufferEmptyContext];
-        [[_player currentItem] removeObserver:self
-                                   forKeyPath:@"playbackBufferFull"
-                                      context:playbackBufferFullContext];
-        [[NSNotificationCenter defaultCenter] removeObserver:self];
+        @try { [_player removeObserver:self forKeyPath:@"rate" context:nil]; } @catch(...) {}
         
-
+        AVPlayerItem *item = self.observedItem;
+        if (!item) item = _player.currentItem;
+        
+        @try { [item removeObserver:self forKeyPath:@"status"           context:statusContext]; } @catch(...) {}
+        @try { [item removeObserver:self forKeyPath:@"presentationSize" context:presentationSizeContext]; } @catch(...) {}
+        @try { [item removeObserver:self forKeyPath:@"loadedTimeRanges" context:timeRangeContext]; } @catch(...) {}
+        @try { [item removeObserver:self forKeyPath:@"playbackLikelyToKeepUp" context:playbackLikelyToKeepUpContext]; } @catch(...) {}
+        @try { [item removeObserver:self forKeyPath:@"playbackBufferEmpty"    context:playbackBufferEmptyContext]; } @catch(...) {}
+        @try { [item removeObserver:self forKeyPath:@"playbackBufferFull"     context:playbackBufferFullContext]; } @catch(...) {}
+        
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:item];
+        
+        self.observedItem = nil;
         self._observersAdded = false;
     }
 }
@@ -273,13 +271,14 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     _stalledCount = 0;
     _isStalledCheckStarted = false;
     _playerRate = 1;
+    [self removeObservers];
     [_player replaceCurrentItemWithPlayerItem:item];
     if (!@available(iOS 16.0, *)) {
         // https://dw-ml-nfc.atlassian.net/browse/DAF-3642
         // set buffer time into 1 second
         // This option cannot keep the buffer fixed to 1s, but the value can only be maxed to 10s.
         // It keeps the player not frozen when fast-forwarding
-        item.preferredForwardBufferDuration = 0;
+        item.preferredForwardBufferDuration = 10;
     }
 
     AVAsset* asset = [item asset];
@@ -458,24 +457,25 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)updatePlayingState {
-    if (!_isInitialized || !_key) {
-        return;
-    }
-    if (!self._observersAdded){
-        [self addObservers:[_player currentItem]];
-    }
+  if (!_isInitialized || !_key) return;
+  if (!self._observersAdded && _player.currentItem) [self addObservers:_player.currentItem];
 
-    if (_isPlaying) {
-        if (@available(iOS 10.0, *)) {
-            [_player playImmediatelyAtRate:1.0];
-            _player.rate = _playerRate;
-        } else {
-            [_player play];
-            _player.rate = _playerRate;
-        }
+  if (_isPlaying) {
+    if (@available(iOS 10.0, *)) {
+      _player.automaticallyWaitsToMinimizeStalling = YES;
+
+      // If we're still waiting for buffer, don't stomp it
+      if (_player.timeControlStatus != AVPlayerTimeControlStatusWaitingToPlayAtSpecifiedRate) {
+        [_player play];                // <- instead of playImmediatelyAtRate:
+        _player.rate = _playerRate;
+      }
     } else {
-        [_player pause];
+      [_player play];
+      _player.rate = _playerRate;
     }
+  } else {
+    [_player pause];
+  }
 }
 
 - (void)onReadyToPlay {
@@ -532,22 +532,27 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)play {
-    _stalledCount = 0;
-    _isStalledCheckStarted = false;
-    _isPlaying = true;
-   if (!_pipController.isPictureInPictureActive) {
-       NSLog(@"play play not in picture");
-    [self updatePlayingState];
-       }
+  _stalledCount = 0;
+  _isStalledCheckStarted = false;
+  _isPlaying = true;
+
+  if (@available(iOS 10.0, *)) {
+    if (_player.timeControlStatus == AVPlayerTimeControlStatusWaitingToPlayAtSpecifiedRate ||
+        ![_player.currentItem isPlaybackLikelyToKeepUp]) {
+      // Let preroll continue; don't force rate right now.
+      return;
+    }
+  }
+  [self updatePlayingState];
 }
 
 - (void)playFromNotification {
-   if (!_pipController.isPictureInPictureActive) return;
-   NSLog(@"playFromNotification");
-   _stalledCount = 0;
-   _isStalledCheckStarted = false;
-   _isPlaying = true;
-   [self updatePlayingState];
+//   if (!_pipController.isPictureInPictureActive) return;
+//   NSLog(@"playFromNotification");
+//   _stalledCount = 0;
+//   _isStalledCheckStarted = false;
+//   _isPlaying = true;
+//   [self updatePlayingState];
 }
 
 - (void)pause {
@@ -660,6 +665,38 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     }
 }
 
+#pragma mark - PiP inline masking helpers
+
+- (void)showInlinePlaceholderForPip {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!self.playerView) {
+            return;
+        }
+        if (!self.pipInlinePlaceholderView) {
+            UIView *maskView = [[UIView alloc] initWithFrame:self.playerView.bounds];
+            maskView.backgroundColor = [UIColor blackColor];
+            maskView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            self.pipInlinePlaceholderView = maskView;
+        }
+        if (self.pipInlinePlaceholderView.superview != self.playerView) {
+            [self.playerView addSubview:self.pipInlinePlaceholderView];
+        } else {
+            [self.playerView bringSubviewToFront:self.pipInlinePlaceholderView];
+        }
+        self.pipInlinePlaceholderView.hidden = NO;
+    });
+}
+
+- (void)hideInlinePlaceholderForPip {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!self.pipInlinePlaceholderView) {
+            return;
+        }
+        [self.pipInlinePlaceholderView removeFromSuperview];
+        self.pipInlinePlaceholderView = nil;
+    });
+}
+
 #if TARGET_OS_IOS
 - (void)setRestoreUserInterfaceForPIPStopCompletionHandler:(BOOL)restore
 {
@@ -728,15 +765,20 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 
 - (void)disablePictureInPicture
 {
-    if (__playerLayer){
+    if (self._playerLayer) { // <-- was __playerLayer (typo)
+        [self hideInlinePlaceholderForPip];
+        if (@available(iOS 9.0, *)) {
+            if (_pipController) {
+                if (_pipController.isPictureInPictureActive) {
+                    [_pipController stopPictureInPicture];
+                }
+                _pipController.delegate = nil;
+                _pipController = nil;
+            }
+        }
         [self._playerLayer removeFromSuperlayer];
         self._playerLayer = nil;
-        if (_pipController) {
-            _pipController = nil;
-        }
-        if (_eventSink != nil) {
-            _eventSink(@{@"event" : @"pipStop"});
-        }
+        if (_eventSink) _eventSink(@{@"event": @"pipStop"});
     }
 }
 #endif
@@ -747,12 +789,14 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)pictureInPictureControllerDidStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController  API_AVAILABLE(ios(9.0)){
+    [self showInlinePlaceholderForPip];
     if (_eventSink != nil) {
         _eventSink(@{@"event" : @"pipStart"});
     }
 }
 
 - (void)pictureInPictureControllerWillStopPictureInPicture:(AVPictureInPictureController *)pictureInPictureController  API_AVAILABLE(ios(9.0)){
+    [self hideInlinePlaceholderForPip];
     if (_eventSink != nil) {
             _eventSink(@{@"event" : @"exitingPIP"});
         }
@@ -760,6 +804,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)pictureInPictureControllerWillStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
+    [self showInlinePlaceholderForPip];
     if (_eventSink != nil) {
             _eventSink(@{@"event" : @"enteringPIP"});
         }
@@ -767,7 +812,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController failedToStartPictureInPictureWithError:(NSError *)error {
-
+    [self hideInlinePlaceholderForPip];
 }
 
 - (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController restoreUserInterfaceForPictureInPictureStopWithCompletionHandler:(void (^)(BOOL))completionHandler {

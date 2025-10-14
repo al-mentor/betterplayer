@@ -1143,7 +1143,7 @@ class BetterPlayerController {
     if (isPipSupported) {
       _wasInFullScreenBeforePiP = _isFullScreen;
       _wasControlsEnabledBeforePiP = _controlsEnabled;
-      setControlsEnabled(true);
+      setControlsEnabled(false);
       setControlsVisibility(false);
       if (Platform.isAndroid) {
         _wasInFullScreenBeforePiP = _isFullScreen;

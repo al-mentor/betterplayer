@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-
 import 'package:better_player/src/configuration/better_player_controls_configuration.dart';
 import 'package:better_player/src/controls/better_player_clickable_widget.dart';
 import 'package:better_player/src/controls/better_player_controls_state.dart';
@@ -12,13 +11,12 @@ import 'package:better_player/src/controls/better_player_progress_colors.dart';
 import 'package:better_player/src/core/better_player_controller.dart';
 import 'package:better_player/src/core/better_player_utils.dart';
 import 'package:better_player/src/video_player/video_player.dart';
+
 // Flutter imports:
 import 'package:flutter/material.dart';
 
 import '../../better_player.dart';
 import '../colors.dart';
-
-
 
 class BetterPlayerMaterialControls extends StatefulWidget {
   ///Callback used to send information if player bar is hidden or not
@@ -87,10 +85,10 @@ class _BetterPlayerMaterialControlsState
             color: Colors.black,
             child: _buildErrorWidget(),
           ),
-           Positioned(
+          Positioned(
             top: 16,
             left: 16,
-            child: BetterPlayerConstant.videoCloseIcon ,
+            child: BetterPlayerConstant.videoCloseIcon,
           ),
         ],
       );
@@ -286,8 +284,56 @@ class _BetterPlayerMaterialControlsState
   Widget _buildPipButton() {
     return BetterPlayerMaterialClickableWidget(
       onTap: () {
-        betterPlayerController!.enablePictureInPicture(
-            betterPlayerController!.betterPlayerGlobalKey!);
+        // betterPlayerController!.enablePictureInPicture(
+        //     betterPlayerController!.betterPlayerGlobalKey!);
+        // Check if there's enough buffered content (at least 10 seconds)
+        final positionInSeconds = _controller!.value.position.inSeconds;
+        final bufferedAfter = _controller!.value.buffered
+            .where((element) => element.end.inSeconds > positionInSeconds);
+
+        int bufferedDuration = 0;
+        if (bufferedAfter.isNotEmpty) {
+          final maxBufferedEnd =
+              bufferedAfter.map((e) => e.end.inSeconds).reduce(max);
+          bufferedDuration = maxBufferedEnd - positionInSeconds;
+        }
+
+        if (bufferedDuration < 10 && Platform.isIOS) {
+          // Show alert if buffered time is less than 10 seconds
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text(
+                _controlsConfiguration.pipNotReadyTitle,
+                style: TextStyle(
+                  color: _controlsConfiguration.textColor,
+                ),
+              ),
+              content: Text(
+                _controlsConfiguration.pipNotReadyMessage,
+                style: TextStyle(
+                  color: _controlsConfiguration.textColor,
+                ),
+              ),
+              backgroundColor: _controlsConfiguration.controlBarColor,
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    _controlsConfiguration.pipNotReadyActionText,
+                    style: TextStyle(
+                      color: _controlsConfiguration.iconsColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else {
+          // Enable PIP if buffered time is sufficient
+          betterPlayerController!.enablePictureInPicture(
+              betterPlayerController!.betterPlayerGlobalKey!);
+        }
       },
       padding: const EdgeInsets.all(8.0),
       child: Icon(
@@ -685,7 +731,6 @@ class _BetterPlayerMaterialControlsState
   void cancelAndRestartTimer() {
     _hideTimer?.cancel();
     _startHideTimer();
-
     changePlayerControlsNotVisible(false);
   }
 
@@ -794,7 +839,10 @@ class _BetterPlayerMaterialControlsState
               if (isVideoFinished(_latestValue) &&
                   _betterPlayerController?.isLiveStream() == false &&
                   betterPlayerController!.isPlaying()!) {
-                changePlayerControlsNotVisible(false);
+
+                if (!(betterPlayerController?.isPIPStart ?? false)) {
+                  changePlayerControlsNotVisible(false);
+                }
                 _hideTimer?.cancel();
                 _initTimer?.cancel();
                 _showAfterExpandCollapseTimer?.cancel();
@@ -812,6 +860,7 @@ class _BetterPlayerMaterialControlsState
   }
 
   int? seekDurationViewOnly;
+
   Widget _buildProgressBar() {
     final controller = _controller!;
     final positionInSeconds = controller.value.position.inSeconds;

@@ -168,6 +168,15 @@ class BetterPlayerControlsConfiguration {
   final void Function()? onFullScreenIconWidgetTapped;
   final String? trackDesc;
 
+  ///Title displayed when PiP cannot be started due to insufficient buffer.
+  final String pipNotReadyTitle;
+
+  ///Message displayed when PiP cannot be started due to insufficient buffer.
+  final String pipNotReadyMessage;
+
+  ///Action button text displayed in PiP buffer alert.
+  final String pipNotReadyActionText;
+
   final Widget Function(BuildContext)? fullScreenControlsBuilder;
 
   const BetterPlayerControlsConfiguration(
@@ -236,6 +245,10 @@ class BetterPlayerControlsConfiguration {
       this.topBarEndWidgetWhenVideoIsLocked,
       this.internetSpeed,
       this.trackDesc,
+      this.pipNotReadyTitle = 'PIP Not Ready',
+      this.pipNotReadyMessage =
+          'Picture-in-Picture is not ready yet. Please wait for the video to buffer at least 10 seconds.',
+      this.pipNotReadyActionText = 'OK',
       });
 
 
@@ -305,12 +318,15 @@ BetterPlayerControlsConfiguration copyWith({
     void Function()? onFullScreenIconWidgetTapped,
     Widget Function(BuildContext)? fullScreenControlsBuilder,
     String? trackDesc,
+    String? pipNotReadyTitle,
+    String? pipNotReadyMessage,
+    String? pipNotReadyActionText,
 }) {
     return BetterPlayerControlsConfiguration(
       //Solution
       skipBackIconWidget: skipBackIconWidget ?? this.skipBackIconWidget,
       skipForwardIconWidget: skipForwardIconWidget ?? this.skipForwardIconWidget,
-        trackDesc : trackDesc ?? this.trackDesc,
+        trackDesc: trackDesc ?? this.trackDesc,
         controlBarColor: controlBarColor ?? this.controlBarColor,
         textColor: textColor ?? this.textColor,
         iconsColor: iconsColor ?? this.iconsColor,
@@ -373,6 +389,9 @@ BetterPlayerControlsConfiguration copyWith({
         disableBuildMoreWidgetWhenFullScreen: disableBuildMoreWidgetWhenFullScreen ?? this.disableBuildMoreWidgetWhenFullScreen,
         onFullScreenIconWidgetTapped: onFullScreenIconWidgetTapped ?? this.onFullScreenIconWidgetTapped,
         fullScreenControlsBuilder: fullScreenControlsBuilder ?? this.fullScreenControlsBuilder,
+        pipNotReadyTitle: pipNotReadyTitle ?? this.pipNotReadyTitle,
+        pipNotReadyMessage: pipNotReadyMessage ?? this.pipNotReadyMessage,
+        pipNotReadyActionText: pipNotReadyActionText ?? this.pipNotReadyActionText,
     );
 }
 
