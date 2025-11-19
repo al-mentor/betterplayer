@@ -41,11 +41,9 @@ API_AVAILABLE(ios(9.0))
 }
 
 - (nonnull UIView *)view {
-    if (self.playerView == nil) {
-        self.playerView = [[BetterPlayerView alloc] initWithFrame:CGRectZero];
-    }
-    self.playerView.player = _player;
-    return self.playerView;
+    BetterPlayerView *playerView = [[BetterPlayerView alloc] initWithFrame:CGRectZero];
+    playerView.player = _player;
+    return playerView;
 }
 
 - (void)addObservers:(AVPlayerItem*)item {
@@ -665,38 +663,6 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     }
 }
 
-#pragma mark - PiP inline masking helpers
-
-- (void)showInlinePlaceholderForPip {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if (!self.playerView) {
-            return;
-        }
-        if (!self.pipInlinePlaceholderView) {
-            UIView *maskView = [[UIView alloc] initWithFrame:self.playerView.bounds];
-            maskView.backgroundColor = [UIColor blackColor];
-            maskView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            self.pipInlinePlaceholderView = maskView;
-        }
-        if (self.pipInlinePlaceholderView.superview != self.playerView) {
-            [self.playerView addSubview:self.pipInlinePlaceholderView];
-        } else {
-            [self.playerView bringSubviewToFront:self.pipInlinePlaceholderView];
-        }
-        self.pipInlinePlaceholderView.hidden = NO;
-    });
-}
-
-- (void)hideInlinePlaceholderForPip {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if (!self.pipInlinePlaceholderView) {
-            return;
-        }
-        [self.pipInlinePlaceholderView removeFromSuperview];
-        self.pipInlinePlaceholderView = nil;
-    });
-}
-
 #if TARGET_OS_IOS
 - (void)setRestoreUserInterfaceForPIPStopCompletionHandler:(BOOL)restore
 {
@@ -766,7 +732,6 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 - (void)disablePictureInPicture
 {
     if (self._playerLayer) { // <-- was __playerLayer (typo)
-        [self hideInlinePlaceholderForPip];
         if (@available(iOS 9.0, *)) {
             if (_pipController) {
                 if (_pipController.isPictureInPictureActive) {
@@ -789,14 +754,12 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)pictureInPictureControllerDidStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController  API_AVAILABLE(ios(9.0)){
-    [self showInlinePlaceholderForPip];
     if (_eventSink != nil) {
         _eventSink(@{@"event" : @"pipStart"});
     }
 }
 
 - (void)pictureInPictureControllerWillStopPictureInPicture:(AVPictureInPictureController *)pictureInPictureController  API_AVAILABLE(ios(9.0)){
-    [self hideInlinePlaceholderForPip];
     if (_eventSink != nil) {
             _eventSink(@{@"event" : @"exitingPIP"});
         }
@@ -804,7 +767,6 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)pictureInPictureControllerWillStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
-    [self showInlinePlaceholderForPip];
     if (_eventSink != nil) {
             _eventSink(@{@"event" : @"enteringPIP"});
         }
@@ -812,7 +774,6 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController failedToStartPictureInPictureWithError:(NSError *)error {
-    [self hideInlinePlaceholderForPip];
 }
 
 - (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController restoreUserInterfaceForPictureInPictureStopWithCompletionHandler:(void (^)(BOOL))completionHandler {
