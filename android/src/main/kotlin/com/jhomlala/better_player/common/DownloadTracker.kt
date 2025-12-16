@@ -442,7 +442,17 @@ class DownloadTracker(
 
 
         // DownloadHelper.Callback implementation.
+        // Support both old and new media3 API signatures
         override fun onPrepared(helper: DownloadHelper) {
+            onPreparedInternal(helper)
+        }
+
+        // New signature for media3 1.5.0+
+        fun onPrepared(helper: DownloadHelper, isProgressiveDownloadQualityOrNotAdaptive: Boolean) {
+            onPreparedInternal(helper)
+        }
+
+        private fun onPreparedInternal(helper: DownloadHelper) {
             if (isReleased) {
                 return
             }
